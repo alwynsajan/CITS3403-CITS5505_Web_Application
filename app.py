@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import timedelta
 from dbClient import dbClient
-from models import db, User
+from models import db
 
 app = Flask(__name__)
 # Secret key for encrypting session data

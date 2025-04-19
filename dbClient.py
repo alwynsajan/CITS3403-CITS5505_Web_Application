@@ -1,5 +1,4 @@
 from models import User
-from werkzeug.security import check_password_hash
 
 class dbClient:
 
@@ -12,7 +11,7 @@ class dbClient:
         user = User.query.filter_by(username=username).first()
         
         # Check if the user exists and the password matches
-        if user and user.check_password(password):
+        if user and user.checkPassword(password):
 
             # Return user ID if credentials are correct
             return user.id  
