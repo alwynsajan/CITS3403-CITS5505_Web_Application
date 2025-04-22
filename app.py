@@ -104,8 +104,8 @@ def add_user():
         user_id = dbClient.addUser(
             username=data['username'],
             password=data['password'],
-            first_name=data['firstName'],
-            last_name=data['lastName']
+            firstname=data['firstName'],
+            lastname=data['lastName']
         )
         
         if user_id:

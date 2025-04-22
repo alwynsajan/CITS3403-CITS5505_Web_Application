@@ -1,34 +1,37 @@
-from models import User
+from models import User, db
+from werkzeug.security import generatePasswordHash
 
-class dbClient:
+class DbClient:  # PascalCase for class name
+    def __init__(self, dbSession):
+        self.dbSession = dbSession  # camelCase
 
-    def __init__(self, db):
-        self.db = db
+    def getLastUserId(self):  # camelCase
+        """Returns the highest user ID or 0 if empty"""
+        lastUser = User.query.order_by(User.id.desc()).first()
+        return lastUser.id if lastUser else 0
 
-    def checkCredentials(self, username, password):
-
-        # Query the database for the user
-        user = User.query.filter_by(username=username).first()
-        
-        # Check if the user exists and the password matches
-        if user and user.checkPassword(password):
-
-            # Return user ID if credentials are correct
-            return user.id  
-        
-        # Return None if credentials are invalid
-        return None  
-    
-    def addUser(self, username, password, first_name, last_name):
-        """Add new user to database with validation"""
+    def addUser(self, username, password, firstName, lastName):  # camelCase
+        """Adds new user with auto-incremented ID"""
         if User.query.filter_by(username=username).first():
             return None  # Username exists
+
+        newId = self.getLastUserId() + 1  # camelCase
+        newUser = User(
+            id=newId,
+            username=username,
+            password=generatePasswordHash(password),  # camelCase
+            firstName=firstName,
+            lastName=lastName
+        )
         
-        new_user = User.createUser(username, password, first_name, last_name)
-        self.db.session.add(new_user)
+        self.dbSession.add(newUser)
         try:
-            self.db.session.commit()
-            return new_user.id
+            self.dbSession.commit()
+            return newId
         except Exception as e:
-            self.db.session.rollback()
+            self.dbSession.rollback()
             raise e
+
+    def checkCredentials(self, username, passwordInput):  # camelCase
+        user = User.query.filter_by(username=username).first()
+        return user.id if user and user.checkPassword(passwordInput) else None
