@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Account Balance Card -->
+    <div class="card">
+        <h3>Account Balance</h3>
+        {% if data.hasAccountBlance %}
+            <!-- Show actual balance when data is available -->
+            <div class="balance-content">
+                <h2>${{ data.balance }}</h2>
+                <span class="{{ 'positive' if data.balance_change >= 0 else 'negative' }}">
+                    {{ "+" if data.balance_change >= 0 else "" }}{{ data.balance_change }}%
+                </span>
+            </div>
+        {% else %}
+            <!-- Show placeholder when no balance data is available -->
+            <div class="placeholder-content">
+                <h2>$0</h2>
+                <p class="placeholder-text">Add your income to see your balance</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Goal Progress Card -->
+    <div class="card">
+        <h3>Goal Progress</h3>
+        {% if data.hasGoal %}
+            <!-- Show goal progress when goal data is available -->
+            <div class="goal-content">
+                <div class="progress-circle">
+                    <div class="progress-circle-inner">
+                        <h2>{{ data.goal_progress }}%</h2>
+                        <p>{{ data.goal_name }}</p>
+                    </div>
+                </div>
+                <div class="goal-details">
+                    <p>Target: ${{ data.goal_target }}</p>
+                    <p>Saved: ${{ data.goal_saved }}</p>
+                    <p>Remaining: ${{ data.goal_target - data.goal_saved }}</p>
+                </div>
+            </div>
+        {% else %}
+            <!-- Show placeholder when no goal data is available -->
+            <div class="placeholder-content">
+                <div class="progress-circle-placeholder"></div>
+                <p class="placeholder-text">Set a goal to track your progress</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Set Goal Form Card -->
+    <div class="card">
+        <h3>Set a Goal</h3>
+        <form class="goal-form">
+            <!-- Goal name input field -->
+            <div class="form-group">
+                <label for="goal-name">Goal Name</label>
+                <input type="text" id="goal-name" placeholder="e.g. New Laptop">
+            </div>
+            
+            <!-- Target amount input field -->
+            <div class="form-group">
+                <label for="target-amount">Target Amount ($)</label>
+                <input type="number" id="target-amount" placeholder="1000">
+            </div>
+            
+            <!-- Time duration selection -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="time-duration">Time Duration</label>
+                    <select id="time-duration">
+                        <option value="weeks">Weeks</option>
+                        <option value="fortnights">Fortnights</option>
+                        <option value="months">Months</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration-value">Number</label>
+                    <input type="number" id="duration-value" placeholder="12">
+                </div>
+            </div>
+            
+            <!-- Income frequency selection -->
+            <div class="form-group">
+                <label for="income-frequency">Income Frequency</label>
+                <select id="income-frequency">
+                    <option value="weekly">Weekly</option>
+                    <option value="fortnightly">Fortnightly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+            
+            <!-- Salary amount input -->
+            <div class="form-group">
+                <label for="income-amount">Salary Amount ($)</label>
+                <input type="number" id="income-amount" placeholder="2000">
+            </div>
+            
+            <!-- Allocation percentage input -->
+            <div class="form-group">
+                <label for="allocation">Allocation Percentage (%)</label>
+                <input type="number" id="allocation" placeholder="20">
+            </div>
+            
+            <!-- Submit button -->
+            <button type="submit" class="btn-primary">Add Goal</button>
+        </form>
+    </div>
+
+    <!-- Budget Suggestion Card -->
+    <div class="card">
+        <h3>Budget Suggestion (50/30/20)</h3>
+        {% if data.hasSalary %}
+            <!-- Show budget suggestions when salary data is available -->
+            <div class="budget-content">
+                <div class="budget-item">
+                    <div class="budget-category needs">50%</div>
+                    <div class="budget-info">
+                        <h4>Needs</h4>
+                        <p>${{ data.needs_amount }}</p>
+                    </div>
+                </div>
+                
+                <div class="budget-item">
+                    <div class="budget-category wants">30%</div>
+                    <div class="budget-info">
+                        <h4>Wants</h4>
+                        <p>${{ data.wants_amount }}</p>
+                    </div>
+                </div>
+                
+                <div class="budget-item">
+                    <div class="budget-category savings">20%</div>
+                    <div class="budget-info">
+                        <h4>Savings</h4>
+                        <p>${{ data.savings_amount }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Show placeholder when no salary data is available -->
+            <div class="placeholder-content">
+                <p class="placeholder-text">Add your income to get budget suggestions</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Monthly Spending Chart Card -->
+    <div class="card">
+        <h3>Monthly Spending</h3>
+        {% if data.hasExpense %}
+            <!-- Show spending chart when expense data is available -->
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+        {% else %}
+            <!-- Show placeholder when no expense data is available -->
+            <div class="placeholder-content">
+                <p class="placeholder-text">No spending data to display</p>
+                <p>Add expenses to see your monthly spending trends</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Export Data Card -->
+    <div class="card">
+        <h3>Export Options</h3>
+        <div class="export-buttons">
+            <button class="btn-export">Export to CSV</button>
+            <button class="btn-export">Export to PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js script for the spending chart (only included when expense data exists) -->
+{% if data.hasExpense %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the canvas element
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        
+        // Create a new chart
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Monthly Spending',
+                    data: [{{ data.monthly_spending|join(', ') }}],
+                    backgroundColor: 'rgba(83, 111, 255, 0.1)',
+                    borderColor: '#536fff',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
