@@ -2,149 +2,233 @@
 
 {% block content %}
 <div class="dashboard-grid">
-    <!-- Account Balance Card -->
-    <div class="card">
-        <h3>Account Balance</h3>
-        {% if data.hasAccountBlance %}
-            <div class="balance-content">
-                <h2>${{ data.balance }}</h2>
-            </div>
-        {% else %}
-            <div class="placeholder-content">
-                <h2>$0.0</h2>
-                <p class="placeholder-text">Add your income to see your balance</p>
-            </div>
-        {% endif %}
-    </div>
+    <!-- First row - Core financial information -->
+    <div class="main-row">
+        <!-- Account Balance Card -->
+        <div class="card balance-card">
+            <h2>Account Balance</h2>
+            {% if data.hasAccountBlance %}
+                <div class="balance-content">
+                    <h3>${{ data.balance }}</h3>
+                    <span class="{{ 'positive' if data.balance_change >= 0 else 'negative' }}">
+                        {{ "+" if data.balance_change >= 0 else "" }}{{ data.balance_change }}%
+                    </span>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-illustration">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 7L12 13L21 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">$0.00</h3>
+                    <p class="empty-message">Add your income to see your balance</p>
+                </div>
+            {% endif %}
+        </div>
 
-    <!-- Goal Progress Card -->
-    <div class="card" id="goalProgressCard">
-        <h3>Goal Progress</h3>
-        {% if data.hasGoal %}
-            <div class="goal-content">
-                <div class="progress-circle" style="--progress-percent: {{ data.goal_progress }}">
-                    <div class="progress-circle-inner">
-                        <h2>{{ data.goal_progress }}%</h2>
-                        <p>{{ data.goal_name }}</p>
+        <!-- Goal Progress Card -->
+        <div class="card goal-progress-card" id="goalProgressCard">
+            <h2>Goal Progress</h2>
+            {% if data.hasGoal %}
+                <div class="goal-content">
+                    <div class="progress-circle-container">
+                        <div class="progress-circle" data-progress="{{ data.goal_progress }}">
+                            <div class="progress-circle-inner">
+                                <h3>{{ data.goal_progress }}%</h3>
+                                <p>{{ data.goal_name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="goal-details">
+                        <p><strong>Target:</strong> ${{ data.goal_target }}</p>
+                        <p><strong>Saved:</strong> ${{ data.goal_saved }}</p>
+                        <p><strong>Remaining:</strong> ${{ data.goal_target - data.goal_saved }}</p>
                     </div>
                 </div>
-                <div class="goal-details">
-                    <p>Target: ${{ data.goal_target }}</p>
-                    <p>Saved: ${{ data.goal_saved }}</p>
-                    <p>Remaining: ${{ data.goal_target - data.goal_saved }}</p>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-illustration">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4"/>
+                            <path d="M14.5 9.5L9.5 14.5M9.5 9.5L14.5 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">No Goals Set</h3>
+                    <p class="empty-message">Create a goal to track your progress</p>
+                    <button id="openGoalForm" class="btn-secondary">Set a Goal</button>
                 </div>
-            </div>
-        {% else %}
-            <div class="placeholder-content">
-                <p class="placeholder-text">Set a goal to track progress</p>
-            </div>
-        {% endif %}
-    </div>
+            {% endif %}
+        </div>
 
-    <!-- Set Goal Form Card -->
-    <div class="card">
-        <h3>Set a Goal</h3>
-        <div id="goalFormMessage" class="form-message"></div>
-        
-        <form id="goalForm" class="goal-form">
-            <div class="form-row">
+        <!-- Collapsed Set Goal Button/Card -->
+        <div class="card goal-button-card" id="goalButtonCard">
+            <h2>Financial Goals</h2>
+            <p>Setting clear financial goals helps you stay motivated and track your progress.</p>
+            <button id="showGoalForm" class="btn-primary">Set a New Goal</button>
+        </div>
+
+        <!-- Hidden Set Goal Form Card -->
+        <div class="card goal-form-card" id="goalFormCard" style="display: none;">
+            <div class="form-header">
+                <h2>Set a Goal</h2>
+                <button class="close-form-btn" id="closeGoalForm">×</button>
+            </div>
+            
+            <!-- Status message for form submission -->
+            <div id="goalFormMessage" class="form-message"></div>
+            
+            <!-- Goal form with AJAX handling -->
+            <form id="goalForm" class="goal-form">
+                <!-- Goal name input field -->
+                <div class="form-group">
+                    <label for="goal_name">Goal Name</label>
+                    <input type="text" id="goal_name" name="goal_name" placeholder="e.g. New Laptop" required>
+                </div>
+                
+                <!-- Target amount input field -->
                 <div class="form-group">
                     <label for="target_amount">Target Savings Amount</label>
-                    <input type="number" id="target_amount" name="target_amount" placeholder="Enter amount" required>
+                    <input type="number" id="target_amount" name="target_amount" placeholder="1000" required>
                 </div>
                 
-                <div class="form-group">
-                    <label for="time_duration">Duration</label>
-                    <select id="time_duration" name="time_duration">
-                        <option value="weeks">Weeks</option>
-                        <option value="months">Months</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="income_frequency">Income Frequency</label>
-                    <select id="income_frequency" name="income_frequency">
-                        <option value="weekly">Weekly</option>
-                        <option value="fortnightly">Fortnightly</option>
-                        <option value="monthly">Monthly</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="income_amount">Salary ($)</label>
-                    <input type="number" id="income_amount" name="income_amount" placeholder="Enter salary" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="allocation">Percentage Allocation</label>
-                    <input type="number" id="allocation" name="allocation" placeholder="Enter percentage" required>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn-primary">Add Goal</button>
-        </form>
-    </div>
-
-    <!-- Budget Suggestion Card -->
-    <div class="card">
-        <h3>Budget Suggestion</h3>
-        {% if data.hasSalary %}
-            <div class="budget-content">
-                <div class="budget-item">
-                    <div class="budget-category needs">50%</div>
-                    <div class="budget-info">
-                        <h4>Needs</h4>
-                        <p>${{ data.needs_amount }}</p>
+                <!-- Time settings -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="time_duration">Time Period</label>
+                        <select id="time_duration" name="time_duration">
+                            <option value="weeks">Weeks</option>
+                            <option value="months">Months</option>
+                            <option value="years">Years</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="income_frequency">Income Frequency</label>
+                        <select id="income_frequency" name="income_frequency">
+                            <option value="weekly">Weekly</option>
+                            <option value="fortnightly">Fortnightly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
                     </div>
                 </div>
                 
-                <div class="budget-item">
-                    <div class="budget-category wants">30%</div>
-                    <div class="budget-info">
-                        <h4>Wants</h4>
-                        <p>${{ data.wants_amount }}</p>
+                <!-- Financial settings -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="income_amount">Salary ($)</label>
+                        <input type="number" id="income_amount" name="income_amount" placeholder="2000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="allocation">Percentage Allocation (%)</label>
+                        <input type="number" id="allocation" name="allocation" placeholder="20" required>
                     </div>
                 </div>
                 
-                <div class="budget-item">
-                    <div class="budget-category savings">20%</div>
-                    <div class="budget-info">
-                        <h4>Savings</h4>
-                        <p>${{ data.savings_amount }}</p>
+                <!-- Submit button -->
+                <button type="submit" class="btn-primary">Add Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Second row - Additional financial insights -->
+    <div class="secondary-row">
+        <!-- Budget Suggestion Card -->
+        <div class="card budget-card">
+            <h2>Budget Suggestions</h2>
+            {% if data.hasSalary %}
+                <div class="budget-rule">
+                    <h3>50/30/20 Rule</h3>
+                    <div class="budget-allocation">
+                        <div class="budget-item">
+                            <div class="budget-circle needs">50%</div>
+                            <div class="budget-details">
+                                <h4>Needs</h4>
+                                <p>${{ data.needs_amount }}</p>
+                                <small>Essential expenses</small>
+                            </div>
+                        </div>
+                        
+                        <div class="budget-item">
+                            <div class="budget-circle wants">30%</div>
+                            <div class="budget-details">
+                                <h4>Wants</h4>
+                                <p>${{ data.wants_amount }}</p>
+                                <small>Non-essential purchases</small>
+                            </div>
+                        </div>
+                        
+                        <div class="budget-item">
+                            <div class="budget-circle savings">20%</div>
+                            <div class="budget-details">
+                                <h4>Savings</h4>
+                                <p>${{ data.savings_amount }}</p>
+                                <small>Future goals</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% else %}
-            <div class="placeholder-content">
-                <p class="placeholder-text">Add salary to get suggestions</p>
-            </div>
-        {% endif %}
-    </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-illustration">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">No Budget Data</h3>
+                    <p class="empty-message">Add salary to get personalized suggestions</p>
+                </div>
+            {% endif %}
+        </div>
 
-    <!-- Monthly Spending Chart Card -->
-    <div class="card">
-        <h3>Monthly Spending</h3>
-        {% if data.hasExpense %}
-            <div class="chart-container">
-                <canvas id="spendingChart"></canvas>
-            </div>
-        {% else %}
-            <div class="placeholder-content">
-                <p class="placeholder-text">No spending data to display</p>
-            </div>
-        {% endif %}
-    </div>
+        <!-- Monthly Spending Chart Card -->
+        <div class="card spending-card">
+            <h2>Monthly Spending</h2>
+            {% if data.hasExpense %}
+                <div class="chart-container">
+                    <canvas id="spendingChart"></canvas>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-illustration">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="empty-title">No Spending Data</h3>
+                    <p class="empty-message">Track your expenses to visualize spending patterns</p>
+                </div>
+            {% endif %}
+        </div>
 
-    <!-- Export Options Card -->
-    <div class="card">
-        <h3>Export</h3>
-        <div class="export-buttons">
-            <button class="btn-export">Export to CSV</button>
-            <button class="btn-export">Export to PDF</button>
+        <!-- Export Data Card -->
+        <div class="card export-card">
+            <h2>Export</h2>
+            <div class="export-options">
+                <button class="btn-export" id="exportCSV">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M17 21H7C6.46957 21 5.96086 20.7893 5.58579 20.4142C5.21071 20.0391 5 19.5304 5 19V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H14L19 8V19C19 19.5304 18.7893 20.0391 18.4142 20.4142C18.0391 20.7893 17.5304 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 17V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 17V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 17V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Export to CSV
+                </button>
+                <button class="btn-export" id="exportPDF">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M17 21H7C6.46957 21 5.96086 20.7893 5.58579 20.4142C5.21071 20.0391 5 19.5304 5 19V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H14L19 8V19C19 19.5304 18.7893 20.0391 18.4142 20.4142C18.0391 20.7893 17.5304 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Export to PDF
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -153,18 +237,21 @@
 {% if data.hasExpense %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Get the canvas element
         const ctx = document.getElementById('spendingChart').getContext('2d');
+        
+        // Create a new chart
         new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 datasets: [{
                     label: 'Monthly Spending',
                     data: [{{ data.monthly_spending|join(', ') }}],
-                    backgroundColor: 'rgba(83, 111, 255, 0.1)',
-                    borderColor: '#536fff',
-                    tension: 0.4,
-                    fill: true
+                    backgroundColor: [
+                        '#4F9DA6', '#5555AA', '#5A9FD4', '#59A5D8', '#4781A7', '#3E6D9C'
+                    ],
+                    borderRadius: 6
                 }]
             },
             options: {
@@ -172,18 +259,6 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            display: true,
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
                 }
             }
         });
@@ -191,58 +266,165 @@
 </script>
 {% endif %}
 
-<!-- AJAX form handling script -->
+<!-- Progress circle animation and Goal form handling script -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Goal form visibility toggle
+    const showGoalFormBtn = document.getElementById('showGoalForm');
+    const openGoalFormBtn = document.getElementById('openGoalForm');
+    const closeGoalFormBtn = document.getElementById('closeGoalForm');
+    const goalFormCard = document.getElementById('goalFormCard');
+    const goalButtonCard = document.getElementById('goalButtonCard');
+    
+    function showGoalForm() {
+        goalButtonCard.style.display = 'none';
+        goalFormCard.style.display = 'block';
+    }
+    
+    function hideGoalForm() {
+        goalFormCard.style.display = 'none';
+        goalButtonCard.style.display = 'flex';
+    }
+    
+    if (showGoalFormBtn) {
+        showGoalFormBtn.addEventListener('click', showGoalForm);
+    }
+    
+    if (openGoalFormBtn) {
+        openGoalFormBtn.addEventListener('click', showGoalForm);
+    }
+    
+    if (closeGoalFormBtn) {
+        closeGoalFormBtn.addEventListener('click', hideGoalForm);
+    }
+    
+    // Animate progress circles
+    const progressCircles = document.querySelectorAll('.progress-circle');
+    progressCircles.forEach(circle => {
+        const progress = parseInt(circle.getAttribute('data-progress')) || 0;
+        
+        // Start with 0% progress
+        circle.style.setProperty('--progress-percent', '0');
+        
+        // Animate to actual progress
+        setTimeout(() => {
+            let currentProgress = 0;
+            const interval = setInterval(() => {
+                currentProgress += 1;
+                circle.style.setProperty('--progress-percent', currentProgress);
+                if (currentProgress >= progress) {
+                    clearInterval(interval);
+                }
+            }, 15);
+        }, 300);
+    });
+    
+    // AJAX form handling
     const goalForm = document.getElementById('goalForm');
     const messageDiv = document.getElementById('goalFormMessage');
     const goalProgressCard = document.getElementById('goalProgressCard');
     
+    // Add submit event listener to the form
     if (goalForm) {
         goalForm.addEventListener('submit', function(e) {
+            // Prevent default form submission
             e.preventDefault();
             
+            // Show loading message
             messageDiv.innerHTML = '<p class="loading-message">Processing your request...</p>';
             
+            // Create FormData object
             const formData = new FormData(goalForm);
             
+            // Send AJAX request to server
             fetch('/addGoal', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
+                // Handle the response
                 if (data.status === 'success') {
+                    // Show success message
                     messageDiv.innerHTML = `<p class="success-message">${data.message}</p>`;
+                    
+                    // Reset form
                     goalForm.reset();
                     
-                    // Update goal progress section
-                    const goalHTML = `
-                        <h3>Goal Progress</h3>
-                        <div class="goal-content">
-                            <div class="progress-circle" style="--progress-percent: ${data.goal.progress}">
-                                <div class="progress-circle-inner">
-                                    <h2>${data.goal.progress}%</h2>
-                                    <p>${data.goal.name}</p>
-                                </div>
-                            </div>
-                            <div class="goal-details">
-                                <p>Target: $${data.goal.target}</p>
-                                <p>Saved: $${data.goal.saved}</p>
-                                <p>Remaining: $${data.goal.target - data.goal.saved}</p>
-                            </div>
-                        </div>
-                    `;
+                    // Update the goal progress section with new data
+                    updateGoalProgress(data.goal);
                     
-                    goalProgressCard.innerHTML = goalHTML;
+                    // Hide form after successful submission
+                    setTimeout(hideGoalForm, 1500);
                 } else {
+                    // Show error message
                     messageDiv.innerHTML = `<p class="error-message">${data.message}</p>`;
                 }
             })
             .catch(error => {
+                // Handle fetch errors
                 console.error('Error:', error);
                 messageDiv.innerHTML = '<p class="error-message">An error occurred. Please try again.</p>';
             });
+        });
+    }
+    
+    // Function to update goal progress section
+    function updateGoalProgress(goalData) {
+        // Create HTML for the goal progress content
+        const goalHTML = `
+            <h2>Goal Progress</h2>
+            <div class="goal-content">
+                <div class="progress-circle-container">
+                    <div class="progress-circle" data-progress="${goalData.progress}">
+                        <div class="progress-circle-inner">
+                            <h3>${goalData.progress}%</h3>
+                            <p>${goalData.name}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="goal-details">
+                    <p><strong>Target:</strong> $${goalData.target}</p>
+                    <p><strong>Saved:</strong> $${goalData.saved}</p>
+                    <p><strong>Remaining:</strong> $${goalData.target - goalData.saved}</p>
+                </div>
+            </div>
+        `;
+        
+        // Update the goal progress card
+        goalProgressCard.innerHTML = goalHTML;
+        
+        // Re-animate the new progress circle
+        setTimeout(() => {
+            const newCircle = goalProgressCard.querySelector('.progress-circle');
+            if (newCircle) {
+                newCircle.style.setProperty('--progress-percent', '0');
+                
+                let currentProgress = 0;
+                const interval = setInterval(() => {
+                    currentProgress += 1;
+                    newCircle.style.setProperty('--progress-percent', currentProgress);
+                    if (currentProgress >= goalData.progress) {
+                        clearInterval(interval);
+                    }
+                }, 15);
+            }
+        }, 100);
+    }
+
+    // Export button handlers
+    const exportCSVBtn = document.getElementById('exportCSV');
+    const exportPDFBtn = document.getElementById('exportPDF');
+
+    if (exportCSVBtn) {
+        exportCSVBtn.addEventListener('click', function() {
+            alert('CSV export feature will be implemented soon');
+        });
+    }
+
+    if (exportPDFBtn) {
+        exportPDFBtn.addEventListener('click', function() {
+            alert('PDF export feature will be implemented soon');
         });
     }
 });

@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="light-theme">
     <div class="dashboard-container">
-        <!-- Text-based sidebar navigation -->
+        <!-- Modern sidebar with text navigation -->
         <aside class="sidebar">
             <div class="logo">SB</div>
             <nav class="menu">
@@ -17,18 +17,54 @@
                 <a href="/expenses" class="menu-item {{ 'active' if request.path == '/expenses' }}">Expenses</a>
                 <a href="/settings" class="menu-item {{ 'active' if request.path == '/settings' }}">Settings</a>
             </nav>
+            
+            <!-- Theme toggle switch -->
+            <div class="theme-toggle">
+                <input type="checkbox" id="theme-switch" class="theme-switch">
+                <label for="theme-switch" class="theme-switch-label">
+                    <span class="theme-icon light">☀️</span>
+                    <span class="theme-icon dark">🌙</span>
+                    <span class="theme-switch-toggle"></span>
+                </label>
+            </div>
+            
+            <div class="profile-pic"></div>
         </aside>
         
         <!-- Main content container -->
         <main class="main-content">
-            <!-- Welcome message -->
-            <div class="welcome-bar">
+            <!-- Welcome header for all pages -->
+            <div class="welcome-header">
                 <h1>Welcome to Smart Budget</h1>
-                <p>Keep track of your finances and achieve your savings goals</p>
+                <p>Take control of your finances with our easy-to-use tools</p>
             </div>
             
             {% block content %}{% endblock %}
         </main>
     </div>
+    
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeSwitch = document.getElementById('theme-switch');
+            
+            // Check for saved theme preference
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.replace('light-theme', 'dark-theme');
+                themeSwitch.checked = true;
+            }
+            
+            // Theme switch event listener
+            themeSwitch.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.replace('light-theme', 'dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.body.classList.replace('dark-theme', 'light-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

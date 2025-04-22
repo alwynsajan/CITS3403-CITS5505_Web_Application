@@ -1,17 +1,72 @@
-/* Simple modern dashboard styles */
+/* Modern Dashboard CSS with light/dark themes and improved layout */
 :root {
-    --primary-color: #6932dd;
-    --secondary-color: #536fff;
-    --success-color: #28c76f;
-    --danger-color: #ea5455;
-    --warning-color: #ff9f43;
-    --background-color: #f5f7fa;
-    --card-color: #ffffff;
-    --text-color: #333333;
-    --text-light: #6c757d;
-    --border-radius: 20px;
-    --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-    --font-family: 'Segoe UI', sans-serif;
+    /* Light theme colors */
+    --l-primary-color: #4F9DA6;
+    --l-secondary-color: #5555AA;
+    --l-accent-color: #5A9FD4;
+    --l-success-color: #4FB477;
+    --l-danger-color: #FF5A5F;
+    --l-warning-color: #FFC857;
+    --l-background-color: #f5f7fa;
+    --l-card-color: #ffffff;
+    --l-text-color: #333333;
+    --l-text-light: #6c757d;
+    --l-border-color: rgba(0,0,0,0.1);
+    
+    /* Dark theme colors */
+    --d-primary-color: #65b6bd;
+    --d-secondary-color: #7575cc;
+    --d-accent-color: #71b3e7;
+    --d-success-color: #63d090;
+    --d-danger-color: #ff7a7e;
+    --d-warning-color: #ffd57e;
+    --d-background-color: #121212;
+    --d-card-color: #1e1e1e;
+    --d-text-color: #e0e0e0;
+    --d-text-light: #aaaaaa;
+    --d-border-color: rgba(255,255,255,0.1);
+    
+    /* Common properties */
+    --border-radius: 16px;
+    --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    --d-box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    --font-family: 'Segoe UI', 'Roboto', sans-serif;
+    
+    /* Height calculation to avoid scrolling */
+    --header-height: 80px;
+    --content-padding: 2rem;
+    --row-gap: 1.5rem;
+}
+
+/* Apply theme variables */
+.light-theme {
+    --primary-color: var(--l-primary-color);
+    --secondary-color: var(--l-secondary-color);
+    --accent-color: var(--l-accent-color);
+    --success-color: var(--l-success-color);
+    --danger-color: var(--l-danger-color);
+    --warning-color: var(--l-warning-color);
+    --background-color: var(--l-background-color);
+    --card-color: var(--l-card-color);
+    --text-color: var(--l-text-color);
+    --text-light: var(--l-text-light);
+    --border-color: var(--l-border-color);
+    --box-shadow-color: var(--box-shadow);
+}
+
+.dark-theme {
+    --primary-color: var(--d-primary-color);
+    --secondary-color: var(--d-secondary-color);
+    --accent-color: var(--d-accent-color);
+    --success-color: var(--d-success-color);
+    --danger-color: var(--d-danger-color);
+    --warning-color: var(--d-warning-color);
+    --background-color: var(--d-background-color);
+    --card-color: var(--d-card-color);
+    --text-color: var(--d-text-color);
+    --text-light: var(--d-text-light);
+    --border-color: var(--d-border-color);
+    --box-shadow-color: var(--d-box-shadow);
 }
 
 * {
@@ -19,36 +74,41 @@
     padding: 0;
     box-sizing: border-box;
     font-family: var(--font-family);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 
 body {
     background-color: var(--background-color);
     color: var(--text-color);
     min-height: 100vh;
+    overflow: hidden;
 }
 
 /* Main Layout */
 .dashboard-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
-/* Sidebar with text navigation */
+/* Sidebar */
 .sidebar {
-    width: 200px;
-    background-color: var(--primary-color);
-    color: white;
+    width: 220px;
+    background-color: var(--card-color);
+    border-right: 1px solid var(--border-color);
+    padding: 2rem 1rem;
     display: flex;
     flex-direction: column;
-    padding: 2rem 1rem;
-    gap: 2rem;
+    gap: 2.5rem;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .logo {
-    width: 50px;
-    height: 50px;
-    background-color: white;
-    color: var(--primary-color);
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-color);
+    color: white;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -65,44 +125,121 @@ body {
 }
 
 .menu-item {
-    padding: 0.8rem 1rem;
+    padding: 0.8rem 1.2rem;
     border-radius: 10px;
-    color: white;
+    color: var(--text-color);
     text-decoration: none;
-    text-align: center;
     transition: all 0.3s ease;
+    font-weight: 500;
 }
 
 .menu-item:hover, .menu-item.active {
-    background-color: white;
-    color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    margin-top: auto;
+    align-self: center;
+}
+
+/* Theme toggle switch */
+.theme-toggle {
+    margin: 1rem auto;
+    width: 80px;
+    position: relative;
+}
+
+.theme-switch {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.theme-switch-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    width: 80px;
+    height: 40px;
+    background: var(--border-color);
+    border-radius: 100px;
+    position: relative;
+    transition: background-color 0.2s;
+    padding: 0 0.5rem;
+}
+
+.theme-switch-label .theme-icon {
+    font-size: 1rem;
+}
+
+.theme-switch-toggle {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    transition: transform 0.2s;
+}
+
+.theme-switch:checked + .theme-switch-label .theme-switch-toggle {
+    transform: translateX(40px);
 }
 
 /* Main Content */
+/* Main Content */
 .main-content {
     flex: 1;
-    padding: 2rem;
+    padding: var(--content-padding);
+    height: 100vh;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.welcome-bar {
-    margin-bottom: 2.5rem;
+/* Welcome Header */
+.welcome-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    height: var(--header-height);
 }
 
-.welcome-bar h1 {
-    margin-bottom: 0.5rem;
+.welcome-header h1 {
+    font-size: 1.8rem;
     color: var(--primary-color);
+    margin-bottom: 0.5rem;
 }
 
-.welcome-bar p {
+.welcome-header p {
     color: var(--text-light);
 }
 
 /* Dashboard Grid */
 .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--row-gap);
+    flex: 1;
+    /* Calculate exact height to avoid scrolling */
+    height: calc(100vh - var(--header-height) - var(--content-padding) * 2);
+}
+
+.main-row, .secondary-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
+    /* Each row takes equal space */
+    height: calc((100vh - var(--header-height) - var(--content-padding) * 2 - var(--row-gap)) / 2);
+    min-height: 250px;
 }
 
 /* Cards */
@@ -110,148 +247,321 @@ body {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     padding: 1.5rem;
-    box-shadow: var(--box-shadow);
-    min-height: 200px;
+    box-shadow: var(--box-shadow-color);
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-.card h3 {
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
     font-size: 1.2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: var(--text-color);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* Account Balance */
-.balance-content h2 {
-    font-size: 2.5rem;
-    margin: 0.5rem 0;
-}
-
-.placeholder-content {
+/* Balance Card */
+.balance-card .balance-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     flex: 1;
-    text-align: center;
 }
 
-.placeholder-text {
-    color: var(--text-light);
-    font-style: italic;
+.balance-content h3 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
 }
 
-/* Progress Circle */
+.positive {
+    color: var(--success-color);
+}
+
+.negative {
+    color: var(--danger-color);
+}
+
+/* Goal Progress Card */
+.goal-progress-card {
+    display: flex;
+    flex-direction: column;
+}
+
 .goal-content {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     flex: 1;
+}
+
+.progress-circle-container {
+    position: relative;
+    margin-bottom: 1.5rem;
 }
 
 .progress-circle {
     position: relative;
-    width: 120px;
-    height: 120px;
-    margin-bottom: 1.5rem;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(
+        var(--primary-color) 0% calc(var(--progress-percent, 0) * 1%),
+        #e0e0e0 calc(var(--progress-percent, 0) * 1%) 100%
+    );
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
 }
 
-.progress-circle::before {
-    content: '';
+.dark-theme .progress-circle {
+    background: conic-gradient(
+        var(--primary-color) 0% calc(var(--progress-percent, 0) * 1%),
+        #333333 calc(var(--progress-percent, 0) * 1%) 100%
+    );
+}
+
+.progress-circle::after {
+    content: "";
     position: absolute;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background: conic-gradient(
-        var(--primary-color) 0% calc(var(--progress-percent, 0) * 1%),
-        #e0e0e0 calc(var(--progress-percent, 0) * 1%) 100%
+        transparent 0% calc(var(--progress-percent, 0) * 1%),
+        rgba(255, 255, 255, 0.1) calc(var(--progress-percent, 0) * 1%) calc(var(--progress-percent, 0) * 1% + 2%),
+        transparent calc(var(--progress-percent, 0) * 1% + 2%) 100%
     );
+    filter: blur(8px);
+    opacity: 0.6;
 }
 
 .progress-circle-inner {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    background-color: white;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    background-color: var(--card-color);
     border-radius: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 2;
+    box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.progress-circle-inner h3 {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.progress-circle-inner p {
+    font-size: 0.9rem;
+    text-align: center;
+    color: var(--text-light);
 }
 
 .goal-details {
-    width: 100%;
     text-align: center;
+    font-size: 0.9rem;
 }
 
 .goal-details p {
-    margin: 0.5rem 0;
+    margin: 0.3rem 0;
 }
 
-/* Form Styles */
+/* Goal Form Card */
+.goal-button-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.goal-button-card p {
+    margin: 1rem 0;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.goal-form-card {
+    position: relative;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.close-form-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-form-btn:hover {
+    color: var(--danger-color);
+}
+
+.form-message {
+    margin-bottom: 1rem;
+    min-height: 24px;
+}
+
 .goal-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-y: auto;
+    max-height: calc(100% - 4rem);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .form-row {
     display: flex;
     gap: 1rem;
-    flex-wrap: wrap;
 }
 
-.form-group {
+.form-row .form-group {
     flex: 1;
-    min-width: 200px;
 }
 
 label {
-    display: block;
-    margin-bottom: 0.5rem;
     font-size: 0.9rem;
-    color: var(--text-light);
+    color: var(--text-color);
 }
 
 input, select {
-    width: 100%;
     padding: 0.75rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-size: 0.9rem;
+    background-color: transparent;
+    color: var(--text-color);
 }
 
 input:focus, select:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 157, 166, 0.2);
 }
 
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 0.9rem;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: 600;
-    margin-top: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 0.5rem;
 }
 
 .btn-primary:hover {
-    background-color: #5a2bc0;
+    background-color: var(--secondary-color);
 }
 
-/* Budget Suggestion */
-.budget-content {
+.btn-secondary {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Empty States */
+.empty-state {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    padding: 1rem;
+}
+
+.empty-illustration {
+    margin-bottom: 1.5rem;
+    color: var(--text-light);
+    opacity: 0.7;
+    transition: all 0.3s;
+}
+
+.empty-state:hover .empty-illustration {
+    transform: scale(1.1);
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+.empty-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.empty-message {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+/* Budget Card */
+.budget-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.budget-rule {
+    display: flex;
+    flex-direction: column;
     flex: 1;
+}
+
+.budget-rule h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.budget-allocation {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+    justify-content: center;
 }
 
 .budget-item {
@@ -259,7 +569,7 @@ input:focus, select:focus {
     align-items: center;
 }
 
-.budget-category {
+.budget-circle {
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -268,11 +578,12 @@ input:focus, select:focus {
     justify-content: center;
     color: white;
     font-weight: bold;
+    font-size: 0.9rem;
     margin-right: 1rem;
 }
 
 .needs {
-    background-color: var(--secondary-color);
+    background-color: var(--primary-color);
 }
 
 .wants {
@@ -283,83 +594,184 @@ input:focus, select:focus {
     background-color: var(--success-color);
 }
 
-/* Chart Container */
-.chart-container {
-    height: 200px;
+.budget-details {
     flex: 1;
 }
 
-/* Export Buttons */
-.export-buttons {
+.budget-details h4 {
+    margin-bottom: 0.3rem;
+}
+
+.budget-details p {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.budget-details small {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+/* Spending Card */
+.spending-card {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-top: 1rem;
+}
+
+.chart-container {
+    flex: 1;
+    position: relative;
+}
+
+/* Export Card */
+.export-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: center;
+    flex: 1;
 }
 
 .btn-export {
-    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 1rem;
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
     color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
 }
 
+.btn-export svg {
+    transition: all 0.3s;
+}
+
 .btn-export:hover {
-    background-color: rgba(83, 111, 255, 0.1);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-export:hover svg {
+    transform: translateY(-3px);
 }
 
 /* Form Messages */
-.form-message {
-    margin-bottom: 1rem;
-    min-height: 24px;
-}
-
 .success-message {
     color: var(--success-color);
     padding: 0.5rem;
-    background-color: rgba(40, 199, 111, 0.1);
-    border-radius: 4px;
+    background-color: rgba(79, 180, 119, 0.1);
+    border-radius: 8px;
 }
 
 .error-message {
     color: var(--danger-color);
     padding: 0.5rem;
-    background-color: rgba(234, 84, 85, 0.1);
-    border-radius: 4px;
+    background-color: rgba(255, 90, 95, 0.1);
+    border-radius: 8px;
 }
 
 .loading-message {
     color: var(--text-light);
     padding: 0.5rem;
     background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
+    border-radius: 8px;
 }
 
 /* Responsive Design */
+@media (max-width: 1400px) {
+    :root {
+        --content-padding: 1.5rem;
+        --row-gap: 1rem;
+    }
+    
+    .main-row, .secondary-row {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .main-row, .secondary-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* Adjust height for 2x3 grid instead of 2x2 */
+    .dashboard-grid {
+        height: auto;
+        min-height: calc(100vh - var(--header-height) - var(--content-padding) * 2);
+    }
+    
+    .main-row, .secondary-row {
+        height: auto;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        width: 180px;
+    }
+}
+
 @media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+    
     .dashboard-container {
         flex-direction: column;
+        height: auto;
     }
     
     .sidebar {
         width: 100%;
+        height: auto;
         padding: 1rem;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
     
     .menu {
         flex-direction: row;
-        justify-content: space-around;
+    }
+    
+    .profile-pic {
+        margin-top: 0;
+    }
+    
+    .main-content {
+        height: auto;
+    }
+    
+    .main-row, .secondary-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .welcome-header {
+        height: auto;
     }
     
     .form-row {
         flex-direction: column;
-        gap: 1rem;
     }
     
-    .form-group {
-        width: 100%;
+    .dashboard-grid, .main-row, .secondary-row {
+        height: auto;
+    }
+    
+    .card {
+        min-height: 250px;
     }
 }
