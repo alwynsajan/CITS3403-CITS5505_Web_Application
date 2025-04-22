@@ -18,3 +18,17 @@ class dbClient:
         
         # Return None if credentials are invalid
         return None  
+    
+    def add_user(self, username, password, first_name, last_name):
+        """Add new user to database with validation"""
+        if User.query.filter_by(username=username).first():
+            return None  # Username exists
+        
+        new_user = User.create_user(username, password, first_name, last_name)
+        self.db.session.add(new_user)
+        try:
+            self.db.session.commit()
+            return new_user.id
+        except Exception as e:
+            self.db.session.rollback()
+            raise e
