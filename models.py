@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash  
 
 db = SQLAlchemy()
 
@@ -15,4 +16,13 @@ class User(db.Model):
     # Method to verify the password
     def checkPassword(self, password):
         return check_password_hash(self.password, password)
-
+    
+    @staticmethod
+    def createUser(username, password, first_name, last_name):
+        """Helper method to create new user with hashed password"""
+        return User(
+            username=username,
+            password=generate_password_hash(password),
+            firstName=first_name,
+            lastName=last_name
+        )
