@@ -8,27 +8,27 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="dashboard-layout">
-        <!-- Sidebar navigation -->
-        <div class="sidebar">
+    <div class="dashboard-container">
+        <!-- Text-based sidebar navigation -->
+        <aside class="sidebar">
             <div class="logo">SB</div>
             <nav class="menu">
-                <a href="/" class="menu-item active">Dashboard</a>
-                <a href="/expenses" class="menu-item">Expenses</a>
-                <a href="/settings" class="menu-item">Settings</a>
+                <a href="/" class="menu-item {{ 'active' if request.path == '/' }}">Dashboard</a>
+                <a href="/expenses" class="menu-item {{ 'active' if request.path == '/expenses' }}">Expenses</a>
+                <a href="/settings" class="menu-item {{ 'active' if request.path == '/settings' }}">Settings</a>
             </nav>
-        </div>
+        </aside>
         
-        <!-- Main content area -->
-        <div class="main-content">
+        <!-- Main content container -->
+        <main class="main-content">
             <!-- Welcome message -->
             <div class="welcome-bar">
                 <h1>Welcome to Smart Budget</h1>
+                <p>Keep track of your finances and achieve your savings goals</p>
             </div>
             
-            <!-- Content from child templates will be inserted here -->
             {% block content %}{% endblock %}
-        </div>
+        </main>
     </div>
 </body>
 </html>

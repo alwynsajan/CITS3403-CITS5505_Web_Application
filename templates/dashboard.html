@@ -6,29 +6,23 @@
     <div class="card">
         <h3>Account Balance</h3>
         {% if data.hasAccountBlance %}
-            <!-- Show actual balance when data is available -->
             <div class="balance-content">
                 <h2>${{ data.balance }}</h2>
-                <span class="{{ 'positive' if data.balance_change >= 0 else 'negative' }}">
-                    {{ "+" if data.balance_change >= 0 else "" }}{{ data.balance_change }}%
-                </span>
             </div>
         {% else %}
-            <!-- Show placeholder when no balance data is available -->
             <div class="placeholder-content">
-                <h2>$0</h2>
+                <h2>$0.0</h2>
                 <p class="placeholder-text">Add your income to see your balance</p>
             </div>
         {% endif %}
     </div>
 
     <!-- Goal Progress Card -->
-    <div class="card">
+    <div class="card" id="goalProgressCard">
         <h3>Goal Progress</h3>
         {% if data.hasGoal %}
-            <!-- Show goal progress when goal data is available -->
             <div class="goal-content">
-                <div class="progress-circle">
+                <div class="progress-circle" style="--progress-percent: {{ data.goal_progress }}">
                     <div class="progress-circle-inner">
                         <h2>{{ data.goal_progress }}%</h2>
                         <p>{{ data.goal_name }}</p>
@@ -41,10 +35,8 @@
                 </div>
             </div>
         {% else %}
-            <!-- Show placeholder when no goal data is available -->
             <div class="placeholder-content">
-                <div class="progress-circle-placeholder"></div>
-                <p class="placeholder-text">Set a goal to track your progress</p>
+                <p class="placeholder-text">Set a goal to track progress</p>
             </div>
         {% endif %}
     </div>
@@ -52,68 +44,55 @@
     <!-- Set Goal Form Card -->
     <div class="card">
         <h3>Set a Goal</h3>
-        <form class="goal-form">
-            <!-- Goal name input field -->
-            <div class="form-group">
-                <label for="goal-name">Goal Name</label>
-                <input type="text" id="goal-name" placeholder="e.g. New Laptop">
-            </div>
-            
-            <!-- Target amount input field -->
-            <div class="form-group">
-                <label for="target-amount">Target Amount ($)</label>
-                <input type="number" id="target-amount" placeholder="1000">
-            </div>
-            
-            <!-- Time duration selection -->
+        <div id="goalFormMessage" class="form-message"></div>
+        
+        <form id="goalForm" class="goal-form">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="time-duration">Time Duration</label>
-                    <select id="time-duration">
-                        <option value="weeks">Weeks</option>
-                        <option value="fortnights">Fortnights</option>
-                        <option value="months">Months</option>
-                    </select>
+                    <label for="target_amount">Target Savings Amount</label>
+                    <input type="number" id="target_amount" name="target_amount" placeholder="Enter amount" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration-value">Number</label>
-                    <input type="number" id="duration-value" placeholder="12">
+                    <label for="time_duration">Duration</label>
+                    <select id="time_duration" name="time_duration">
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                    </select>
                 </div>
             </div>
             
-            <!-- Income frequency selection -->
-            <div class="form-group">
-                <label for="income-frequency">Income Frequency</label>
-                <select id="income-frequency">
-                    <option value="weekly">Weekly</option>
-                    <option value="fortnightly">Fortnightly</option>
-                    <option value="monthly">Monthly</option>
-                </select>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="income_frequency">Income Frequency</label>
+                    <select id="income_frequency" name="income_frequency">
+                        <option value="weekly">Weekly</option>
+                        <option value="fortnightly">Fortnightly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
             </div>
             
-            <!-- Salary amount input -->
-            <div class="form-group">
-                <label for="income-amount">Salary Amount ($)</label>
-                <input type="number" id="income-amount" placeholder="2000">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="income_amount">Salary ($)</label>
+                    <input type="number" id="income_amount" name="income_amount" placeholder="Enter salary" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="allocation">Percentage Allocation</label>
+                    <input type="number" id="allocation" name="allocation" placeholder="Enter percentage" required>
+                </div>
             </div>
             
-            <!-- Allocation percentage input -->
-            <div class="form-group">
-                <label for="allocation">Allocation Percentage (%)</label>
-                <input type="number" id="allocation" placeholder="20">
-            </div>
-            
-            <!-- Submit button -->
             <button type="submit" class="btn-primary">Add Goal</button>
         </form>
     </div>
 
     <!-- Budget Suggestion Card -->
     <div class="card">
-        <h3>Budget Suggestion (50/30/20)</h3>
+        <h3>Budget Suggestion</h3>
         {% if data.hasSalary %}
-            <!-- Show budget suggestions when salary data is available -->
             <div class="budget-content">
                 <div class="budget-item">
                     <div class="budget-category needs">50%</div>
@@ -140,9 +119,8 @@
                 </div>
             </div>
         {% else %}
-            <!-- Show placeholder when no salary data is available -->
             <div class="placeholder-content">
-                <p class="placeholder-text">Add your income to get budget suggestions</p>
+                <p class="placeholder-text">Add salary to get suggestions</p>
             </div>
         {% endif %}
     </div>
@@ -151,22 +129,19 @@
     <div class="card">
         <h3>Monthly Spending</h3>
         {% if data.hasExpense %}
-            <!-- Show spending chart when expense data is available -->
             <div class="chart-container">
                 <canvas id="spendingChart"></canvas>
             </div>
         {% else %}
-            <!-- Show placeholder when no expense data is available -->
             <div class="placeholder-content">
                 <p class="placeholder-text">No spending data to display</p>
-                <p>Add expenses to see your monthly spending trends</p>
             </div>
         {% endif %}
     </div>
 
-    <!-- Export Data Card -->
+    <!-- Export Options Card -->
     <div class="card">
-        <h3>Export Options</h3>
+        <h3>Export</h3>
         <div class="export-buttons">
             <button class="btn-export">Export to CSV</button>
             <button class="btn-export">Export to PDF</button>
@@ -178,10 +153,7 @@
 {% if data.hasExpense %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Get the canvas element
         const ctx = document.getElementById('spendingChart').getContext('2d');
-        
-        // Create a new chart
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -218,4 +190,61 @@
     });
 </script>
 {% endif %}
+
+<!-- AJAX form handling script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const goalForm = document.getElementById('goalForm');
+    const messageDiv = document.getElementById('goalFormMessage');
+    const goalProgressCard = document.getElementById('goalProgressCard');
+    
+    if (goalForm) {
+        goalForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            messageDiv.innerHTML = '<p class="loading-message">Processing your request...</p>';
+            
+            const formData = new FormData(goalForm);
+            
+            fetch('/addGoal', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    messageDiv.innerHTML = `<p class="success-message">${data.message}</p>`;
+                    goalForm.reset();
+                    
+                    // Update goal progress section
+                    const goalHTML = `
+                        <h3>Goal Progress</h3>
+                        <div class="goal-content">
+                            <div class="progress-circle" style="--progress-percent: ${data.goal.progress}">
+                                <div class="progress-circle-inner">
+                                    <h2>${data.goal.progress}%</h2>
+                                    <p>${data.goal.name}</p>
+                                </div>
+                            </div>
+                            <div class="goal-details">
+                                <p>Target: $${data.goal.target}</p>
+                                <p>Saved: $${data.goal.saved}</p>
+                                <p>Remaining: $${data.goal.target - data.goal.saved}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    goalProgressCard.innerHTML = goalHTML;
+                } else {
+                    messageDiv.innerHTML = `<p class="error-message">${data.message}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageDiv.innerHTML = '<p class="error-message">An error occurred. Please try again.</p>';
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
