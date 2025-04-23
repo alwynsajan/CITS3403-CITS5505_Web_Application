@@ -16,7 +16,6 @@ class User(db.Model):
     def checkPassword(self, password):
         return checkPasswordHash(self.password, password)
     
-    @staticmethod
     def createUser(username, password, firstName, lastName):
         """Helper method to create new user with hashed password"""
         return User(

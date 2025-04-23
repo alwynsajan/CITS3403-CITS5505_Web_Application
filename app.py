@@ -84,10 +84,6 @@ def logout():
     data= {"check" : True}
     return render_template('login.html',data = data)
 
-if __name__ == '__main__':
-    # Start the Flask application in debug mode
-    app.run(debug=False)
-    
 @app.route('/addUser', methods=['POST'])
 def add_user():
     data = request.get_json()
@@ -118,3 +114,9 @@ def add_user():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    # Start the Flask application in debug mode
+    app.run(debug=False)
+    
+
