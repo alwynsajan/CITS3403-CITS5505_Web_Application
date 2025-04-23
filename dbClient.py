@@ -18,3 +18,12 @@ class dbClient:
         
         # Return None if credentials are invalid
         return None  
+    
+    def getAccountBalance(self, userID):
+        # Fetch the user by ID and return their account balance
+        user = User.query.get(userID)
+        if user:
+            return user.accountBalance
+        return 0.0  # Return 0 if user not found
+
+    
