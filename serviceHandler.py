@@ -1,3 +1,21 @@
+def getAccountData(accBalance,previousBalance):
+
+    data ={"balance": accBalance}
+
+    if previousBalance > accBalance:
+        data["trendType"] = "down"
+    else:
+        data["trendType"] = "up"
+
+    # Calculate the percentage change, avoiding division by zero
+    if previousBalance != 0:
+        data["percentChange"] = round(((accBalance - previousBalance) / previousBalance) * 100,2)
+    else:
+        data["percentChange"] = 100.0
+
+    return data
+
+
 def getGoalProgress(goalData, accBalance):
 
     # List to store progress info for each goal
