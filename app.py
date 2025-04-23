@@ -31,30 +31,39 @@ def loginPage():
     # Otherwise, show the login page
 
     #To show login failed msg in Login page.
-    data= {"check" : True}
+    data= {"status" : True}
     return render_template('login.html',data = data)
 
 @app.route('/login', methods=['POST'])
 def login():
         
-        # Get the username and password from the login form
-        username = request.form['username']
-        password = request.form['password']
+    # Get the username and password from the login form
+    username = request.form['username']
+    password = request.form['password']
 
-        # Check if the credentials are valid
-        user_id = DBClient.checkCredentials(username, password)
-        
-        # If user_id is returned, credentials are valid
-        if user_id:  
-            session.permanent = True
-            session['username'] = username
+    # Check if the credentials are valid
+    userID = DBClient.checkCredentials(username, password)
+    
+    # If userID is returned, credentials are valid
+    if userID:  
+        session.permanent = True
+        session['username'] = username
+        session['userID'] = userID
+        return redirect(url_for('dashboard'))
+    else:
+        # If the credentials are invalid, show an error message in login page.
+        data= { "status" : False }
+        return render_template('login.html',data = data)
 
-            return redirect(url_for('dashboard'))
-        else:
-            # If the credentials are invalid, show an error message in login page.
-            data= { "check" : False }
-            return render_template('login.html',data = data)
+@app.route('/logout')
+def logout():
 
+    # Remove user data from the session when logging out
+    session.pop('username', None)
+    session.pop('userID', None)
+
+    data= {"status" : True}
+    return render_template('login.html',data = data)
 
 @app.route('/dashboard')
 def dashboard():
@@ -72,15 +81,6 @@ def dashboard():
     
     # If the user is not logged in, redirect to the login page
     return redirect(url_for('loginPage'))
-
-@app.route('/logout')
-def logout():
-
-    # Remove user data from the session when logging out
-    session.pop('username', None)
-
-    data= {"check" : True}
-    return render_template('login.html',data = data)
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
