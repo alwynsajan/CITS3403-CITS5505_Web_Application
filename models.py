@@ -12,6 +12,7 @@ class User(db.Model):
     firstName = db.Column(db.String(100), nullable=False)  
     lastName = db.Column(db.String(100), nullable=False)
     accountBalance = db.Column(db.Float, nullable=False, default=0.0)
+    previousBalance = db.Column(db.Float, nullable=False, default=0.0)
     goalAllocationPercent = db.Column(db.Float, nullable=False, default=0.0)
 
     # Method to verify the password
