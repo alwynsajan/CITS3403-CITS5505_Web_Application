@@ -96,7 +96,13 @@ def dashboard():
 @app.route('/addUser', methods=['POST'])
 def addUser():
 
-    data = request.get_json()
+    data = {
+        "username": request.form.get('username'),
+        "password": request.form.get('password'),
+        "firstName": request.form.get('firstName'),
+        "lastName": request.form.get('lastName')
+    }
+    
     requestStatus = handler.addNewUser(data)
 
     if requestStatus["status"] == "Success":

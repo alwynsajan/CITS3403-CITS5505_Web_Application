@@ -12,12 +12,14 @@ class serviceHandler():
     
     def addNewUser(self,data):
 
-        # Validate required fields
-        if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Missing required fields"}
+        # Validate required fields for empty or None
+        for field, value in data.items():
+            if not value:  # catches None, '', and falsy values
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Missing or empty value for field: {field}"
+                }
         
         # Validate password strength (customize as needed)
         if len(data['password']) < 8:
