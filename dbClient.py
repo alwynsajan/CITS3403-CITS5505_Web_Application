@@ -1,5 +1,5 @@
 from models import User
-from werkzeug.security import generatePasswordHash
+from werkzeug.security import generate_password_hash
 
 class dbClient: 
     def __init__(self, dbSession):
@@ -15,13 +15,18 @@ class dbClient:
         
         """Adds new user with auto-incremented ID"""
         if User.query.filter_by(username=username).first():
-            return None  # Username exists
+            # Username exists
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Username already exists"
+                }
 
         newId = self.getLastUserId() + 1  
         newUser = User(
             id=newId,
             username=username,
-            password=generatePasswordHash(password),  
+            password=generate_password_hash(password),  
             firstName=firstName,
             lastName=lastName
         )
@@ -29,28 +34,73 @@ class dbClient:
         self.dbSession.add(newUser)
         try:
             self.dbSession.commit()
-            return newId
+            return {
+                    "status": "Success",
+                    "statusCode":200,
+                    "message": "User created successfully",
+                    "data": {"username":username,
+                             "userID": newId}
+                }
         except Exception as e:
-            self.dbSession.rollback()
-            raise e
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": str(e)}
 
     def checkCredentials(self, username, password): 
 
         user = User.query.filter_by(username=username).first()
-        
-        # Check if the user exists and the password matches
-        if user and user.checkPassword(password):
 
-            # Return user ID if credentials are correct
-            return user.id  
-        
-        # Return None if credentials are invalid
-        return None  
-    
+        # Check if the user exists
+        if not user:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": "User not found"
+            }
+
+        # Check if the password matches
+        if user.checkPassword(password):
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Login successful",
+                "data": {
+                    "username": username,
+                    "userID": user.id
+                }
+            }
+        else:
+            return {
+                "status": "Failed",
+                "statusCode": 401,
+                "message": "Incorrect password"
+            }
+
     def getAccountBalance(self, userID):
+        try:
+            user = User.query.get(userID)
 
-        # Fetch the user by ID and return their account balance
-        user = User.query.get(userID)
-        if user:
-            return user.accountBalance
-        return None 
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Account balance retrieved successfully",
+                    "data": {
+                        "userID": userID,
+                        "accountBalance": user.accountBalance
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 500,
+                "message": str(e)
+            }
+
