@@ -94,7 +94,7 @@ def dashboard():
     return redirect(url_for('loginPage'))
 
 @app.route('/addUser', methods=['POST'])
-def add_user():
+def addUser():
 
     data = request.get_json()
     requestStatus = handler.addNewUser(data)
@@ -103,6 +103,29 @@ def add_user():
         return render_template('login.html', data = requestStatus)
     
     return jsonify(requestStatus) #might have to render signUP  page again.
+
+@app.route('/dashboard/addGoal', methods=['POST'])
+def addGoal():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    data = {}
+    # Get data from form.
+    data["goalName"] = request.form.get('goal_name')
+    data["targetAmount"] = request.form.get('target_amount')
+    data["timeDuration"] = request.form.get('time_duration')
+    data["percentageAllocation"] = request.form.get('allocation')
+
+    requestStatus = handler.addNewGoal(username,userID,data)
+
+    return jsonify(requestStatus) 
     
 
 if __name__ == '__main__':
