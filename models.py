@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import date
 
 db = SQLAlchemy()
 
@@ -37,3 +38,13 @@ class Goal(db.Model):
     targetAmount = db.Column(db.Float, nullable=False)
     duration = db.Column(db.Integer, nullable=False)
     percentageAllocation = db.Column(db.Integer, nullable=False)
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+
+    id = db.Column(db.Integer, primary_key=True) 
+    userid = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) 
+    category = db.Column(db.String(100), nullable=False)  
+    amount = db.Column(db.Float, nullable=False)  
+    date = db.Column(db.Date, nullable=False, default=date.today)  
+    weekStartDate = db.Column(db.String(20), nullable=False)

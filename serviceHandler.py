@@ -81,5 +81,26 @@ class serviceHandler():
                 "message": str(e)
                 }
         
+    def getMonthlyExpenses(self,userID):
+
+        try:
+            #Get the expense data for the user
+            status = self.DBClient.getMonthlyExpenses(userID)
+
+            if status["status"] == "Success" and status["data"] != []:
+
+                #Get the monthly expenses in a list.
+                monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
+                status["data"] = monthlyExpenseList
+                return status
+            
+            return status
+            
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": str(e)
+                }
     
         

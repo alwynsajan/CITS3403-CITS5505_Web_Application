@@ -1,4 +1,4 @@
-from models import User,Goal
+from models import User,Goal,Expense
 from werkzeug.security import generate_password_hash
 
 class dbClient: 
@@ -145,7 +145,7 @@ class dbClient:
             }
         
     def getGoalsByUserId(self, userID):
-        
+
         """Fetches all goals for a given user ID"""
         try:
             goals = Goal.query.filter_by(userId=userID).all()
@@ -169,3 +169,31 @@ class dbClient:
                 "statusCode": 400,
                 "message": str(e)
             }
+        
+    def getMonthlyExpenses(self, userID):
+        """Fetches all expenses for a given user ID"""
+        try:
+            expenses = Expense.query.filter_by(userid=userID).all()
+            expensesData = [
+                {
+                    "expenseID": expense.id,
+                    "category": expense.category,
+                    "amount": expense.amount,
+                    "date": expense.date.strftime("%Y-%m-%d"),
+                    "weekStartDate": expense.weekStartDate,
+                    "weekEndDate": expense.weekEndDate
+                } for expense in expenses
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": expensesData
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": str(e)
+            }
+
+

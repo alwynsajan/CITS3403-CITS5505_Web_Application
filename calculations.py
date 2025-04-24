@@ -1,3 +1,5 @@
+from datetime import datetime
+
 def getAccountData(accBalance,previousBalance):
 
     data ={"balance": accBalance}
@@ -51,3 +53,15 @@ def getGoalProgress(goalData, accBalance):
         goalProgressDataList.append(goalProgressData)
 
     return goalProgressDataList
+
+def getMonthlyExpenseList(data):
+
+    monthlyExpenseList= [0,0,0,0,0,0,0,0,0,0,0,0]
+
+    for expense in data:
+        dateObj = datetime.strptime(expense["date"], "%Y-%m-%d")
+        index = dateObj.month - 1
+        monthlyExpenseList[index]+= float(expense["amount"])
+
+    return monthlyExpenseList
+        
