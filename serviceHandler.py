@@ -1,53 +1,42 @@
-def getAccountData(accBalance,previousBalance):
+from dbClient import dbClient
 
-    data ={"balance": accBalance}
+class serviceHandler():
+    def __init__(self, db):
+        self.db = db
+        self.DBClient = dbClient(db)
 
-    if previousBalance > accBalance:
-        data["trendType"] = "down"
-    else:
-        data["trendType"] = "up"
+    def checkCredentials(self,username, password):
+        status = self.DBClient.checkCredentials(username, password)
+        return status
+    
+    def addNewUser(self,data):
 
-    # Calculate the percentage change, avoiding division by zero
-    if previousBalance != 0:
-        data["percentChange"] = round(((accBalance - previousBalance) / previousBalance) * 100,2)
-    else:
-        data["percentChange"] = 100.0
+        # Validate required fields
+        if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Missing required fields"}
+        
+        # Validate password strength (customize as needed)
+        if len(data['password']) < 8:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Password must be at least 8 characters"}
+        
+        try:
+            status = self.DBClient.addUser(
+                username=data['username'],
+                password=data['password'],
+                firstname=data['firstName'],
+                lastname=data['lastName']
+            )
 
-    return data
-
-
-def getGoalProgress(goalData, accBalance):
-
-    # List to store progress info for each goal
-    goalProgressDataList = []
-
-    for data in goalData:
-        goalProgressData = {}
-
-        # Set goal name and target amount
-        goalProgressData["goalName"] = data["goalName"]
-        goalProgressData["target"] = data["targetAmount"]
-
-        # Calculate amount saved based on allocation and account balance
-        amountSaved = round((accBalance * float(data["allocation"])) / 100, 2)
-
-        # If goal is fully achieved
-        if amountSaved >= data["targetAmount"]:
-            goalProgressData["progressPercentage"] = 100
-            goalProgressData["remaining"] = 0
-            goalProgressData["saved"] = data["targetAmount"]
-            goalProgressData["message"] = "Congratulations, Goal met!!"
-        else:
-            # Calculate progress percentage and amount remaining
-            goalProgressData["progressPercentage"] = round((amountSaved / float(data["targetAmount"])) * 100, 2)
-            goalProgressData["remaining"] = data["targetAmount"] - amountSaved
-            goalProgressData["saved"] = amountSaved
-
-            # Suggest monthly savings needed to reach the goal
-            monthlySavings = round(data["targetAmount"] / data["timeDuration"], 2)
-            goalProgressData["message"] = f"Save at least ${monthlySavings:.2f} per month to reach your goal!"
-
-        # Add this goal's progress data to the list
-        goalProgressDataList.append(goalProgressData)
-
-    return goalProgressDataList
+            return status
+            
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": str(e)}
