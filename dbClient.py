@@ -1,20 +1,37 @@
-from models import User
+from models import User, db
+from werkzeug.security import generatePasswordHash
 
-class dbClient:
+class DbClient:  # PascalCase for class name
+    def __init__(self, dbSession):
+        self.dbSession = dbSession  
 
-    def __init__(self, db):
-        self.db = db
+    def getLastUserId(self):  
+        """Returns the highest user ID or 0 if empty"""
+        lastUser = User.query.order_by(User.id.desc()).first()
+        return lastUser.id if lastUser else 0
 
-    def checkCredentials(self, username, password):
+    def addUser(self, username, password, firstName, lastName):  
+        """Adds new user with auto-incremented ID"""
+        if User.query.filter_by(username=username).first():
+            return None  # Username exists
 
-        # Query the database for the user
+        newId = self.getLastUserId() + 1  
+        newUser = User(
+            id=newId,
+            username=username,
+            password=generatePasswordHash(password),  
+            firstName=firstName,
+            lastName=lastName
+        )
+        
+        self.dbSession.add(newUser)
+        try:
+            self.dbSession.commit()
+            return newId
+        except Exception as e:
+            self.dbSession.rollback()
+            raise e
+
+    def checkCredentials(self, username, passwordInput):  
         user = User.query.filter_by(username=username).first()
-        
-        # Check if the user exists and the password matches
-        if user and user.checkPassword(password):
-
-            # Return user ID if credentials are correct
-            return user.id  
-        
-        # Return None if credentials are invalid
-        return None  
+        return user.id if user and user.checkPassword(passwordInput) else None

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from datetime import timedelta
 from dbClient import dbClient
 from models import db
@@ -16,6 +16,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database with the app
 db.init_app(app)
+with app.app_context():
+    db.create_all()  # Creates tables if they don't exist
 
 # Initialize the database client to interact with the database
 DBClient = dbClient(db)
@@ -82,6 +84,39 @@ def logout():
     data= {"check" : True}
     return render_template('login.html',data = data)
 
+@app.route('/addUser', methods=['POST'])
+def add_user():
+    data = request.get_json()
+    
+    # Validate required fields
+    if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    # Validate password strength (customize as needed)
+    if len(data['password']) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+    
+    try:
+        user_id = dbClient.addUser(
+            username=data['username'],
+            password=data['password'],
+            firstname=data['firstName'],
+            lastname=data['lastName']
+        )
+        
+        if user_id:
+            return jsonify({
+                "success": True,
+                "user_id": user_id,
+                "message": "User created successfully"
+            }), 201
+        return jsonify({"error": "Username already exists"}), 409
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Start the Flask application in debug mode
     app.run(debug=False)
+    
+
