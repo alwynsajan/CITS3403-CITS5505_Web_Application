@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from datetime import timedelta
 from dbClient import dbClient
 from models import db
@@ -17,6 +17,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize the database with the app
 db.init_app(app)
 
+# Creates tables if they don't exist
+with app.app_context():
+    db.create_all()  
+
 # Initialize the database client to interact with the database
 DBClient = dbClient(db)
 
@@ -25,11 +29,12 @@ DBClient = dbClient(db)
 @app.route('/')
 @app.route('/login')
 def loginPage():
+
     # If the user is already logged in, redirect them to the dashboard
     if 'username' in session:
         return redirect(url_for('dashboard'))
+    
     # Otherwise, show the login page
-
     #To show login failed msg in Login page.
     data= {"status" : True}
     return render_template('login.html',data = data)
@@ -82,6 +87,38 @@ def dashboard():
     # If the user is not logged in, redirect to the login page
     return redirect(url_for('loginPage'))
 
+@app.route('/addUser', methods=['POST'])
+def add_user():
+    data = request.get_json()
+    
+    # Validate required fields
+    if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
+        return jsonify({"status": "Failed","message": "Missing required fields"})
+    
+    # Validate password strength (customize as needed)
+    if len(data['password']) < 8:
+        return jsonify({"status": "Failed","message": "Password must be at least 8 characters"})
+    
+    try:
+        userID = DBClient.addUser(
+            username=data['username'],
+            password=data['password'],
+            firstname=data['firstName'],
+            lastname=data['lastName']
+        )
+        
+        if userID:
+            return jsonify({
+                "status": "Success",
+                "message": "User created successfully"
+            }), 200
+        return jsonify({"status": "Failed","message": "Username already exists"})
+        
+    except Exception as e:
+        return jsonify({"status": "Failed","message": str(e)})
+
 if __name__ == '__main__':
     # Start the Flask application in debug mode
     app.run(debug=False)
+    
+
