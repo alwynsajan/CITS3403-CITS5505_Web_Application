@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from datetime import timedelta
-from dbClient import dbClient
+from serviceHandler import serviceHandler
 from models import db
 
 app = Flask(__name__)
@@ -21,8 +21,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()  
 
-# Initialize the database client to interact with the database
-DBClient = dbClient(db)
+# Initialize serviceHandler to interact with the database and do other operations
+handler = serviceHandler(db)
 
 # Home route
 # This ensures both `/` and `/login` go to the login page
@@ -36,7 +36,10 @@ def loginPage():
     
     # Otherwise, show the login page
     #To show login failed msg in Login page.
-    data= {"status" : True}
+    data= { 
+        "status" : "Success",
+        "statusCode":200,
+        "message":None}
     return render_template('login.html',data = data)
 
 @app.route('/login', methods=['POST'])
@@ -47,18 +50,17 @@ def login():
     password = request.form['password']
 
     # Check if the credentials are valid
-    userID = DBClient.checkCredentials(username, password)
+    requestStatus = handler.checkCredentials(username, password)
     
     # If userID is returned, credentials are valid
-    if userID:  
+    if requestStatus["status"] == "Success":  
         session.permanent = True
         session['username'] = username
-        session['userID'] = userID
+        session['userID'] = requestStatus["data"]["userID"]
         return redirect(url_for('dashboard'))
     else:
-        # If the credentials are invalid, show an error message in login page.
-        data= { "status" : False }
-        return render_template('login.html',data = data)
+       
+        return render_template('login.html',data = requestStatus)
 
 @app.route('/logout')
 def logout():
@@ -67,7 +69,11 @@ def logout():
     session.pop('username', None)
     session.pop('userID', None)
 
-    data= {"status" : True}
+    data= {
+        "status" : "Success",
+        "statusCode":200,
+        "message":None
+        }
     return render_template('login.html',data = data)
 
 @app.route('/dashboard')
@@ -89,33 +95,15 @@ def dashboard():
 
 @app.route('/addUser', methods=['POST'])
 def add_user():
+
     data = request.get_json()
+    requestStatus = handler.addNewUser(data)
+
+    if requestStatus["status"] == "Success":
+        return render_template('login.html', data = requestStatus)
     
-    # Validate required fields
-    if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
-        return jsonify({"status": "Failed","message": "Missing required fields"})
+    return jsonify(requestStatus) #might have to render signUP  page again.
     
-    # Validate password strength (customize as needed)
-    if len(data['password']) < 8:
-        return jsonify({"status": "Failed","message": "Password must be at least 8 characters"})
-    
-    try:
-        userID = DBClient.addUser(
-            username=data['username'],
-            password=data['password'],
-            firstname=data['firstName'],
-            lastname=data['lastName']
-        )
-        
-        if userID:
-            return jsonify({
-                "status": "Success",
-                "message": "User created successfully"
-            }), 200
-        return jsonify({"status": "Failed","message": "Username already exists"})
-        
-    except Exception as e:
-        return jsonify({"status": "Failed","message": str(e)})
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
