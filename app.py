@@ -84,8 +84,8 @@ def dashboard():
         # Access the username and user role from the session
         username = session['username']
 
-        #Fetch user data from DB!! Need to edit this part later.
-        data= {}
+        #Fetch required user data to update dashboard from DB!!
+        data = handler.getDashboardData(session["userID"])
 
         # Render the dashboard template, passing the username and user role as variables
         return render_template('dashboard.html', username=username, data=data)
@@ -102,7 +102,7 @@ def addUser():
         "firstName": request.form.get('firstName'),
         "lastName": request.form.get('lastName')
     }
-    
+
     requestStatus = handler.addNewUser(data)
 
     if requestStatus["status"] == "Success":

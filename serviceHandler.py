@@ -69,7 +69,7 @@ class serviceHandler():
 
                     #Get the goal progress
                     if getGoalsStatus["status"] == "Success":
-                        goalProgressList = calculations.getGoalProgress(data,float(accBalanceStatus["data"]["accountBalance"]))
+                        goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accBalanceStatus["data"]["accountBalance"]))
                         status["data"] = goalProgressList
 
             return status
@@ -102,5 +102,59 @@ class serviceHandler():
                 "statusCode":400,
                 "message": str(e)
                 }
+        
+    def getDashboardData(self,userID):
+
+        dashboardData = {}
+
+        accBalanceStatus = self.DBClient.getAccountBalance(userID)
+
+        accountBalance = 0.0
+        previousBalance = 0.0
+
+        #Fetch Account Data:
+        if accBalanceStatus["status"] == "Success":
+            if accBalanceStatus["data"]["accountBalance"] != 0:
+                accountBalance = accBalanceStatus["data"]["accountBalance"]
+                dashboardData["hasAccountBlance"] = True
+
+                previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
+                if previousAccBalanceStatus["status"] == "Success":
+                    previousBalance = previousAccBalanceStatus["data"]["previousBalance"]
+                accountData = calculations.getAccountData(float(accountBalance),float(previousBalance))
+
+                dashboardData["accountData"] = accountData
+
+        else:
+            dashboardData["hasAccountBlance"] = False
+
+        #Fetch GoalData:
+        getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
+        #Get the goal progress
+        if getGoalsStatus["status"] == "Success" and getGoalsStatus["data"] != []:
+            goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accountBalance))
+            dashboardData["hasGoal"] = True
+            dashboardData["goalData"] = goalProgressList
+            
+        else:
+            dashboardData["hasGoal"] = False
+
+        #Fetch Montly expenses:
+        status = self.DBClient.getMonthlyExpenses(userID)
+        if status["status"] == "Success" and status["data"] != []:
+            #Get the monthly expenses in a list.
+            monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
+            dashboardData["hasExpense"] = True
+            dashboardData["monthlySpendData"] = monthlyExpenseList
+
+        else:
+            dashboardData["hasExpense"] = False
+
+        #Fetch BudgetSuggestionData:
+
+        return dashboardData
+
+                    
+
     
         

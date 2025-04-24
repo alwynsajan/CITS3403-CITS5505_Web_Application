@@ -104,6 +104,33 @@ class dbClient:
                 "message": str(e)
             }
         
+    def getPreviousAccountBalance(self, userID):
+        try:
+            user = User.query.get(userID)
+
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Account balance retrieved successfully",
+                    "data": {
+                        "userID": userID,
+                        "previousBalance": user.previousBalance
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 500,
+                "message": str(e)
+            }
+        
     def addNewGoal(self, username, data):
         
         """Adds a new goal for the specified user"""
