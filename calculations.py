@@ -31,7 +31,7 @@ def getGoalProgress(goalData, accBalance):
         goalProgressData["target"] = data["targetAmount"]
 
         # Calculate amount saved based on allocation and account balance
-        amountSaved = round((accBalance * float(data["allocation"])) / 100, 2)
+        amountSaved = round((accBalance * float(data["percentageAllocation"])) / 100, 2)
 
         # If goal is fully achieved
         if amountSaved >= data["targetAmount"]:
@@ -64,4 +64,15 @@ def getMonthlyExpenseList(data):
         monthlyExpenseList[index]+= float(expense["amount"])
 
     return monthlyExpenseList
+
+def calculate_50_30_20_Percentages(salary):
+
+    salary = float(salary)
+    return {
+        "needs": round(salary * 0.50, 2),
+        "wants": round(salary * 0.30, 2),
+        "savings": round(salary * 0.20, 2),
+        "salary" : salary
+    }
+
         

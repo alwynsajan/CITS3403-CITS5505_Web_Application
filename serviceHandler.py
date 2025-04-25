@@ -2,9 +2,9 @@ from dbClient import dbClient
 import calculations
 
 class serviceHandler():
-    def __init__(self, db):
-        self.db = db
-        self.DBClient = dbClient(db)
+
+    def __init__(self):
+        self.DBClient = dbClient()
 
     def checkCredentials(self,username, password):
         status = self.DBClient.checkCredentials(username, password)
@@ -32,8 +32,8 @@ class serviceHandler():
             status = self.DBClient.addUser(
                 username=data['username'],
                 password=data['password'],
-                firstname=data['firstName'],
-                lastname=data['lastName']
+                firstName=data['firstName'],
+                lastName=data['lastName']
             )
 
             return status
@@ -42,9 +42,10 @@ class serviceHandler():
             return {
                 "status": "Failed",
                 "statusCode":400,
-                "message": str(e)
+                "message": "Error : "+str(e)
                 }
         
+    #adds new goal to the db and return the whole goalProgressList.
     def addNewGoal(self,username,userID,data):
 
         # Validate all required fields
@@ -78,9 +79,10 @@ class serviceHandler():
             return {
                 "status": "Failed",
                 "statusCode":400,
-                "message": str(e)
+                "message": "Error : "+str(e)
                 }
         
+    #Gets  the monthlyExpenseList from the db.Returns a list of expenses based on months. 
     def getMonthlyExpenses(self,userID):
 
         try:
@@ -100,9 +102,10 @@ class serviceHandler():
             return {
                 "status": "Failed",
                 "statusCode":400,
-                "message": str(e)
+                "message": "Error : "+str(e)
                 }
         
+    #Gets all the necessary data from the db for dashboard.
     def getDashboardData(self,userID):
 
         dashboardData = {}
@@ -124,6 +127,8 @@ class serviceHandler():
                 accountData = calculations.getAccountData(float(accountBalance),float(previousBalance))
 
                 dashboardData["accountData"] = accountData
+            else:
+                dashboardData["hasAccountBlance"] = False
 
         else:
             dashboardData["hasAccountBlance"] = False
@@ -151,6 +156,14 @@ class serviceHandler():
             dashboardData["hasExpense"] = False
 
         #Fetch BudgetSuggestionData:
+        salaryStatus  = self.DBClient.getLastSalary(userID)
+        if  salaryStatus["status"] == "Success" and salaryStatus["data"] != None:
+            salarySuggestions = calculations.calculate_50_30_20_Percentages(float(salaryStatus["data"]["amount"]))
+            salarySuggestions["salaryDate"] = salaryStatus["data"]["salaryDate"]
+            dashboardData["budgetSuggestionData"] = salarySuggestions
+            dashboardData["hasSalary"] = True
+        else:
+            dashboardData["hasSalary"] = False
 
         return dashboardData
 

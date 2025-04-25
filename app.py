@@ -22,7 +22,7 @@ with app.app_context():
     db.create_all()  
 
 # Initialize serviceHandler to interact with the database and do other operations
-handler = serviceHandler(db)
+handler = serviceHandler()
 
 # Home route
 # This ensures both `/` and `/login` go to the login page
@@ -124,10 +124,10 @@ def addGoal():
     
     data = {}
     # Get data from form.
-    data["goalName"] = request.form.get('goal_name')
-    data["targetAmount"] = request.form.get('target_amount')
-    data["timeDuration"] = request.form.get('time_duration')
-    data["percentageAllocation"] = request.form.get('allocation')
+    data["goalName"] = request.form.get('goalName')
+    data["targetAmount"] = request.form.get('targetAmount')
+    data["timeDuration"] = request.form.get('timeDuration')
+    data["percentageAllocation"] = request.form.get('percentageAllocation')
 
     requestStatus = handler.addNewGoal(username,userID,data)
 
