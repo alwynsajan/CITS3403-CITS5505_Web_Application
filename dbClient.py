@@ -152,8 +152,8 @@ class dbClient:
                 userId=user.id,
                 goalName=data["goalName"],
                 targetAmount=float(data["targetAmount"]),
-                timeDuration=int(data["timeDuration"]),
-                percentageAllocation=int(data["percentageAllocation"])
+                timeDuration=float(data["timeDuration"]),
+                percentageAllocation=float(data["percentageAllocation"])
             )
             db.session.add(newGoal)
             db.session.commit()
@@ -254,3 +254,107 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error : "+str(e)
             }
+    # Update the previous account balance for a given user
+    def updatePreviousBalance(self, userID, newBalance):
+        """Updates the previous account balance for the specified user"""
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+
+            user.previousBalance = float(newBalance)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Previous balance updated to {newBalance} for user {userID}"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+        
+    # Add a new salary entry for a user
+    def addSalary(self, userID, amount, salaryDate):
+        """Adds a new salary entry for the specified user"""
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+
+            from models import Salary  # Local import to avoid circular import issues
+            newSalaryId = self.getLastId(Salary) + 1
+
+            newSalary = Salary(
+                id=newSalaryId,
+                userId=userID,
+                amount=float(amount),
+                salaryDate=salaryDate  # Expected to be a `datetime.date` object
+            )
+
+            db.session.add(newSalary)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Salary of {amount} added for user {userID}",
+                "data": {
+                    "salaryID": newSalaryId,
+                    "userID": userID,
+                    "amount": amount,
+                    "salaryDate": salaryDate.strftime("%Y-%m-%d")
+                }
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+
+            
+    # Update the account balance for a given user
+    def updateAccountBalance(self, userID, newBalance):
+        """Updates the current account balance for the specified user"""
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+
+            user.accountBalance = float(newBalance)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Account balance updated to {newBalance}"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+

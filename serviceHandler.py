@@ -1,5 +1,6 @@
 from dbClient import dbClient
 import calculations
+from datetime import datetime
 
 class serviceHandler():
 
@@ -81,6 +82,42 @@ class serviceHandler():
                 "statusCode":400,
                 "message": "Error : "+str(e)
                 }
+        
+    def addNewSalary(self,username,userID,data):
+
+        # Validate all required fields
+        for key, value in data.items():
+            if value is None or str(value).strip() == "":
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Missing required field: {key}"
+                }
+            
+        salaryDate = datetime.strptime(data["salaryDate"], "%Y-%m-%d").date()
+            
+        status = self.DBClient.addSalary(userID,float(data["amount"]),salaryDate)
+
+        if status["status"] == "Success":
+            status = self.DBClient.getAccountBalance(userID)
+
+            if status["status"] == "Success":
+                #Update the previous Account Balance
+                previousAccBalance = status["data"]["accountBalance"]
+                status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
+
+                if status["status"] == "Success":
+                    newBalance = float(previousAccBalance)+ float(data["amount"])
+                    status = self.DBClient.updateAccountBalance(userID, newBalance)
+
+                    return status
+
+            else:
+                return status
+            
+        else:
+            return status
+            
         
     #Gets  the monthlyExpenseList from the db.Returns a list of expenses based on months. 
     def getMonthlyExpenses(self,userID):

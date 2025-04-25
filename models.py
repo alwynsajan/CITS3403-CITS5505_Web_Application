@@ -36,8 +36,8 @@ class Goal(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     goalName = db.Column(db.String(100), nullable=False)
     targetAmount = db.Column(db.Float, nullable=False)
-    timeDuration = db.Column(db.Integer, nullable=False)
-    percentageAllocation = db.Column(db.Integer, nullable=False)
+    timeDuration = db.Column(db.Float, nullable=False)
+    percentageAllocation = db.Column(db.Float, nullable=False)
 
 class Expense(db.Model):
     __tablename__ = 'expenses'
@@ -47,7 +47,7 @@ class Expense(db.Model):
     category = db.Column(db.String(100), nullable=False)  
     amount = db.Column(db.Float, nullable=False)  
     date = db.Column(db.Date, nullable=False, default=date.today)  
-    weekStartDate = db.Column(db.String(20), nullable=False)
+    weekStartDate = db.Column(db.Date, nullable=False)
 
 class Salary(db.Model):
     __tablename__ = 'salaries'

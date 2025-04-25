@@ -132,6 +132,29 @@ def addGoal():
     requestStatus = handler.addNewGoal(username,userID,data)
 
     return jsonify(requestStatus) 
+
+@app.route('/dashboard/addSalary', methods=['POST'])
+@app.route('/expense/addSalary', methods=['POST'])
+def addSalary():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    data = {}
+    # Get data from form.
+    data["amount"] = request.form.get('amount')
+    data["salaryDate"] = request.form.get('salaryDate')
+
+    requestStatus = handler.addNewSalary(username,userID,data)
+
+    return jsonify(requestStatus)
+    
     
 
 if __name__ == '__main__':
