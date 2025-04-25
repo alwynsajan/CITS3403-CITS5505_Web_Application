@@ -96,25 +96,65 @@ class serviceHandler():
             
         salaryDate = datetime.strptime(data["salaryDate"], "%Y-%m-%d").date()
             
-        status = self.DBClient.addSalary(userID,float(data["amount"]),salaryDate)
+        status = self.DBClient.getAccountBalance(userID)
 
         if status["status"] == "Success":
-            status = self.DBClient.getAccountBalance(userID)
+            #Update the previous Account Balance
+            previousAccBalance = status["data"]["accountBalance"]
+            status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
 
             if status["status"] == "Success":
-                #Update the previous Account Balance
-                previousAccBalance = status["data"]["accountBalance"]
-                status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
+                newBalance = float(previousAccBalance) + float(data["amount"])
+                status = self.DBClient.updateAccountBalance(userID, newBalance)
 
                 if status["status"] == "Success":
-                    newBalance = float(previousAccBalance)+ float(data["amount"])
-                    status = self.DBClient.updateAccountBalance(userID, newBalance)
+                    status = self.DBClient.addSalary(userID,float(data["amount"]),salaryDate)
 
-                    return status
-
+                return status
             else:
                 return status
+        else:
+            return status
             
+    def addNewExpense(self,username,userID,data):
+
+        # Validate all required fields
+        for key, value in data.items():
+            if value is None or str(value).strip() == "":
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Missing required field: {key}"
+                }
+            
+        startOfWeek = calculations.getStartOfWeek(data["date"])
+        date = datetime.strptime(data["date"], "%Y-%m-%d").date()
+        
+        status = self.DBClient.getAccountBalance(userID)
+
+        if status["status"] == "Success":
+            #Update the previous Account Balance
+            previousAccBalance = status["data"]["accountBalance"]
+            status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
+
+            if status["status"] == "Success":
+                newBalance = float(previousAccBalance) - float(data["amount"])
+                status = self.DBClient.updateAccountBalance(userID, newBalance)
+
+                if status["status"] == "Success":
+                    status = self.DBClient.addNewExpense(userID, data["amount"], data["category"], date,startOfWeek)
+                    # return status fir testing
+
+                    # if status["status"] == "Success":
+                    #     #Call functions to update the graph data for expense page.
+                    #     pass
+                    # else:
+                    #     return status
+
+                else:
+                    return status
+            else:
+                return status
         else:
             return status
             

@@ -211,7 +211,6 @@ class dbClient:
                     "amount": expense.amount,
                     "date": expense.date.strftime("%Y-%m-%d"),
                     "weekStartDate": expense.weekStartDate,
-                    "weekEndDate": expense.weekEndDate
                 } for expense in expenses
             ]
             return {
@@ -295,14 +294,13 @@ class dbClient:
                     "message": f"User with ID {userID} not found"
                 }
 
-            from models import Salary  # Local import to avoid circular import issues
             newSalaryId = self.getLastId(Salary) + 1
 
             newSalary = Salary(
                 id=newSalaryId,
                 userId=userID,
                 amount=float(amount),
-                salaryDate=salaryDate  # Expected to be a `datetime.date` object
+                salaryDate=salaryDate 
             )
 
             db.session.add(newSalary)
@@ -328,7 +326,6 @@ class dbClient:
                 "message": "Error: " + str(e)
             }
 
-            
     # Update the account balance for a given user
     def updateAccountBalance(self, userID, newBalance):
         """Updates the current account balance for the specified user"""
@@ -352,6 +349,44 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+        
+    # Add a new expense to the database
+    def addNewExpense(self,userId, amount, category, date,startOfWeek):
+        """Adds a new expense with an auto-incremented ID (no description)"""
+        try:
+            newId = (db.session.query(Expense).order_by(Expense.id.desc()).first().id + 1) if db.session.query(Expense).first() else 1
+
+            newExpense = Expense(
+                id=newId,
+                userId=userId,
+                amount=amount,
+                category=category,
+                date=date,
+                weekStartDate=startOfWeek
+            )
+
+            db.session.add(newExpense)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Expense added successfully",
+                "data": {
+                    "expenseId": newId,
+                    "userId": userId,
+                    "amount": amount,
+                    "category": category,
+                    "date": date
+                }
+            }
+
+        except Exception as e:
             return {
                 "status": "Failed",
                 "statusCode": 400,

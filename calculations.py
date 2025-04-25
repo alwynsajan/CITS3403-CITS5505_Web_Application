@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 
 def getAccountData(accBalance,previousBalance):
 
@@ -54,6 +54,7 @@ def getGoalProgress(goalData, accBalance):
 
     return goalProgressDataList
 
+# Returns a list with total expenses for each month (index 0 = Jan, 11 = Dec)
 def getMonthlyExpenseList(data):
 
     monthlyExpenseList= [0,0,0,0,0,0,0,0,0,0,0,0]
@@ -65,6 +66,7 @@ def getMonthlyExpenseList(data):
 
     return monthlyExpenseList
 
+# Calculates 50/30/20 budget rule breakdown from given salary
 def calculate_50_30_20_Percentages(salary):
 
     salary = float(salary)
@@ -75,4 +77,13 @@ def calculate_50_30_20_Percentages(salary):
         "salary" : salary
     }
 
+# Returns the Monday of the week for a given date
+def getStartOfWeek(inputDate):
+    # If input is a string, convert to datetime object
+    if isinstance(inputDate, str):
+        inputDate = datetime.strptime(inputDate, "%Y-%m-%d").date()
+    
+    # Calculate the Monday of that week
+    startOfWeek = inputDate - timedelta(days=inputDate.weekday())
+    return startOfWeek
         

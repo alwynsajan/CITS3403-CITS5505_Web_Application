@@ -155,7 +155,27 @@ def addSalary():
 
     return jsonify(requestStatus)
     
+@app.route('/expense/addExpense', methods=['POST'])
+def addExpense():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
     
+    data = {}
+    # Get data from form.
+    data["category"] = request.form.get('category')
+    data["amount"] = request.form.get('amount')
+    data["date"] = request.form.get('date')
+
+    requestStatus = handler.addNewExpense(username,userID,data)
+    
+    return jsonify(requestStatus)
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
