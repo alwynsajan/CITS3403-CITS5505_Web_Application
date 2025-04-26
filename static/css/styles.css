@@ -1,6 +1,6 @@
 /* 
  * Smart Budget Dashboard Styles
- * This CSS file contains all styles for the dashboard application
+ * This file contains all styles for the dashboard application
  * with support for light and dark themes
  */
 
@@ -197,11 +197,28 @@ h1, h2, h3, h4, h5, h6, p {
     padding: 5px 10px;
 }
 
+/* Goal Selector */
+.goal-selector {
+    margin-bottom: 1rem;
+}
+
+.goal-selector .form-select {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.goal-selector .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(95, 189, 189, 0.25);
+}
+
 /* Progress Circle */
 .progress-circle {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     position: relative;
+    margin: 0 auto;
 }
 
 .progress-circle-inner {
@@ -213,6 +230,7 @@ h1, h2, h3, h4, h5, h6, p {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    transition: all 0.5s ease;
 }
 
 .progress-percentage {
@@ -222,22 +240,19 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .progress-label {
-    font-size: 0.9rem;
+    font-size: 1rem;
+    margin-top: 5px;
+    text-align: center;
 }
 
-/* Goals Layout */
-.goals-row {
+.goal-details {
+    margin-top: 1.5rem;
+}
+
+.goal-details p {
+    margin-bottom: 0.5rem;
     display: flex;
-    flex-wrap: wrap;
-}
-
-.goals-row .card {
-    height: 100%;
-    transition: transform 0.2s;
-}
-
-.goals-row .card:hover {
-    transform: translateY(-3px);
+    justify-content: space-between;
 }
 
 /* Budget Categories */
@@ -306,6 +321,15 @@ canvas#monthlySpendingChart {
     box-shadow: 0 0 0 0.25rem rgba(95, 189, 189, 0.25);
 }
 
+/* Goal transition animations */
+.goal-progress {
+    transition: opacity 0.3s;
+}
+
+.goal-details p {
+    transition: all 0.3s;
+}
+
 /* ===== Media Queries ===== */
 @media (max-width: 992px) {
     .sidebar {
@@ -335,6 +359,11 @@ canvas#monthlySpendingChart {
     .budget-category {
         margin-bottom: 20px;
     }
+    
+    .progress-circle {
+        width: 120px;
+        height: 120px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -348,10 +377,6 @@ canvas#monthlySpendingChart {
     
     .main-content {
         padding: 15px;
-    }
-    
-    .goals-row .col-md-6 {
-        width: 100%;
     }
     
     .progress-circle {

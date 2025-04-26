@@ -27,11 +27,23 @@
         </div>
     </div>
 
-    <!-- Goal Progress Card (showing first goal) -->
+    <!-- Goal Progress Card with Goal Selector -->
     <div class="col-md-4">
         <div class="card h-100 goal-card">
             <div class="card-body">
                 <h2 class="card-title">Goal Progress</h2>
+                
+                <!-- Goal selector for multiple goals -->
+                {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
+                <div class="goal-selector mb-3">
+                    <select id="goalSelector" class="form-select">
+                        {% for goal in data.goalData %}
+                            <option value="{{ loop.index0 }}">{{ goal.goalName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
                 <hr>
                 
                 {% if data.hasGoal and data.goalData %}
@@ -42,12 +54,12 @@
                                 <span class="progress-label">{{ data.goalData[0].goalName }}</span>
                             </div>
                         </div>
-                        <div class="goal-details">
-                            <p><strong>Target:</strong> ${{ data.goalData[0].target }}</p>
-                            <p><strong>Saved:</strong> ${{ data.goalData[0].saved }}</p>
-                            <p><strong>Remaining:</strong> ${{ data.goalData[0].remaining }}</p>
+                        <div id="goalDetails" class="goal-details">
+                            <p><strong>Target:</strong> $<span id="goalTarget">{{ data.goalData[0].target }}</span></p>
+                            <p><strong>Saved:</strong> $<span id="goalSaved">{{ data.goalData[0].saved }}</span></p>
+                            <p><strong>Remaining:</strong> $<span id="goalRemaining">{{ data.goalData[0].remaining }}</span></p>
                             {% if data.goalData[0].message %}
-                                <p><small>{{ data.goalData[0].message }}</small></p>
+                                <p><small id="goalMessage">{{ data.goalData[0].message }}</small></p>
                             {% endif %}
                         </div>
                     </div>
@@ -71,53 +83,6 @@
                     <p>Setting clear financial goals helps you stay motivated and track your progress.</p>
                     <button id="newGoalBtn" class="btn btn-primary mt-3">Set a New Goal</button>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Multiple Goals Container -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body" id="goalsContainer">
-                {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
-                    <h2 class="mb-4">Your Financial Goals</h2>
-                    <div class="row goals-row">
-                        {% for goal in data.goalData %}
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ goal.goalName }}</h5>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="progress flex-grow-1 me-2" style="height: 10px;">
-                                                <div class="progress-bar" role="progressbar" 
-                                                     style="width: {{ goal.progressPercentage }}%;" 
-                                                     aria-valuenow="{{ goal.progressPercentage }}" 
-                                                     aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                            <span class="text-muted small">{{ goal.progressPercentage }}%</span>
-                                        </div>
-                                        <div class="goal-details small">
-                                            <div class="row">
-                                                <div class="col-6"><strong>Target:</strong> ${{ goal.target }}</div>
-                                                <div class="col-6"><strong>Saved:</strong> ${{ goal.saved }}</div>
-                                            </div>
-                                            <div class="row mt-1">
-                                                <div class="col-12"><strong>Remaining:</strong> ${{ goal.remaining }}</div>
-                                            </div>
-                                            {% if goal.message %}
-                                                <div class="alert alert-info mt-2 p-2 small">{{ goal.message }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted text-center py-4">No additional goals set yet. You can create multiple goals to track different savings targets.</p>
-                {% endif %}
             </div>
         </div>
     </div>
