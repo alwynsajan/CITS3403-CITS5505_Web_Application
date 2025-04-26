@@ -1,0 +1,365 @@
+/* 
+ * Smart Budget Dashboard Styles
+ * This CSS file contains all styles for the dashboard application
+ * with support for light and dark themes
+ */
+
+/* ===== Variables ===== */
+:root {
+    /* Light Theme Colors */
+    --primary-color: #5FBDBD;
+    --secondary-color: #45A29E;
+    --text-color: #333333;
+    --bg-color: #F5F7FA;
+    --card-bg: #FFFFFF;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --border-color: #E5E5E5;
+    
+    /* Category Colors */
+    --needs-color: #5FBDBD;
+    --wants-color: #FF9F43;
+    --savings-color: #28C76F;
+    --positive-color: #28C76F;
+    --negative-color: #EA5455;
+}
+
+/* Dark Theme Colors */
+.dark-theme {
+    --primary-color: #66FCF1;
+    --secondary-color: #45A29E;
+    --text-color: #FFFFFF;
+    --bg-color: #1F2833;
+    --card-bg: #2C3440;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --border-color: #3A4750;
+}
+
+/* ===== Base Styles ===== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container-fluid {
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+    color: var(--text-color);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: none;
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.card hr {
+    border-color: var(--border-color);
+    opacity: 0.5;
+    margin: 0.5rem 0 1.25rem 0;
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+}
+
+.alert-info {
+    background-color: rgba(95, 189, 189, 0.1);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+/* ===== Sidebar Styles ===== */
+.sidebar {
+    background-color: var(--card-bg);
+    min-height: 100vh;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    position: fixed;
+    z-index: 1030;
+    transition: background-color 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .logo h2 {
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.sidebar .nav-item {
+    margin-bottom: 8px;
+    border-radius: 5px;
+}
+
+.sidebar .nav-item.active {
+    background-color: var(--primary-color);
+}
+
+.sidebar .nav-item.active a {
+    color: white !important;
+}
+
+.sidebar .nav-link {
+    color: var(--text-color);
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(95, 189, 189, 0.1);
+    border-radius: 5px;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* ===== Theme Toggle ===== */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+    padding: 15px 0;
+}
+
+.theme-toggle i {
+    color: var(--text-color);
+}
+
+.form-switch .form-check-input {
+    background-color: #ccc;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* ===== Main Content ===== */
+.main-content {
+    padding: 20px;
+    transition: all 0.3s;
+}
+
+.main-content header {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.main-content h1 {
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+/* ===== Dashboard Elements ===== */
+.balance-amount h1 {
+    margin-bottom: 10px;
+}
+
+.badge {
+    font-size: 1rem;
+    padding: 5px 10px;
+}
+
+/* Progress Circle */
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    position: relative;
+}
+
+.progress-circle-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 10px solid #eee;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.progress-percentage {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.progress-label {
+    font-size: 0.9rem;
+}
+
+/* Goals Layout */
+.goals-row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.goals-row .card {
+    height: 100%;
+    transition: transform 0.2s;
+}
+
+.goals-row .card:hover {
+    transform: translateY(-3px);
+}
+
+/* Budget Categories */
+.category-percent {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    color: white;
+    font-weight: bold;
+}
+
+.needs .category-percent {
+    background-color: var(--needs-color);
+}
+
+.wants .category-percent {
+    background-color: var(--wants-color);
+}
+
+.savings .category-percent {
+    background-color: var(--savings-color);
+}
+
+.category-amount {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+/* Chart Container */
+.chart-container {
+    width: 100%;
+    height: 250px;
+    position: relative;
+}
+
+canvas#monthlySpendingChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ===== Modal Styles ===== */
+.modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.form-control {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.form-control:focus {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(95, 189, 189, 0.25);
+}
+
+/* ===== Media Queries ===== */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 70px;
+        padding: 15px 10px;
+    }
+    
+    .sidebar .logo h2,
+    .sidebar .nav-link span {
+        display: none;
+    }
+    
+    .sidebar .nav-link i {
+        margin-right: 0;
+        font-size: 1.25rem;
+    }
+    
+    .main-content {
+        margin-left: 70px;
+        width: calc(100% - 70px);
+    }
+    
+    .budget-categories {
+        flex-direction: column;
+    }
+    
+    .budget-category {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .col-md-4 {
+        margin-bottom: 20px;
+    }
+    
+    .card {
+        height: auto !important;
+    }
+    
+    .main-content {
+        padding: 15px;
+    }
+    
+    .goals-row .col-md-6 {
+        width: 100%;
+    }
+    
+    .progress-circle {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .progress-percentage {
+        font-size: 1.5rem;
+    }
+}
