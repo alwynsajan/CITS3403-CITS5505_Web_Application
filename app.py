@@ -153,8 +153,9 @@ def addSalary():
 
     requestStatus = handler.addNewSalary(username,userID,data)
 
-    return jsonify(requestStatus)
-    
+    # Render the dashboard template, passing the username and user role as variables
+    return render_template('dashboard.html', username=username, data=data)
+
 @app.route('/expense/addExpense', methods=['POST'])
 def addExpense():
 
@@ -173,9 +174,30 @@ def addExpense():
     data["amount"] = request.form.get('amount')
     data["date"] = request.form.get('date')
 
-    requestStatus = handler.addNewExpense(username,userID,data)
+    data = handler.addNewExpense(username,userID,data)
+
+    # Render the expense template, passing the required data for graohs
+    return render_template('expense.html', username=username, data=data)
+
+
     
-    return jsonify(requestStatus)
+@app.route('/expense', methods=['POST'])
+def expensePage():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    #Fetch required user data to update expensePage from DB!!
+    data = handler.getExpensePageData(userID)
+    
+    # Render the expense template, passing the required data for graohs
+    return render_template('expense.html', username=username, data=data)
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode

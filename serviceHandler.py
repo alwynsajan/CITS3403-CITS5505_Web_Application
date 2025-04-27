@@ -143,13 +143,14 @@ class serviceHandler():
 
                 if status["status"] == "Success":
                     status = self.DBClient.addNewExpense(userID, data["amount"], data["category"], date,startOfWeek)
-                    # return status fir testing
+                    # return status #for testing
 
-                    # if status["status"] == "Success":
-                    #     #Call functions to update the graph data for expense page.
-                    #     pass
-                    # else:
-                    #     return status
+                    if status["status"] == "Success":
+                        #Call functions to update the graph data for expense page.
+                        expensePageData = self.getExpensePageData(userID)
+                        return expensePageData
+                    else:
+                        return status
 
                 else:
                     return status
@@ -243,6 +244,37 @@ class serviceHandler():
             dashboardData["hasSalary"] = False
 
         return dashboardData
+    
+    def getExpensePageData(self,userID):
+
+        expenseData = {}
+        expenseAndSalary = {}
+
+        salaryDataListStatus = self.DBClient.getUserSalaries(userID)
+
+        if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
+            monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
+            expenseData["hasSalary"] = True
+            expenseAndSalary["salaryData"] = monthlySalaryList
+            expenseData["expenseAndSalary"] = expenseAndSalary
+        else:
+            expenseData["hasSalary"] = False
+
+        expenseDataListStatus = self.DBClient.getUserExpenses(userID)
+        if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
+            monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
+            expenseData["hasExpense"] = True
+            expenseAndSalary["expenseData"] = monthlyExpenseList
+            expenseData["expenseAndSalary"] = expenseAndSalary
+            expenseData["weeklyExpense"] = weeklyExpense
+            expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
+
+        else:
+            expenseData["hasExpense"] = False
+
+        return expenseData
+
+
 
                     
 

@@ -392,4 +392,56 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
+    # Get all expense entries for a user
+    def getUserExpenses(self, userID):
+        """Fetches all expenses for a given user ID"""
+        try:
+            expenses = Expense.query.filter_by(userId=userID).all()
+            expensesData = [
+                {
+                    "expenseID": expense.id,
+                    "category": expense.category,
+                    "amount": expense.amount,
+                    "date": expense.date.strftime("%Y-%m-%d"),
+                    "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d")
+                } for expense in expenses
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": expensesData
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    # Get all salary entries for a user
+    def getUserSalaries(self, userID):
+        """Fetches all salaries for a given user ID"""
+        try:
+            salaries = Salary.query.filter_by(userId=userID).all()
+            salaryData = [
+                {
+                    "salaryID": salary.id,
+                    "amount": salary.amount,
+                    "salaryDate": salary.salaryDate.strftime("%Y-%m-%d")
+                } for salary in salaries
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": salaryData
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+
+
 
