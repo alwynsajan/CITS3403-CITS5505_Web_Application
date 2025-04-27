@@ -101,7 +101,7 @@
                             <div class="budget-category needs">
                                 <div class="category-percent">50%</div>
                                 <h6>Needs</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.needs }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.fiftyPercent }}</p>
                                 <p class="text-muted small">Essential expenses</p>
                             </div>
                         </div>
@@ -109,7 +109,7 @@
                             <div class="budget-category wants">
                                 <div class="category-percent">30%</div>
                                 <h6>Wants</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.wants }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.thirtyPercent }}</p>
                                 <p class="text-muted small">Non-essential purchases</p>
                             </div>
                         </div>
@@ -117,7 +117,7 @@
                             <div class="budget-category savings">
                                 <div class="category-percent">20%</div>
                                 <h6>Savings</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.savings }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.twentyPercent }}</p>
                                 <p class="text-muted small">Future goals</p>
                             </div>
                         </div>
@@ -214,17 +214,21 @@
 
 {% block scripts %}
 <!-- Pass data to JavaScript -->
+{% if data.hasExpense %}
 <script>
     // Declare variables with var for global scope
-    {% if data.hasExpense %}
-    var monthlyLabels = {{ monthly_data.labels|safe }};
-    var monthlyExpenses = {{ monthly_data.expenses|safe }};
-    {% endif %}
-    {% if data.hasGoal and data.goalData %}
-    var goalData = {{ goals_json|safe }};
-    window.goalData = goalData; // Make it globally accessible
-    {% endif %}
+    var monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var monthlyExpenses = {{ data.monthlySpendData.Expenses|tojson|default('[]', true) }};
+    window.monthlyLabels = monthlyLabels;
+    window.monthlyExpenses = monthlyExpenses;
 </script>
+{% endif %}
+{% if data.hasGoal %}
+<script>
+    var goalData = {{ data.goalData|tojson|default('[]', true) }};
+    window.goalData = goalData;
+</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
     // Listen for goal selector changes and update the progress card
@@ -247,10 +251,10 @@
                         document.getElementById('goalMessage').textContent = '';
                     }
                     // Re-render the progress ring style
-                    if (typeof updateGoalProgressCircle === 'function') {
+                    if (typeof window.updateGoalProgressCircle === 'function') {
                         var circle = document.querySelector('.progress-circle');
                         if (circle) {
-                            updateGoalProgressCircle(circle);
+                            window.updateGoalProgressCircle(circle);
                         }
                     }
                 }

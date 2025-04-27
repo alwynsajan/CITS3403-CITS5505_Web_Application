@@ -77,14 +77,13 @@ function initMonthlySpendingChart() {
     const labels = window.monthlyLabels || [];
     const expenses = window.monthlyExpenses || [];
     
-    console.log('Initializing monthly spending chart with data:', { 
-        labels: labels, 
-        expenses: expenses 
-    });
-    
-    // Use sample data if no data is provided
-    const chartLabels = labels.length ? labels : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const chartData = expenses.length ? expenses : [50, 0, 0, 0, 0, 0];
+    // Only render chart if there is real data
+    if (!labels.length || !expenses.length) {
+        // No data, do not render chart
+        chartCanvas.style.display = 'none';
+        // Optionally, you can show a placeholder here if needed
+        return;
+    }
     
     // Get the 2D context from the canvas
     const ctx = chartCanvas.getContext('2d');
@@ -94,10 +93,10 @@ function initMonthlySpendingChart() {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: chartLabels,
+                labels: labels,
                 datasets: [{
                     label: 'Monthly Spending',
-                    data: chartData,
+                    data: expenses,
                     backgroundColor: [
                         '#5FBDBD', '#7367F0', '#5FBDBD', 
                         '#FF9F43', '#5FBDBD', '#28C76F'
@@ -382,3 +381,6 @@ function getRandomColor() {
     
     return colors[Math.floor(Math.random() * colors.length)];
 }
+
+// Expose updateGoalProgressCircle to window for external use
+window.updateGoalProgressCircle = updateGoalProgressCircle;
