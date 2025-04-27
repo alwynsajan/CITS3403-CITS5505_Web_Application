@@ -32,7 +32,6 @@
         <div class="card h-100 goal-card">
             <div class="card-body">
                 <h2 class="card-title">Goal Progress</h2>
-                
                 <!-- Goal selector for multiple goals -->
                 {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
                 <div class="goal-selector mb-3">
@@ -43,9 +42,7 @@
                     </select>
                 </div>
                 {% endif %}
-                
                 <hr>
-                
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
                         <div class="progress-circle mx-auto mb-3">
@@ -218,15 +215,47 @@
 {% block scripts %}
 <!-- Pass data to JavaScript -->
 <script>
-    // Make data available to JavaScript
+    // Declare variables with var for global scope
     {% if data.hasExpense %}
-    monthlyLabels = {{ monthly_data.labels|safe }};
-    monthlyExpenses = {{ monthly_data.expenses|safe }};
+    var monthlyLabels = {{ monthly_data.labels|safe }};
+    var monthlyExpenses = {{ monthly_data.expenses|safe }};
     {% endif %}
-    
     {% if data.hasGoal and data.goalData %}
-    goalData = {{ goals_json|safe }};
+    var goalData = {{ goals_json|safe }};
+    window.goalData = goalData; // Make it globally accessible
     {% endif %}
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // Listen for goal selector changes and update the progress card
+    document.addEventListener('DOMContentLoaded', function() {
+        var goalSelector = document.getElementById('goalSelector');
+        if (goalSelector && window.goalData) {
+            goalSelector.addEventListener('change', function() {
+                var idx = parseInt(this.value);
+                if (window.goalData && window.goalData[idx]) {
+                    // Update progress ring and details
+                    var goal = window.goalData[idx];
+                    document.querySelector('.progress-percentage').textContent = goal.progressPercentage + '%';
+                    document.querySelector('.progress-label').textContent = goal.goalName;
+                    document.getElementById('goalTarget').textContent = goal.target;
+                    document.getElementById('goalSaved').textContent = goal.saved;
+                    document.getElementById('goalRemaining').textContent = goal.remaining;
+                    if (goal.message) {
+                        document.getElementById('goalMessage').textContent = goal.message;
+                    } else if (document.getElementById('goalMessage')) {
+                        document.getElementById('goalMessage').textContent = '';
+                    }
+                    // Re-render the progress ring style
+                    if (typeof updateGoalProgressCircle === 'function') {
+                        var circle = document.querySelector('.progress-circle');
+                        if (circle) {
+                            updateGoalProgressCircle(circle);
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

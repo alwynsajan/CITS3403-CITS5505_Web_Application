@@ -1,37 +1,37 @@
 /* 
  * Smart Budget Dashboard Styles
- * This file contains all styles for the dashboard application
+ * This CSS file contains all styles for the dashboard application
  * with support for light and dark themes
  */
 
 /* ===== Variables ===== */
 :root {
     /* Light Theme Colors */
-    --primary-color: #5FBDBD;
-    --secondary-color: #45A29E;
-    --text-color: #333333;
-    --bg-color: #F5F7FA;
-    --card-bg: #FFFFFF;
-    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --border-color: #E5E5E5;
+    --primary-color: #4F8A8B;         /* 主色：蓝绿 */
+    --secondary-color: #F9AE58;       /* 辅助色：橙色 */
+    --text-color: #222831;            /* 文字深灰 */
+    --bg-color: #F6F6F6;              /* 背景浅灰 */
+    --card-bg: #FFFFFF;               /* 卡片白色 */
+    --card-shadow: 0 4px 12px rgba(79, 138, 139, 0.08);
+    --border-color: #E0E0E0;
     
     /* Category Colors */
-    --needs-color: #5FBDBD;
-    --wants-color: #FF9F43;
-    --savings-color: #28C76F;
-    --positive-color: #28C76F;
-    --negative-color: #EA5455;
+    --needs-color: #4F8A8B;           /* 蓝绿 */
+    --wants-color: #F9AE58;           /* 橙色 */
+    --savings-color: #395B64;         /* 深蓝灰 */
+    --positive-color: #4F8A8B;        /* 蓝绿 */
+    --negative-color: #EA5455;        /* 红色 */
 }
 
 /* Dark Theme Colors */
 .dark-theme {
-    --primary-color: #66FCF1;
-    --secondary-color: #45A29E;
-    --text-color: #FFFFFF;
-    --bg-color: #1F2833;
-    --card-bg: #2C3440;
-    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --border-color: #3A4750;
+    --primary-color: #43C6AC;         /* 主色：青绿 */
+    --secondary-color: #F9AE58;       /* 辅助色：橙色 */
+    --text-color: #F6F6F6;            /* 文字浅灰 */
+    --bg-color: #222831;              /* 背景深灰 */
+    --card-bg: #2C3440;               /* 卡片深色 */
+    --card-shadow: 0 4px 12px rgba(67, 198, 172, 0.12);
+    --border-color: #395B64;
 }
 
 /* ===== Base Styles ===== */
@@ -197,28 +197,11 @@ h1, h2, h3, h4, h5, h6, p {
     padding: 5px 10px;
 }
 
-/* Goal Selector */
-.goal-selector {
-    margin-bottom: 1rem;
-}
-
-.goal-selector .form-select {
-    background-color: var(--bg-color);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-.goal-selector .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(95, 189, 189, 0.25);
-}
-
 /* Progress Circle */
 .progress-circle {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
     position: relative;
-    margin: 0 auto;
 }
 
 .progress-circle-inner {
@@ -230,7 +213,6 @@ h1, h2, h3, h4, h5, h6, p {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    transition: all 0.5s ease;
 }
 
 .progress-percentage {
@@ -240,19 +222,22 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .progress-label {
-    font-size: 1rem;
-    margin-top: 5px;
-    text-align: center;
+    font-size: 0.9rem;
 }
 
-.goal-details {
-    margin-top: 1.5rem;
-}
-
-.goal-details p {
-    margin-bottom: 0.5rem;
+/* Goals Layout */
+.goals-row {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.goals-row .card {
+    height: 100%;
+    transition: transform 0.2s;
+}
+
+.goals-row .card:hover {
+    transform: translateY(-3px);
 }
 
 /* Budget Categories */
@@ -321,15 +306,6 @@ canvas#monthlySpendingChart {
     box-shadow: 0 0 0 0.25rem rgba(95, 189, 189, 0.25);
 }
 
-/* Goal transition animations */
-.goal-progress {
-    transition: opacity 0.3s;
-}
-
-.goal-details p {
-    transition: all 0.3s;
-}
-
 /* ===== Media Queries ===== */
 @media (max-width: 992px) {
     .sidebar {
@@ -359,11 +335,6 @@ canvas#monthlySpendingChart {
     .budget-category {
         margin-bottom: 20px;
     }
-    
-    .progress-circle {
-        width: 120px;
-        height: 120px;
-    }
 }
 
 @media (max-width: 768px) {
@@ -377,6 +348,10 @@ canvas#monthlySpendingChart {
     
     .main-content {
         padding: 15px;
+    }
+    
+    .goals-row .col-md-6 {
+        width: 100%;
     }
     
     .progress-circle {
