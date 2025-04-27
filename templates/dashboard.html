@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Account Summary Row -->
+<div class="row mb-4">
+    <!-- Account Balance Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title">Account Balance</h2>
+                <hr>
+                
+                {% if data.hasAccountBalance %}
+                    <div class="balance-amount text-center">
+                        <h1 class="display-4">${{ data.accountData.balance }}</h1>
+                        <span class="badge {% if data.accountData.trendType == 'up' %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if data.accountData.trendType == 'up' %}+{% else %}-{% endif %}{{ data.accountData.percentChange }}%
+                        </span>
+                    </div>
+                {% else %}
+                    <div class="balance-amount text-center">
+                        <h1 class="display-4">$0.00</h1>
+                        <p class="text-muted">Add income to see your balance</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Progress Card with Goal Selector -->
+    <div class="col-md-4">
+        <div class="card h-100 goal-card">
+            <div class="card-body">
+                <h2 class="card-title">Goal Progress</h2>
+                
+                <!-- Goal selector for multiple goals -->
+                {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
+                <div class="goal-selector mb-3">
+                    <select id="goalSelector" class="form-select">
+                        {% for goal in data.goalData %}
+                            <option value="{{ loop.index0 }}">{{ goal.goalName }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                {% if data.hasGoal and data.goalData %}
+                    <div class="goal-progress text-center">
+                        <div class="progress-circle mx-auto mb-3">
+                            <div class="progress-circle-inner">
+                                <span class="progress-percentage">{{ data.goalData[0].progressPercentage }}%</span>
+                                <span class="progress-label">{{ data.goalData[0].goalName }}</span>
+                            </div>
+                        </div>
+                        <div id="goalDetails" class="goal-details">
+                            <p><strong>Target:</strong> $<span id="goalTarget">{{ data.goalData[0].target }}</span></p>
+                            <p><strong>Saved:</strong> $<span id="goalSaved">{{ data.goalData[0].saved }}</span></p>
+                            <p><strong>Remaining:</strong> $<span id="goalRemaining">{{ data.goalData[0].remaining }}</span></p>
+                            {% if data.goalData[0].message %}
+                                <p><small id="goalMessage">{{ data.goalData[0].message }}</small></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <p class="text-muted">Set a goal to track your progress</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- New Goal Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title">Financial Goals</h2>
+                <hr>
+                
+                <div class="text-center py-3">
+                    <p>Setting clear financial goals helps you stay motivated and track your progress.</p>
+                    <button id="newGoalBtn" class="btn btn-primary mt-3">Set a New Goal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget and Spending Row -->
+<div class="row mb-4">
+    <!-- Budget Suggestions Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title">Budget Suggestions</h2>
+                <hr>
+                
+                {% if data.hasSalary %}
+                    <h5 class="text-center mb-4">50/30/20 Rule</h5>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="budget-category needs">
+                                <div class="category-percent">50%</div>
+                                <h6>Needs</h6>
+                                <p class="category-amount">${{ data.budgetSuggestionData.needs }}</p>
+                                <p class="text-muted small">Essential expenses</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="budget-category wants">
+                                <div class="category-percent">30%</div>
+                                <h6>Wants</h6>
+                                <p class="category-amount">${{ data.budgetSuggestionData.wants }}</p>
+                                <p class="text-muted small">Non-essential purchases</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="budget-category savings">
+                                <div class="category-percent">20%</div>
+                                <h6>Savings</h6>
+                                <p class="category-amount">${{ data.budgetSuggestionData.savings }}</p>
+                                <p class="text-muted small">Future goals</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <p class="small text-muted">Based on monthly salary: ${{ data.budgetSuggestionData.salary }}</p>
+                        <p class="small text-muted">Last salary: {{ data.budgetSuggestionData.salaryDate }}</p>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <p class="text-muted">Add your income to get budget suggestions</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Spending Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title">Monthly Spending</h2>
+                <hr>
+                
+                {% if data.hasExpense %}
+                    <div class="chart-container" style="height: 250px; position: relative;">
+                        <canvas id="monthlySpendingChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <p class="text-muted">Track your expenses to see spending trends</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Card -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title">Export</h2>
+                <hr>
+                
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-primary" id="exportCSV">
+                        <i class="fas fa-file-csv me-2"></i> Export to CSV
+                    </button>
+                    <button class="btn btn-outline-primary" id="exportPDF">
+                        <i class="fas fa-file-pdf me-2"></i> Export to PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal fade" id="goalModal" tabindex="-1" aria-labelledby="goalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalModalLabel">Set a New Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="goalForm">
+                    <div class="mb-3">
+                        <label for="goalName" class="form-label">Goal Name</label>
+                        <input type="text" class="form-control" id="goalName" name="goalName" placeholder="e.g., New Laptop" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetAmount" class="form-label">Target Amount ($)</label>
+                        <input type="number" class="form-control" id="targetAmount" name="targetAmount" min="1" placeholder="1000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="timeDuration" class="form-label">Time Duration (months)</label>
+                        <input type="number" class="form-control" id="timeDuration" name="timeDuration" min="1" placeholder="3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="allocation" class="form-label">Allocation (%)</label>
+                        <input type="number" class="form-control" id="allocation" name="allocation" min="1" max="100" placeholder="30" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveGoalBtn">Save Goal</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Pass data to JavaScript -->
+<script>
+    // Make data available to JavaScript
+    {% if data.hasExpense %}
+    monthlyLabels = {{ monthly_data.labels|safe }};
+    monthlyExpenses = {{ monthly_data.expenses|safe }};
+    {% endif %}
+    
+    {% if data.hasGoal and data.goalData %}
+    goalData = {{ goals_json|safe }};
+    {% endif %}
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
