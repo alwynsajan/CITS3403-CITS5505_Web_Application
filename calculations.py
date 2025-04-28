@@ -71,9 +71,9 @@ def calculate_50_30_20_Percentages(salary):
 
     salary = float(salary)
     return {
-        "needs": round(salary * 0.50, 2),
-        "wants": round(salary * 0.30, 2),
-        "savings": round(salary * 0.20, 2),
+        "fiftyPercent": round(salary * 0.50, 2),
+        "thirtyPercent": round(salary * 0.30, 2),
+        "twentyPercent": round(salary * 0.20, 2),
         "salary" : salary
     }
 

@@ -40,6 +40,7 @@ def loginPage():
         "status" : "Success",
         "statusCode":200,
         "message":None}
+    
     return render_template('login.html',data = data)
 
 @app.route('/login', methods=['POST'])
@@ -96,11 +97,20 @@ def dashboard():
 @app.route('/addUser', methods=['POST'])
 def addUser():
 
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+
+    data = {}
+
     data = {
-        "username": request.form.get('username'),
-        "password": request.form.get('password'),
-        "firstName": request.form.get('firstName'),
-        "lastName": request.form.get('lastName')
+        "username": formData.get('username'),
+        "password": formData.get('password'),
+        "firstName": formData.get('firstName'),
+        "lastName": formData.get('lastName')
     }
 
     requestStatus = handler.addNewUser(data)
@@ -122,12 +132,18 @@ def addGoal():
         "statusCode":400,
         "message":"Username not Found, Please login again!"}
     
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+
     data = {}
-    # Get data from form.
-    data["goalName"] = request.form.get('goalName')
-    data["targetAmount"] = request.form.get('targetAmount')
-    data["timeDuration"] = request.form.get('timeDuration')
-    data["percentageAllocation"] = request.form.get('percentageAllocation')
+    data["goalName"] = formData.get('goalName')
+    data["targetAmount"] = formData.get('targetAmount')
+    data["timeDuration"] = formData.get('timeDuration')
+    data["percentageAllocation"] = formData.get('allocation')
 
     requestStatus = handler.addNewGoal(username,userID,data)
 
@@ -146,10 +162,17 @@ def addSalary():
         "statusCode":400,
         "message":"Username not Found, Please login again!"}
     
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
     data = {}
     # Get data from form.
-    data["amount"] = request.form.get('amount')
-    data["salaryDate"] = request.form.get('salaryDate')
+    data["amount"] = formData.get('amount')
+    data["salaryDate"] = formData.get('salaryDate')
 
     requestStatus = handler.addNewSalary(username,userID,data)
 
@@ -168,11 +191,18 @@ def addExpense():
         "statusCode":400,
         "message":"Username not Found, Please login again!"}
     
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
     data = {}
     # Get data from form.
-    data["category"] = request.form.get('category')
-    data["amount"] = request.form.get('amount')
-    data["date"] = request.form.get('date')
+    data["category"] = formData.get('category')
+    data["amount"] = formData.get('amount')
+    data["date"] = formData.get('date')
 
     data = handler.addNewExpense(username,userID,data)
 

@@ -197,7 +197,7 @@ class serviceHandler():
         if accBalanceStatus["status"] == "Success":
             if accBalanceStatus["data"]["accountBalance"] != 0:
                 accountBalance = accBalanceStatus["data"]["accountBalance"]
-                dashboardData["hasAccountBlance"] = True
+                dashboardData["hasAccountBalance"] = True
 
                 previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
                 if previousAccBalanceStatus["status"] == "Success":
@@ -206,10 +206,10 @@ class serviceHandler():
 
                 dashboardData["accountData"] = accountData
             else:
-                dashboardData["hasAccountBlance"] = False
+                dashboardData["hasAccountBalance"] = False
 
         else:
-            dashboardData["hasAccountBlance"] = False
+            dashboardData["hasAccountBalance"] = False
 
         #Fetch GoalData:
         getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
