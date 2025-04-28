@@ -4,13 +4,22 @@
  */
 
 // Store any data passed from backend
-let monthlyLabels = [];
-let monthlyExpenses = [];
-let goalData = [];
+// These variables should be declared in HTML with var keyword to avoid scope issues
+// var monthlyLabels = [];
+// var monthlyExpenses = [];
+// var goalData = [];
 
 // DOM ready handler
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard JS loaded');
+    
+    // Check if variables were passed from HTML
+    console.log('Monthly data:', { 
+        monthlyLabels: window.monthlyLabels || [], 
+        monthlyExpenses: window.monthlyExpenses || [] 
+    });
+    
+    console.log('Goal data:', window.goalData || []);
     
     // Initialize components
     initMonthlySpendingChart();
@@ -22,15 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
  * Set up all event listeners for interactive elements
  */
 function setupEventListeners() {
-    // Goal selector dropdown
-    const goalSelector = document.getElementById('goalSelector');
-    if (goalSelector) {
-        goalSelector.addEventListener('change', function() {
-            const selectedIndex = parseInt(this.value);
-            updateGoalDisplay(selectedIndex);
-        });
-    }
-    
     // New goal button
     const newGoalBtn = document.getElementById('newGoalBtn');
     if (newGoalBtn) {
@@ -63,43 +63,6 @@ function setupEventListeners() {
 }
 
 /**
- * Updates the goal display based on the selected goal index
- * @param {number} index - The index of the selected goal in the goalData array
- */
-function updateGoalDisplay(index) {
-    // Ensure we have valid data
-    if (!Array.isArray(goalData) || !goalData[index]) {
-        console.error('Invalid goal data or index');
-        return;
-    }
-    
-    const selectedGoal = goalData[index];
-    console.log('Updating goal display with selected goal:', selectedGoal);
-    
-    // Update percentage and label in progress circle
-    const percentageElement = document.querySelector('.progress-percentage');
-    const labelElement = document.querySelector('.progress-label');
-    
-    if (percentageElement) percentageElement.textContent = `${selectedGoal.progressPercentage}%`;
-    if (labelElement) labelElement.textContent = selectedGoal.goalName;
-    
-    // Update goal details
-    document.getElementById('goalTarget').textContent = selectedGoal.target;
-    document.getElementById('goalSaved').textContent = selectedGoal.saved;
-    document.getElementById('goalRemaining').textContent = selectedGoal.remaining;
-    
-    // Update message if exists
-    const messageElement = document.getElementById('goalMessage');
-    if (messageElement && selectedGoal.message) {
-        messageElement.textContent = selectedGoal.message;
-    }
-    
-    // Update progress circle visualization
-    const circleElement = document.querySelector('.progress-circle');
-    updateGoalProgressCircle(circleElement, selectedGoal.progressPercentage);
-}
-
-/**
  * Initialize the monthly spending chart
  */
 function initMonthlySpendingChart() {
@@ -110,16 +73,16 @@ function initMonthlySpendingChart() {
         return;
     }
     
-    console.log('Initializing monthly spending chart with data:', { 
-        labels: monthlyLabels, 
-        expenses: monthlyExpenses 
-    });
+    // Access the variables from the global window object
+    const labels = window.monthlyLabels || [];
+    const expenses = window.monthlyExpenses || [];
     
-    // Use sample data if no data is provided
-    if (!monthlyLabels || !monthlyLabels.length || !monthlyExpenses || !monthlyExpenses.length) {
-        console.warn('No monthly spending data available, using sample data');
-        monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-        monthlyExpenses = [550, 610, 480, 700, 520, 590];
+    // Only render chart if there is real data
+    if (!labels.length || !expenses.length) {
+        // No data, do not render chart
+        chartCanvas.style.display = 'none';
+        // Optionally, you can show a placeholder here if needed
+        return;
     }
     
     // Get the 2D context from the canvas
@@ -130,10 +93,10 @@ function initMonthlySpendingChart() {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: monthlyLabels,
+                labels: labels,
                 datasets: [{
                     label: 'Monthly Spending',
-                    data: monthlyExpenses,
+                    data: expenses,
                     backgroundColor: [
                         '#5FBDBD', '#7367F0', '#5FBDBD', 
                         '#FF9F43', '#5FBDBD', '#28C76F'
@@ -178,14 +141,10 @@ function initMonthlySpendingChart() {
  * Initialize goal progress visualization(s)
  */
 function initGoalProgress() {
-    // If we have multiple goals, ensure the first one is displayed
-    if (Array.isArray(goalData) && goalData.length > 0) {
-        console.log('Multiple goals found:', goalData.length);
-        
-        // Initialize with the first goal
-        if (document.getElementById('goalSelector')) {
-            updateGoalDisplay(0);
-        }
+    // Visualization for multiple goals
+    if (window.goalData && window.goalData.length > 0) {
+        console.log('Multiple goals found:', window.goalData.length);
+        renderMultipleGoals(window.goalData);
     }
     
     // For individual goal progress circles
@@ -193,34 +152,25 @@ function initGoalProgress() {
     console.log('Found progress circles:', progressCircles.length);
     
     progressCircles.forEach(function(circle) {
-        // Get percentage from the DOM if not passed
-        const percentageElem = circle.querySelector('.progress-percentage');
-        if (percentageElem) {
-            const percentage = parseFloat(percentageElem.textContent);
-            updateGoalProgressCircle(circle, percentage);
-        }
+        updateGoalProgressCircle(circle);
     });
 }
 
 /**
  * Update a specific goal progress circle
  * @param {HTMLElement} circleElement - The progress circle element
- * @param {number} percentage - The goal progress percentage
  */
-function updateGoalProgressCircle(circleElement, percentage) {
+function updateGoalProgressCircle(circleElement) {
     if (!circleElement) return;
     
     const inner = circleElement.querySelector('.progress-circle-inner');
     if (!inner) return;
     
-    if (isNaN(percentage)) {
-        // Try to get percentage from the DOM
-        const percentageElem = inner.querySelector('.progress-percentage');
-        if (!percentageElem) return;
-        
-        percentage = parseFloat(percentageElem.textContent);
-        if (isNaN(percentage)) return;
-    }
+    const percentageElem = inner.querySelector('.progress-percentage');
+    if (!percentageElem) return;
+    
+    const percentage = parseFloat(percentageElem.textContent);
+    if (isNaN(percentage)) return;
     
     console.log('Updating goal progress circle with percentage:', percentage);
     
@@ -233,9 +183,6 @@ function updateGoalProgressCircle(circleElement, percentage) {
     } else {
         color = '#28C76F'; // Green for high progress
     }
-    
-    // Reset borders first
-    inner.style.border = '10px solid #eee';
     
     // Apply styles to visualize progress
     inner.style.borderTop = `10px solid ${color}`;
@@ -279,27 +226,21 @@ function saveNewGoal() {
     .then(data => {
         console.log('Response:', data);
         if (data.status === 'success') {
-            // Update global goalData
+            // Update global goals data
+            window.goalData = data.data;
+            
+            // If we got multiple goals back
             if (Array.isArray(data.data)) {
-                window.goalData = data.data;
+                renderMultipleGoals(data.data);
                 
-                // Update the goal selector dropdown
-                const selector = document.getElementById('goalSelector');
-                if (selector) {
-                    // Add new option
-                    const newIndex = window.goalData.length - 1;
-                    const option = document.createElement('option');
-                    option.value = newIndex;
-                    option.textContent = window.goalData[newIndex].goalName;
-                    selector.appendChild(option);
-                    
-                    // Select the new goal
-                    selector.value = newIndex;
-                    updateGoalDisplay(newIndex);
-                } else {
-                    // If no selector exists yet, we may need to reload to show it
-                    location.reload();
+                // Also update the first goal card if it exists
+                if (data.data.length > 0) {
+                    updateSingleGoalUI(data.data[0]);
                 }
+            } 
+            // If we got a single goal back
+            else {
+                updateSingleGoalUI(data.data);
             }
             
             // Close modal and reset form
@@ -314,6 +255,114 @@ function saveNewGoal() {
         console.error('Error:', error);
         alert('An error occurred while saving the goal.');
     });
+}
+
+/**
+ * Update the UI for a single goal
+ * @param {Object} goalData - The goal data
+ */
+function updateSingleGoalUI(goalData) {
+    const goalCard = document.querySelector('.goal-card');
+    if (!goalCard) return;
+    
+    console.log('Updating single goal UI with data:', goalData);
+    
+    // Create new content
+    const newContent = `
+        <div class="card-body">
+            <h2 class="card-title">Goal Progress</h2>
+            <hr>
+            <div class="goal-progress text-center">
+                <div class="progress-circle mx-auto mb-3">
+                    <div class="progress-circle-inner">
+                        <span class="progress-percentage">${goalData.progressPercentage}%</span>
+                        <span class="progress-label">${goalData.goalName}</span>
+                    </div>
+                </div>
+                <div class="goal-details">
+                    <p><strong>Target:</strong> $${goalData.target}</p>
+                    <p><strong>Saved:</strong> $${goalData.saved}</p>
+                    <p><strong>Remaining:</strong> $${goalData.remaining}</p>
+                    ${goalData.message ? `<p><small>${goalData.message}</small></p>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Update card content
+    goalCard.innerHTML = newContent;
+    
+    // Update progress visualization
+    const circle = goalCard.querySelector('.progress-circle');
+    updateGoalProgressCircle(circle);
+}
+
+/**
+ * Render multiple goals in the UI
+ * @param {Array} goals - Array of goal data objects
+ */
+function renderMultipleGoals(goals) {
+    const goalsContainer = document.getElementById('goalsContainer');
+    if (!goalsContainer) return;
+    
+    console.log('Rendering multiple goals:', goals.length);
+    
+    // Clear existing content
+    goalsContainer.innerHTML = '';
+    
+    // Create header
+    const header = document.createElement('h2');
+    header.className = 'mb-4';
+    header.textContent = 'Your Financial Goals';
+    goalsContainer.appendChild(header);
+    
+    // Create goals list
+    if (!goals || goals.length === 0) {
+        const placeholder = document.createElement('p');
+        placeholder.className = 'text-muted text-center py-4';
+        placeholder.textContent = 'No goals set yet. Create your first financial goal!';
+        goalsContainer.appendChild(placeholder);
+    } else {
+        const row = document.createElement('div');
+        row.className = 'row goals-row';
+        
+        // Add each goal
+        goals.forEach(function(goal) {
+            const goalCol = document.createElement('div');
+            goalCol.className = 'col-md-6 mb-3';
+            
+            goalCol.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">${goal.goalName}</h5>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: ${goal.progressPercentage}%;" 
+                                     aria-valuenow="${goal.progressPercentage}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="text-muted small">${goal.progressPercentage}%</span>
+                        </div>
+                        <div class="goal-details small">
+                            <div class="row">
+                                <div class="col-6"><strong>Target:</strong> $${goal.target}</div>
+                                <div class="col-6"><strong>Saved:</strong> $${goal.saved}</div>
+                            </div>
+                            <div class="row mt-1">
+                                <div class="col-12"><strong>Remaining:</strong> $${goal.remaining}</div>
+                            </div>
+                            ${goal.message ? `<div class="alert alert-info mt-2 p-2 small">${goal.message}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            row.appendChild(goalCol);
+        });
+        
+        goalsContainer.appendChild(row);
+    }
 }
 
 /**
@@ -332,3 +381,6 @@ function getRandomColor() {
     
     return colors[Math.floor(Math.random() * colors.length)];
 }
+
+// Expose updateGoalProgressCircle to window for external use
+window.updateGoalProgressCircle = updateGoalProgressCircle;
