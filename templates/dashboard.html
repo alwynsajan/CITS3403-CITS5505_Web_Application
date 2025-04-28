@@ -32,7 +32,6 @@
         <div class="card h-100 goal-card">
             <div class="card-body">
                 <h2 class="card-title">Goal Progress</h2>
-                
                 <!-- Goal selector for multiple goals -->
                 {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
                 <div class="goal-selector mb-3">
@@ -43,9 +42,7 @@
                     </select>
                 </div>
                 {% endif %}
-                
                 <hr>
-                
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
                         <div class="progress-circle mx-auto mb-3">
@@ -104,7 +101,7 @@
                             <div class="budget-category needs">
                                 <div class="category-percent">50%</div>
                                 <h6>Needs</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.needs }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.fiftyPercent }}</p>
                                 <p class="text-muted small">Essential expenses</p>
                             </div>
                         </div>
@@ -112,7 +109,7 @@
                             <div class="budget-category wants">
                                 <div class="category-percent">30%</div>
                                 <h6>Wants</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.wants }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.thirtyPercent }}</p>
                                 <p class="text-muted small">Non-essential purchases</p>
                             </div>
                         </div>
@@ -120,7 +117,7 @@
                             <div class="budget-category savings">
                                 <div class="category-percent">20%</div>
                                 <h6>Savings</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.savings }}</p>
+                                <p class="category-amount">${{ data.budgetSuggestionData.twentyPercent }}</p>
                                 <p class="text-muted small">Future goals</p>
                             </div>
                         </div>
@@ -217,16 +214,52 @@
 
 {% block scripts %}
 <!-- Pass data to JavaScript -->
+{% if data.hasExpense %}
 <script>
-    // Make data available to JavaScript
-    {% if data.hasExpense %}
-    monthlyLabels = {{ monthly_data.labels|safe }};
-    monthlyExpenses = {{ monthly_data.expenses|safe }};
-    {% endif %}
-    
-    {% if data.hasGoal and data.goalData %}
-    goalData = {{ goals_json|safe }};
-    {% endif %}
+    // Declare variables with var for global scope
+    var monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var monthlyExpenses = {{ data.monthlySpendData.Expenses|tojson|default('[]', true) }};
+    window.monthlyLabels = monthlyLabels;
+    window.monthlyExpenses = monthlyExpenses;
 </script>
+{% endif %}
+{% if data.hasGoal %}
+<script>
+    var goalData = {{ data.goalData|tojson|default('[]', true) }};
+    window.goalData = goalData;
+</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // Listen for goal selector changes and update the progress card
+    document.addEventListener('DOMContentLoaded', function() {
+        var goalSelector = document.getElementById('goalSelector');
+        if (goalSelector && window.goalData) {
+            goalSelector.addEventListener('change', function() {
+                var idx = parseInt(this.value);
+                if (window.goalData && window.goalData[idx]) {
+                    // Update progress ring and details
+                    var goal = window.goalData[idx];
+                    document.querySelector('.progress-percentage').textContent = goal.progressPercentage + '%';
+                    document.querySelector('.progress-label').textContent = goal.goalName;
+                    document.getElementById('goalTarget').textContent = goal.target;
+                    document.getElementById('goalSaved').textContent = goal.saved;
+                    document.getElementById('goalRemaining').textContent = goal.remaining;
+                    if (goal.message) {
+                        document.getElementById('goalMessage').textContent = goal.message;
+                    } else if (document.getElementById('goalMessage')) {
+                        document.getElementById('goalMessage').textContent = '';
+                    }
+                    // Re-render the progress ring style
+                    if (typeof window.updateGoalProgressCircle === 'function') {
+                        var circle = document.querySelector('.progress-circle');
+                        if (circle) {
+                            window.updateGoalProgressCircle(circle);
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}
