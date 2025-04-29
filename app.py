@@ -15,7 +15,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Analyzer.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database with the app
-db.init_app(app)
+db.init_app(app) 
 
 # Creates tables if they don't exist
 with app.app_context():
@@ -45,24 +45,38 @@ def loginPage():
 
 @app.route('/login', methods=['POST'])
 def login():
+
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
         
     # Get the username and password from the login form
-    username = request.form['username']
-    password = request.form['password']
+    username = formData.get('username')
+    password = formData.get('password')
 
     # Check if the credentials are valid
     requestStatus = handler.checkCredentials(username, password)
     
     # If userID is returned, credentials are valid
-    if requestStatus["status"] == "Success":  
+    if requestStatus["status"] == "Success":
+
         session.permanent = True
         session['username'] = username
         session['userID'] = requestStatus["data"]["userID"]
-        return redirect(url_for('dashboard'))
-    else:
-       
-        return render_template('login.html',data = requestStatus)
 
+        # Return JSON response with redirect information
+        return jsonify({
+            "status": "Success",
+            "statusCode": 200,
+            "message": "Login successfully",
+            "redirect": url_for('dashboard')  # Tell client where to redirect
+        })
+    
+    return jsonify(requestStatus)
+       
 @app.route('/logout')
 def logout():
 
@@ -76,6 +90,16 @@ def logout():
         "message":None
         }
     return render_template('login.html',data = data)
+
+@app.route('/signup')
+def signUp():
+
+    if 'username' in session:
+        # Remove user data from the session.
+        session.pop('username', None)
+        session.pop('userID', None)
+
+    return render_template('signup.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -109,17 +133,30 @@ def addUser():
     data = {
         "username": formData.get('username'),
         "password": formData.get('password'),
+        "confirmPassword": formData.get("confirmPassword"),
         "firstName": formData.get('firstName'),
         "lastName": formData.get('lastName')
     }
 
+    if data["password"] != data["confirmPassword"]:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"Password confirmation failed"})
+
     requestStatus = handler.addNewUser(data)
 
     if requestStatus["status"] == "Success":
-        return render_template('login.html', data = requestStatus)
+        
+        # Return JSON response with redirect information
+        return jsonify({
+            "status": "Success",
+            "statusCode": 200,
+            "message": "User created successfully",
+            "redirect": url_for('login')  # Tell client where to redirect
+        })
     
-    return jsonify(requestStatus) #might have to render signUP  page again.
-
+    return jsonify(requestStatus)
+    
 @app.route('/dashboard/addGoal', methods=['POST'])
 def addGoal():
 
