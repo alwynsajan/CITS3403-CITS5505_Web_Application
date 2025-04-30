@@ -143,13 +143,14 @@ class serviceHandler():
 
                 if status["status"] == "Success":
                     status = self.DBClient.addNewExpense(userID, data["amount"], data["category"], date,startOfWeek)
-                    # return status fir testing
+                    # return status #for testing
 
-                    # if status["status"] == "Success":
-                    #     #Call functions to update the graph data for expense page.
-                    #     pass
-                    # else:
-                    #     return status
+                    if status["status"] == "Success":
+                        #Call functions to update the graph data for expense page.
+                        expensePageData = self.getExpensePageData(userID)
+                        return expensePageData
+                    else:
+                        return status
 
                 else:
                     return status
@@ -157,8 +158,20 @@ class serviceHandler():
                 return status
         else:
             return status
-            
         
+    def getUserFirstName(self,userID):
+
+        try:
+            status = self.DBClient.getUserFirstName(userID)
+            return status
+        
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Error : "+str(e)
+                }
+
     #Gets  the monthlyExpenseList from the db.Returns a list of expenses based on months. 
     def getMonthlyExpenses(self,userID):
 
@@ -196,7 +209,7 @@ class serviceHandler():
         if accBalanceStatus["status"] == "Success":
             if accBalanceStatus["data"]["accountBalance"] != 0:
                 accountBalance = accBalanceStatus["data"]["accountBalance"]
-                dashboardData["hasAccountBlance"] = True
+                dashboardData["hasAccountBalance"] = True
 
                 previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
                 if previousAccBalanceStatus["status"] == "Success":
@@ -205,10 +218,10 @@ class serviceHandler():
 
                 dashboardData["accountData"] = accountData
             else:
-                dashboardData["hasAccountBlance"] = False
+                dashboardData["hasAccountBalance"] = False
 
         else:
-            dashboardData["hasAccountBlance"] = False
+            dashboardData["hasAccountBalance"] = False
 
         #Fetch GoalData:
         getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
@@ -243,6 +256,37 @@ class serviceHandler():
             dashboardData["hasSalary"] = False
 
         return dashboardData
+    
+    def getExpensePageData(self,userID):
+
+        expenseData = {}
+        expenseAndSalary = {}
+
+        salaryDataListStatus = self.DBClient.getUserSalaries(userID)
+
+        if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
+            monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
+            expenseData["hasSalary"] = True
+            expenseAndSalary["salaryData"] = monthlySalaryList
+            expenseData["expenseAndSalary"] = expenseAndSalary
+        else:
+            expenseData["hasSalary"] = False
+
+        expenseDataListStatus = self.DBClient.getUserExpenses(userID)
+        if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
+            monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
+            expenseData["hasExpense"] = True
+            expenseAndSalary["expenseData"] = monthlyExpenseList
+            expenseData["expenseAndSalary"] = expenseAndSalary
+            expenseData["weeklyExpense"] = weeklyExpense
+            expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
+
+        else:
+            expenseData["hasExpense"] = False
+
+        return expenseData
+
+
 
                     
 
