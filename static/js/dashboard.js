@@ -1118,7 +1118,7 @@ function updateGoalProgressCircleSVG(percent) {
     bar.style.strokeDashoffset = offset;
 }
 
-// 页面初始加载时同步SVG环
+// SVG环
 window.addEventListener('DOMContentLoaded', function() {
     if (window.goalData && window.goalData.length > 0) {
         updateGoalProgressCircleSVG(parseFloat(window.goalData[0].progressPercentage));
