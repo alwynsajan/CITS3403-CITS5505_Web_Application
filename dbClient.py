@@ -77,6 +77,35 @@ class dbClient:
                 "statusCode": 401,
                 "message": "Incorrect password"
             }
+        
+    # Fetch first name of user
+    def getUserFirstName(self, userID):
+        """Retrieves the first name of the user"""
+        try:
+            user = User.query.get(userID)
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "User first name retrieved successfully",
+                    "data": {
+                        "userID": userID,
+                        "firstName": user.firstName
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID {userID} not found"
+                }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 500,
+                "message": "Error: " + str(e)
+            }
+
 
     # Fetch current account balance of user
     def getAccountBalance(self, userID):
@@ -177,7 +206,6 @@ class dbClient:
         """Fetches all goals for a given user ID"""
         try:
             goals = Goal.query.filter_by(userId=userID).all()
-            print(goals)
             goalsData = [
                 {
                     "goalID": goal.id,
@@ -227,17 +255,29 @@ class dbClient:
 
     # Get the most recent salary received by user
     def getLastSalary(self, userID):
-        """Fetches the most recent salary entry for a given user ID"""
+        """Fetches latest salary entry and total salary amount for the same month"""
         try:
             lastSalary = Salary.query.filter_by(userId=userID).order_by(Salary.salaryDate.desc()).first()
+            
             if lastSalary:
+                year = lastSalary.salaryDate.year
+                month = lastSalary.salaryDate.month
+
+                monthlyTotal = (
+                    Salary.query
+                    .filter_by(userId=userID)
+                    .filter(db.extract('year', Salary.salaryDate) == year)
+                    .filter(db.extract('month', Salary.salaryDate) == month)
+                    .with_entities(db.func.sum(Salary.amount))
+                    .scalar() or 0
+                )
+
                 return {
                     "status": "Success",
                     "statusCode": 200,
                     "data": {
-                        "salaryID": lastSalary.id,
-                        "amount": lastSalary.amount,
-                        "salaryDate": lastSalary.salaryDate.strftime("%Y-%m-%d")
+                        "amount": monthlyTotal,
+                        "salaryDate": lastSalary.salaryDate.strftime("%Y-%m-%d"),
                     }
                 }
             else:
@@ -247,11 +287,12 @@ class dbClient:
                     "data": None,
                     "message": "No salary records found"
                 }
+
         except Exception as e:
             return {
                 "status": "Failed",
                 "statusCode": 400,
-                "message": "Error : "+str(e)
+                "message": "Error: " + str(e)
             }
     # Update the previous account balance for a given user
     def updatePreviousBalance(self, userID, newBalance):

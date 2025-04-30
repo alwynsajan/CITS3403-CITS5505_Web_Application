@@ -158,8 +158,20 @@ class serviceHandler():
                 return status
         else:
             return status
-            
         
+    def getUserFirstName(self,userID):
+
+        try:
+            status = self.DBClient.getUserFirstName(userID)
+            return status
+        
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Error : "+str(e)
+                }
+
     #Gets  the monthlyExpenseList from the db.Returns a list of expenses based on months. 
     def getMonthlyExpenses(self,userID):
 

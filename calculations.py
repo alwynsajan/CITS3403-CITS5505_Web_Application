@@ -42,7 +42,7 @@ def getGoalProgress(goalData, accBalance):
         else:
             # Calculate progress percentage and amount remaining
             goalProgressData["progressPercentage"] = round((amountSaved / float(data["targetAmount"])) * 100, 2)
-            goalProgressData["remaining"] = data["targetAmount"] - amountSaved
+            goalProgressData["remaining"] = round(data["targetAmount"] - amountSaved,2)
             goalProgressData["saved"] = amountSaved
 
             # Suggest monthly savings needed to reach the goal
@@ -71,9 +71,9 @@ def calculate_50_30_20_Percentages(salary):
 
     salary = float(salary)
     return {
-        "fiftyPercent": round(salary * 0.50, 2),
-        "thirtyPercent": round(salary * 0.30, 2),
-        "twentyPercent": round(salary * 0.20, 2),
+        "needs": round(salary * 0.50, 2),
+        "wants": round(salary * 0.30, 2),
+        "savings": round(salary * 0.20, 2),
         "salary" : salary
     }
 

@@ -109,11 +109,18 @@ def dashboard():
         # Access the username and user role from the session
         username = session['username']
 
-        #Fetch required user data to update dashboard from DB!!
-        data = handler.getDashboardData(session["userID"])
+        status = handler.getUserFirstName(session["userID"])
 
-        # Render the dashboard template, passing the username and user role as variables
-        return render_template('dashboard.html', username=username, data=data)
+        if status["status"] == "Success":
+
+            #Fetch required user data to update dashboard from DB!!
+            data = handler.getDashboardData(session["userID"])
+
+            # Render the dashboard template, passing the username and user role as variables
+            return render_template('dashboard.html', username=status["data"]["firstName"], data=data)
+        
+        else:
+            return redirect(url_for('loginPage'))
     
     # If the user is not logged in, redirect to the login page
     return redirect(url_for('loginPage'))
@@ -209,12 +216,11 @@ def addSalary():
     data = {}
     # Get data from form.
     data["amount"] = formData.get('amount')
-    data["salaryDate"] = formData.get('salaryDate')
+    data["salaryDate"] = formData.get('date')
 
     requestStatus = handler.addNewSalary(username,userID,data)
 
-    # Render the dashboard template, passing the username and user role as variables
-    return render_template('dashboard.html', username=username, data=data)
+    return jsonify(requestStatus)
 
 @app.route('/expense/addExpense', methods=['POST'])
 def addExpense():
