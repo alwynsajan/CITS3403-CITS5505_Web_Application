@@ -3,6 +3,8 @@ from datetime import timedelta
 from serviceHandler import serviceHandler
 from models import db
 
+from flask_wtf import CSRFProtect
+
 app = Flask(__name__)
 # Secret key for encrypting session data
 app.secret_key = 'C1TS3403_C1T5S0S_Gr0UP_4!'
@@ -13,6 +15,10 @@ app.permanent_session_lifetime = timedelta(days=7)
 # Database config to use 'Analyser' as the database name
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Analyzer.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# CSRF protection
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 # Initialize the database with the app
 db.init_app(app) 

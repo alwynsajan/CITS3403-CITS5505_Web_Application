@@ -100,6 +100,8 @@ setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
 // Handle form submission
 document.getElementById('signupForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
     const formData = {
         firstName: document.getElementById('firstName').value,
@@ -114,6 +116,7 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken 
         },
         body: JSON.stringify(formData)
     })

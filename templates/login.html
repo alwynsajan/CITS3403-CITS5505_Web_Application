@@ -65,6 +65,8 @@
         // Handle form submission
       document.getElementById('loginForm').addEventListener('submit', function(e) {
           e.preventDefault();
+
+          const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
           
           const formData = {
               username: document.getElementById('username').value,
@@ -76,6 +78,7 @@
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
+                  'X-CSRFToken': csrfToken 
               },
               body: JSON.stringify(formData)
           })
