@@ -307,29 +307,72 @@ function initGoalProgress() {
 }
 
 /**
- * Update a specific goal progress circle with animation (SVG version)
+ * Update a specific goal progress circle with animation
  * @param {HTMLElement} circleElement - The progress circle element
  * @param {boolean} animate - Whether to animate the update
  */
 function updateGoalProgressCircle(circleElement, animate = false) {
     if (!circleElement) return;
-    // SVG 方案
-    const svg = circleElement.querySelector('svg.goal-progress-svg');
-    const bar = svg ? svg.querySelector('.progress-bar') : null;
-    const percentageElem = circleElement.querySelector('.progress-percentage');
-    if (!svg || !bar || !percentageElem) return;
-    let percentage = parseFloat(percentageElem.textContent);
-    if (isNaN(percentage)) percentage = 0;
-    // 圆参数
-    const r = 65;
-    const c = 2 * Math.PI * r;
-    // 进度
-    const progress = Math.max(0, Math.min(percentage, 100));
-    const offset = c * (1 - progress / 100);
-    bar.setAttribute('stroke-dasharray', c);
-    bar.setAttribute('stroke-dashoffset', offset);
-    bar.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim());
-    bar.setAttribute('style', 'transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: 75px 75px;');
+    
+    const inner = circleElement.querySelector('.progress-circle-inner');
+    if (!inner) return;
+    
+    const percentageElem = inner.querySelector('.progress-percentage');
+    if (!percentageElem) return;
+    
+    const percentage = parseFloat(percentageElem.textContent);
+    if (isNaN(percentage)) return;
+    
+    console.log('Updating goal progress circle with percentage:', percentage);
+    
+    // Reset all borders
+    inner.style.borderTop = '14px solid #eee';
+    inner.style.borderRight = '14px solid #eee';
+    inner.style.borderBottom = '14px solid #eee';
+    inner.style.borderLeft = '14px solid #eee';
+    
+    // If percentage is 0, keep all borders gray
+    if (percentage === 0) {
+        return;
+    }
+    
+    // Define color based on progress
+    let color;
+    if (percentage <= 25) {
+        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-2').trim(); // Bright Teal
+    } else if (percentage <= 75) {
+        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-3').trim(); // Bright Blue
+    } else {
+        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-1').trim(); // Bright Purple
+    }
+    
+    if (animate) {
+        // Apply styles with animation delays
+        setTimeout(() => {
+            inner.style.borderTop = `14px solid ${color}`;
+            if (percentage > 25) {
+                setTimeout(() => {
+                    inner.style.borderRight = `14px solid ${color}`;
+                    if (percentage > 50) {
+                        setTimeout(() => {
+                            inner.style.borderBottom = `14px solid ${color}`;
+                            if (percentage > 75) {
+                                setTimeout(() => {
+                                    inner.style.borderLeft = `14px solid ${color}`;
+                                }, 150);
+                            }
+                        }, 150);
+                    }
+                }, 150);
+            }
+        }, 150);
+    } else {
+        // Apply styles without animation
+        inner.style.borderTop = `14px solid ${color}`;
+        if (percentage > 25) inner.style.borderRight = `14px solid ${color}`;
+        if (percentage > 50) inner.style.borderBottom = `14px solid ${color}`;
+        if (percentage > 75) inner.style.borderLeft = `14px solid ${color}`;
+    }
 }
 
 /**
@@ -665,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const salaryDate = document.getElementById('salaryDate').value;
 
             try {
-                const response = await fetch('/dashboard/addSalary', {
+                const response = await fetch('/add_salary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1041,6 +1084,15 @@ document.getElementById('exportCSV')?.addEventListener('click', function() {
 document.getElementById('exportPDF')?.addEventListener('click', function() {
     // PDF export logic
 });
+
+// Theme switch
+const themeToggle = document.querySelector('.theme-toggle');
+if (themeToggle) {
+    themeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+    });
+}
 
 // Responsive handling
 function handleResponsive() {
