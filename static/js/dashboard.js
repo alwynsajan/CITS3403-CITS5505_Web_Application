@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const salaryDate = document.getElementById('salaryDate').value;
 
             try {
-                const response = await fetch('/add_salary', {
+                const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

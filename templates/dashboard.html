@@ -18,17 +18,17 @@
                 </div>
                 <div style="margin-bottom: 1.2rem;"></div>
                 {% if data.hasAccountBalance %}
-                    <div class="text-center">
+                    <div class="text-center balanceCard">
                         <div class="display-5 mb-2" style="color:var(--primary-color);font-weight:700;">
                             <span id="balanceAmount">${{ data.accountData.balance }}</span>
                         </div>
-                        <div class="d-flex justify-content-center align-items-center mb-2">
+                        <div>
                             <span class="badge bg-{{ 'success' if data.accountData.trendType == 'up' else 'danger' }} me-2" style="color:#fff;">
-                                <i class="fas fa-{{ 'arrow-up' if data.accountData.trendType == 'up' else 'arrow-down' }}"></i>
-                                {{ data.accountData.percentChange }}%
+                              <i class="fas fa-{{ 'arrow-up' if data.accountData.trendType == 'up' else 'arrow-down' }}"></i>
+                              {{ data.accountData.percentChange }}%
                             </span>
-                            <span class="text-muted small" style="color:#b0b4ba !important;">from last month</span>
-                        </div>
+                            <div class="text-muted small mt-1" style="color:#b0b4ba !important;">from last Salary</div>
+                          </div>
                         <button class="btn btn-primary btn-sm add-salary-btn">
                             <i class="fas fa-plus-circle me-2"></i>Add Salary
                         </button>
@@ -78,7 +78,7 @@
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
                         <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">{{ data.goalData[0].goalName }}</h3>
-                        <div class="progress-circle mx-auto mb-2" style="width: 120px; height: 120px;">
+                        <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
                             <div class="progress-circle-inner">
                                 <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
                                     <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
@@ -100,9 +100,9 @@
                             <i class="fas fa-bullseye fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Set a goal to track your progress</p>
-                        <button id="newGoalBtn" class="btn btn-primary btn-sm">
+                        <!-- <button id="newGoalBtn" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle me-2"></i>Set a New Goal
-                        </button>
+                        </button> -->
                     </div>
                 {% endif %}
             </div>
@@ -165,9 +165,9 @@
                             <i class="fas fa-chart-pie fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Add your salary to get budget suggestions</p>
-                        <button class="btn btn-primary btn-sm add-salary-btn">
+                        <!-- <button class="btn btn-primary btn-sm add-salary-btn">
                             <i class="fas fa-plus-circle me-2"></i>Add Salary
-                        </button>
+                        </button> -->
                     </div>
                 {% endif %}
             </div>
@@ -293,10 +293,11 @@
 <script>
     // Declare global variables
     window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    window.monthlyExpenses = {{ data.monthlySpendData|tojson|safe }};
-    window.accountData = {{ data.accountData|tojson|safe }};
-    window.budgetSuggestionData = {{ data.budgetSuggestionData|tojson|safe }};
-    window.goalData = {{ data.goalData|tojson|safe }};
+    window.monthlyExpenses = {{ data.monthlySpendData | default({}) | tojson | safe }};
+    window.accountData = {{ data.accountData | default({}) | tojson | safe }};
+    window.budgetSuggestionData = {{ data.budgetSuggestionData | default({}) | tojson | safe }};
+    window.goalData = {{ data.goalData | default([]) | tojson | safe }};
+
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
