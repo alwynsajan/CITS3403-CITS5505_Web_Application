@@ -1,173 +1,221 @@
 {% extends "base.html" %}
 
+{% block head %}
+<!-- Add countUp.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.min.js"></script>
+{% endblock %}
+
 {% block content %}
-<!-- Account Summary Row -->
-<div class="row mb-4">
+<!-- First Row: Budget Suggestions, Account Balance, Goal Progress -->
+<div class="row mb-3">
     <!-- Account Balance Card -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="card-title">Account Balance</h2>
-                <hr>
-                
+        <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.1s;">
+            <div class="card-body p-3" style="position: relative;">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-wallet fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Balance</h5>
+                </div>
+                <div style="margin-bottom: 1.2rem;"></div>
                 {% if data.hasAccountBalance %}
-                    <div class="balance-amount text-center">
-                        <h1 class="display-4">${{ data.accountData.balance }}</h1>
-                        <span class="badge {% if data.accountData.trendType == 'up' %}bg-success{% else %}bg-danger{% endif %}">
-                            {% if data.accountData.trendType == 'up' %}+{% else %}-{% endif %}{{ data.accountData.percentChange }}%
-                        </span>
+                    <div class="text-center">
+                        <div class="display-5 mb-2" style="color:var(--primary-color);font-weight:700;">
+                            <span id="balanceAmount">${{ data.accountData.balance }}</span>
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center mb-2">
+                            <span class="badge bg-{{ 'success' if data.accountData.trendType == 'up' else 'danger' }} me-2" style="color:#fff;">
+                                <i class="fas fa-{{ 'arrow-up' if data.accountData.trendType == 'up' else 'arrow-down' }}"></i>
+                                {{ data.accountData.percentChange }}%
+                            </span>
+                            <span class="text-muted small" style="color:#b0b4ba !important;">from last month</span>
+                        </div>
+                        <button class="btn btn-primary btn-sm add-salary-btn">
+                            <i class="fas fa-plus-circle me-2"></i>Add Salary
+                        </button>
                     </div>
                 {% else %}
-                    <div class="balance-amount text-center">
-                        <h1 class="display-4">$0.00</h1>
-                        <p class="text-muted">Add income to see your balance</p>
+                    <div class="text-center py-3 empty-state">
+                        <div class="empty-state-icon mb-2">
+                            <i class="fas fa-wallet fa-2x text-muted"></i>
+                        </div>
+                        <p class="text-muted mb-2">Add your salary to track your balance</p>
+                        <button class="btn btn-primary btn-sm add-salary-btn">
+                            <i class="fas fa-plus-circle me-2"></i>Add Salary
+                        </button>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
-
-    <!-- Goal Progress Card with Goal Selector -->
+    <!-- Goal Progress Card -->
     <div class="col-md-4">
-        <div class="card h-100 goal-card">
-            <div class="card-body">
-                <h2 class="card-title">Goal Progress</h2>
+        <div class="card h-100 goal-card" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.2s;">
+            <div class="card-body p-3" style="position: relative;">
+                <div style="position: absolute; top: 18px; right: 24px; z-index: 2;">
+                    <button id="newGoalBtn" class="btn btn-primary btn-circle" title="Set a New Goal" style="width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-bullseye fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
+                </div>
+                <div style="margin-bottom: 1.2rem;"></div>
                 <!-- Goal selector for multiple goals -->
                 {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
-                <div class="goal-selector mb-3">
-                    <select id="goalSelector" class="form-select">
-                        {% for goal in data.goalData %}
-                            <option value="{{ loop.index0 }}">{{ goal.goalName }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="goal-selector mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="goal-counter">1/{{ data.goalData|length }}</span>
+                        <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
                 {% endif %}
-                <hr>
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
-                        <div class="progress-circle mx-auto mb-3">
+                        <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">{{ data.goalData[0].goalName }}</h3>
+                        <div class="progress-circle mx-auto mb-2" style="width: 120px; height: 120px;">
                             <div class="progress-circle-inner">
-                                <span class="progress-percentage">{{ data.goalData[0].progressPercentage }}%</span>
-                                <span class="progress-label">{{ data.goalData[0].goalName }}</span>
+                                <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
+                                    <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
+                                </div>
                             </div>
                         </div>
                         <div id="goalDetails" class="goal-details">
-                            <p><strong>Target:</strong> $<span id="goalTarget">{{ data.goalData[0].target }}</span></p>
-                            <p><strong>Saved:</strong> $<span id="goalSaved">{{ data.goalData[0].saved }}</span></p>
-                            <p><strong>Remaining:</strong> $<span id="goalRemaining">{{ data.goalData[0].remaining }}</span></p>
+                            <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">{{ data.goalData[0].target }}</span></p>
+                            <p class="mb-1"><strong>Saved:</strong> $<span id="goalSaved">{{ data.goalData[0].saved }}</span></p>
+                            <p class="mb-1"><strong>Remaining:</strong> $<span id="goalRemaining">{{ data.goalData[0].remaining }}</span></p>
                             {% if data.goalData[0].message %}
-                                <p><small id="goalMessage">{{ data.goalData[0].message }}</small></p>
+                                <p class="mb-0"><small id="goalMessage">{{ data.goalData[0].message }}</small></p>
                             {% endif %}
                         </div>
                     </div>
                 {% else %}
-                    <div class="text-center py-5">
-                        <p class="text-muted">Set a goal to track your progress</p>
+                    <div class="text-center py-3 empty-state">
+                        <div class="empty-state-icon mb-2">
+                            <i class="fas fa-bullseye fa-2x text-muted"></i>
+                        </div>
+                        <p class="text-muted mb-2">Set a goal to track your progress</p>
+                        <button id="newGoalBtn" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus-circle me-2"></i>Set a New Goal
+                        </button>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
-
-    <!-- New Goal Card -->
+    <!-- Budget Suggestions Card -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="card-title">Financial Goals</h2>
-                <hr>
-                
-                <div class="text-center py-3">
-                    <p>Setting clear financial goals helps you stay motivated and track your progress.</p>
-                    <button id="newGoalBtn" class="btn btn-primary mt-3">Set a New Goal</button>
+        <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.3s;">
+            <div class="card-body p-3" style="position: relative;">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-chart-pie fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Budget</h5>
                 </div>
+                <div style="margin-bottom: 1.2rem;"></div>
+                {% if data.hasSalary %}
+                    <div class="budget-suggestions">
+                        <div class="budget-category needs mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0" style="color:var(--secondary-color);font-weight:600;">Needs (50%)</h6>
+                                    <small class="text-muted" style="color:#b0b4ba !important;">Essential expenses</small>
+                                </div>
+                                <div class="category-amount" id="needsAmount">${{ data.budgetSuggestionData.needs }}</div>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <div class="budget-category wants mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0" style="color:var(--secondary-color);font-weight:600;">Wants (30%)</h6>
+                                    <small class="text-muted" style="color:#b0b4ba !important;">Discretionary spending</small>
+                                </div>
+                                <div class="category-amount" id="wantsAmount">${{ data.budgetSuggestionData.wants }}</div>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 30%"></div>
+                            </div>
+                        </div>
+                        <div class="budget-category savings">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0" style="color:var(--secondary-color);font-weight:600;">Savings (20%)</h6>
+                                    <small class="text-muted" style="color:#b0b4ba !important;">Future goals</small>
+                                </div>
+                                <div class="category-amount" id="savingsAmount">${{ data.budgetSuggestionData.savings }}</div>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 20%"></div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted" id="salaryInfo">Based on monthly salary: ${{ data.budgetSuggestionData.salary }}</small>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3 empty-state">
+                        <div class="empty-state-icon mb-2">
+                            <i class="fas fa-chart-pie fa-2x text-muted"></i>
+                        </div>
+                        <p class="text-muted mb-2">Add your salary to get budget suggestions</p>
+                        <button class="btn btn-primary btn-sm add-salary-btn">
+                            <i class="fas fa-plus-circle me-2"></i>Add Salary
+                        </button>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Budget and Spending Row -->
-<div class="row mb-4">
-    <!-- Budget Suggestions Card -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="card-title">Budget Suggestions</h2>
-                <hr>
-                
-                {% if data.hasSalary %}
-                    <h5 class="text-center mb-4">50/30/20 Rule</h5>
-                    <div class="row text-center">
-                        <div class="col-md-4">
-                            <div class="budget-category needs">
-                                <div class="category-percent">50%</div>
-                                <h6>Needs</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.fiftyPercent }}</p>
-                                <p class="text-muted small">Essential expenses</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="budget-category wants">
-                                <div class="category-percent">30%</div>
-                                <h6>Wants</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.thirtyPercent }}</p>
-                                <p class="text-muted small">Non-essential purchases</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="budget-category savings">
-                                <div class="category-percent">20%</div>
-                                <h6>Savings</h6>
-                                <p class="category-amount">${{ data.budgetSuggestionData.twentyPercent }}</p>
-                                <p class="text-muted small">Future goals</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <p class="small text-muted">Based on monthly salary: ${{ data.budgetSuggestionData.salary }}</p>
-                        <p class="small text-muted">Last salary: {{ data.budgetSuggestionData.salaryDate }}</p>
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <p class="text-muted">Add your income to get budget suggestions</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
+<!-- Second Row: Monthly Spending (2/3), Export (1/3) -->
+<div class="row">
     <!-- Monthly Spending Card -->
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="card-title">Monthly Spending</h2>
-                <hr>
-                
+    <div class="col-md-8">
+        <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.4s;">
+            <div class="card-body p-3" style="position: relative;">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-chart-line fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Spending</h5>
+                </div>
+                <div style="margin-bottom: 1.2rem;"></div>
                 {% if data.hasExpense %}
-                    <div class="chart-container" style="height: 250px; position: relative;">
+                    <div class="chart-container" style="position: relative; height: 250px;">
                         <canvas id="monthlySpendingChart"></canvas>
                     </div>
                 {% else %}
-                    <div class="text-center py-5">
-                        <p class="text-muted">Track your expenses to see spending trends</p>
+                    <div class="text-center py-3 empty-state">
+                        <div class="empty-state-icon mb-2">
+                            <i class="fas fa-chart-line fa-2x text-muted"></i>
+                        </div>
+                        <p class="text-muted mb-0">No expense data available yet</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
-
     <!-- Export Card -->
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h2 class="card-title">Export</h2>
-                <hr>
-                
-                <div class="d-grid gap-3">
-                    <button class="btn btn-outline-primary" id="exportCSV">
-                        <i class="fas fa-file-csv me-2"></i> Export to CSV
+        <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.5s;">
+            <div class="card-body p-2" style="position: relative;">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-file-export fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Export</h5>
+                </div>
+                <div style="margin-bottom: 1.2rem;"></div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" id="exportCSV">
+                        <i class="fas fa-file-csv"></i>
                     </button>
-                    <button class="btn btn-outline-primary" id="exportPDF">
-                        <i class="fas fa-file-pdf me-2"></i> Export to PDF
+                    <button class="btn btn-outline-primary btn-sm" id="exportPDF">
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -210,55 +258,62 @@
         </div>
     </div>
 </div>
+
+<!-- Salary Modal -->
+<div class="modal fade" id="salaryModal" tabindex="-1" aria-labelledby="salaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="salaryModalLabel">Add Amount</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="salaryForm">
+                    <div class="mb-3">
+                        <label for="salaryAmount" class="form-label">Salary Amount ($)</label>
+                        <input type="number" class="form-control" id="salaryAmount" name="salaryAmount" min="1" placeholder="5000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="salaryDate" class="form-label">Salary Date</label>
+                        <input type="date" class="form-control" id="salaryDate" name="salaryDate" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveSalaryBtn">Save Salary</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <!-- Pass data to JavaScript -->
-{% if data.hasExpense %}
 <script>
-    // Declare variables with var for global scope
-    var monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    var monthlyExpenses = {{ data.monthlySpendData.Expenses|tojson|default('[]', true) }};
-    window.monthlyLabels = monthlyLabels;
-    window.monthlyExpenses = monthlyExpenses;
+    // Declare global variables
+    window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    window.monthlyExpenses = {{ data.monthlySpendData|tojson|safe }};
+    window.accountData = {{ data.accountData|tojson|safe }};
+    window.budgetSuggestionData = {{ data.budgetSuggestionData|tojson|safe }};
+    window.goalData = {{ data.goalData|tojson|safe }};
 </script>
-{% endif %}
-{% if data.hasGoal %}
-<script>
-    var goalData = {{ data.goalData|tojson|default('[]', true) }};
-    window.goalData = goalData;
-</script>
-{% endif %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
-    // Listen for goal selector changes and update the progress card
+    // Animation for card entrance
     document.addEventListener('DOMContentLoaded', function() {
-        var goalSelector = document.getElementById('goalSelector');
-        if (goalSelector && window.goalData) {
-            goalSelector.addEventListener('change', function() {
-                var idx = parseInt(this.value);
-                if (window.goalData && window.goalData[idx]) {
-                    // Update progress ring and details
-                    var goal = window.goalData[idx];
-                    document.querySelector('.progress-percentage').textContent = goal.progressPercentage + '%';
-                    document.querySelector('.progress-label').textContent = goal.goalName;
-                    document.getElementById('goalTarget').textContent = goal.target;
-                    document.getElementById('goalSaved').textContent = goal.saved;
-                    document.getElementById('goalRemaining').textContent = goal.remaining;
-                    if (goal.message) {
-                        document.getElementById('goalMessage').textContent = goal.message;
-                    } else if (document.getElementById('goalMessage')) {
-                        document.getElementById('goalMessage').textContent = '';
-                    }
-                    // Re-render the progress ring style
-                    if (typeof window.updateGoalProgressCircle === 'function') {
-                        var circle = document.querySelector('.progress-circle');
-                        if (circle) {
-                            window.updateGoalProgressCircle(circle);
-                        }
-                    }
-                }
+        // Animate cards on load
+        setTimeout(function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
             });
+        }, 100);
+        
+        // Initialize goals if data exists
+        if (window.goalData && window.goalData.length > 0) {
+            updateGoalsUI(window.goalData);
         }
     });
 </script>
