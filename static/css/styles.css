@@ -160,6 +160,13 @@ h1, h2, h3, h4, h5, h6, p {
     transform: translateY(-2px);
 }
 
+.balanceCard{
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10%;
+}
+
 /* ===== Progress Bar - Enhanced ===== */
 .progress {
     height: 10px;
@@ -337,7 +344,7 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .progress-percentage {
-    font-size: 2.4rem;
+    font-size: 1.8rem;
     font-weight: bold;
     color: var(--primary-color);
     transition: all var(--transition-speed);
