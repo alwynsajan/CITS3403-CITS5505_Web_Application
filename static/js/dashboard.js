@@ -439,6 +439,13 @@ async function saveNewGoal(event) {
         // Show success message
         showAlert('Goal added successfully!', 'success');
         
+        // 检查目标区块是否存在，若不存在说明是首次添加目标，需要刷新页面
+        const goalProgress = document.querySelector('.goal-progress');
+        if (!goalProgress) {
+            window.location.reload();
+            return;
+        }
+        
     } catch (error) {
         console.error('Error saving goal:', error);
         showAlert(error.message || 'An error occurred while saving the goal. Please try again.', 'danger');
@@ -681,21 +688,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     // Update the account balance display
                     const balanceDisplay = document.getElementById('balanceAmount');
-                    if (balanceDisplay) {
-                        // Use CountUp animation to refresh balance
-                        const newBalance = result.new_balance || 0;
-                        new CountUp('balanceAmount', newBalance, {
-                            prefix: '$',
-                            duration: 2,
-                            decimalPlaces: 2
-                        }).start();
+                    // 检查 balanceDisplay 是否存在，若不存在说明是首次添加工资，需要刷新页面
+                    if (!balanceDisplay) {
+                        window.location.reload();
+                        return;
                     }
+                    // Use CountUp animation to refresh balance
+                    const newBalance = result.new_balance || 0;
+                    new CountUp('balanceAmount', newBalance, {
+                        prefix: '$',
+                        duration: 2,
+                        decimalPlaces: 2
+                    }).start();
                     // Update budget suggestions (use backend data)
                     if (result.budgetSuggestions) {
                         const needsAmount = document.getElementById('needsAmount');
                         const wantsAmount = document.getElementById('wantsAmount');
                         const savingsAmount = document.getElementById('savingsAmount');
                         const salaryInfo = document.getElementById('salaryInfo');
+                        // 检查 budget 区块是否存在，若不存在说明是首次添加工资，需要刷新页面
+                        if (!needsAmount || !wantsAmount || !savingsAmount) {
+                            window.location.reload();
+                            return;
+                        }
                         if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
                         if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
                         if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
