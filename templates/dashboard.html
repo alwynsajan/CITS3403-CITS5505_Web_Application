@@ -71,10 +71,12 @@
                             </button>
                             {% endif %}
                             <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
-                                <div class="progress-circle-inner">
-                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
-                                        <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
-                                    </div>
+                                <svg class="progress-ring" width="150" height="150">
+                                    <circle class="progress-ring-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                    <circle class="progress-ring-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                                </svg>
+                                <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;">
+                                    <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
                                 </div>
                             </div>
                             {% if data.goalData|length > 1 %}
@@ -285,11 +287,10 @@
 <script>
     // Declare global variables
     window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    window.monthlyExpenses = {{ data.monthlySpendData | default({}) | tojson | safe }};
+    window.monthlyExpenses = {{ data.monthlySpendData | default([]) | tojson | safe }};
     window.accountData = {{ data.accountData | default({}) | tojson | safe }};
     window.budgetSuggestionData = {{ data.budgetSuggestionData | default({}) | tojson | safe }};
     window.goalData = {{ data.goalData | default([]) | tojson | safe }};
-
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
