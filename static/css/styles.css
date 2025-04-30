@@ -160,6 +160,13 @@ h1, h2, h3, h4, h5, h6, p {
     transform: translateY(-2px);
 }
 
+.balanceCard{
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10%;
+}
+
 /* ===== Progress Bar - Enhanced ===== */
 .progress {
     height: 10px;
@@ -337,7 +344,7 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .progress-percentage {
-    font-size: 2.4rem;
+    font-size: 1.8rem;
     font-weight: bold;
     color: var(--primary-color);
     transition: all var(--transition-speed);
@@ -905,4 +912,20 @@ body.dark-theme .custom-theme-switch .icon.sun {
 }
 body.dark-theme .custom-theme-switch .icon.moon {
   opacity: 0;
+}
+
+/* SVG */
+.goal-progress-svg {
+  display: block;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.goal-progress-svg .progress-bg {
+  stroke: #eee;
+}
+.goal-progress-svg .progress-bar {
+  stroke: var(--primary-color);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);
 }

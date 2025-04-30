@@ -307,72 +307,29 @@ function initGoalProgress() {
 }
 
 /**
- * Update a specific goal progress circle with animation
+ * Update a specific goal progress circle with animation (SVG version)
  * @param {HTMLElement} circleElement - The progress circle element
  * @param {boolean} animate - Whether to animate the update
  */
 function updateGoalProgressCircle(circleElement, animate = false) {
     if (!circleElement) return;
-    
-    const inner = circleElement.querySelector('.progress-circle-inner');
-    if (!inner) return;
-    
-    const percentageElem = inner.querySelector('.progress-percentage');
-    if (!percentageElem) return;
-    
-    const percentage = parseFloat(percentageElem.textContent);
-    if (isNaN(percentage)) return;
-    
-    console.log('Updating goal progress circle with percentage:', percentage);
-    
-    // Reset all borders
-    inner.style.borderTop = '14px solid #eee';
-    inner.style.borderRight = '14px solid #eee';
-    inner.style.borderBottom = '14px solid #eee';
-    inner.style.borderLeft = '14px solid #eee';
-    
-    // If percentage is 0, keep all borders gray
-    if (percentage === 0) {
-        return;
-    }
-    
-    // Define color based on progress
-    let color;
-    if (percentage <= 25) {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-2').trim(); // Bright Teal
-    } else if (percentage <= 75) {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-3').trim(); // Bright Blue
-    } else {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-1').trim(); // Bright Purple
-    }
-    
-    if (animate) {
-        // Apply styles with animation delays
-        setTimeout(() => {
-            inner.style.borderTop = `14px solid ${color}`;
-            if (percentage > 25) {
-                setTimeout(() => {
-                    inner.style.borderRight = `14px solid ${color}`;
-                    if (percentage > 50) {
-                        setTimeout(() => {
-                            inner.style.borderBottom = `14px solid ${color}`;
-                            if (percentage > 75) {
-                                setTimeout(() => {
-                                    inner.style.borderLeft = `14px solid ${color}`;
-                                }, 150);
-                            }
-                        }, 150);
-                    }
-                }, 150);
-            }
-        }, 150);
-    } else {
-        // Apply styles without animation
-        inner.style.borderTop = `14px solid ${color}`;
-        if (percentage > 25) inner.style.borderRight = `14px solid ${color}`;
-        if (percentage > 50) inner.style.borderBottom = `14px solid ${color}`;
-        if (percentage > 75) inner.style.borderLeft = `14px solid ${color}`;
-    }
+    // SVG version
+    const svg = circleElement.querySelector('svg.goal-progress-svg');
+    const bar = svg ? svg.querySelector('.progress-bar') : null;
+    const percentageElem = circleElement.querySelector('.progress-percentage');
+    if (!svg || !bar || !percentageElem) return;
+    let percentage = parseFloat(percentageElem.textContent);
+    if (isNaN(percentage)) percentage = 0;
+    // Circle parameters
+    const r = 65;
+    const c = 2 * Math.PI * r;
+    // Progress
+    const progress = Math.max(0, Math.min(percentage, 100));
+    const offset = c * (1 - progress / 100);
+    bar.setAttribute('stroke-dasharray', c);
+    bar.setAttribute('stroke-dashoffset', offset);
+    bar.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim());
+    bar.setAttribute('style', 'transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: 75px 75px;');
 }
 
 /**
@@ -467,20 +424,50 @@ async function saveNewGoal(event) {
             throw new Error(data.message || 'Failed to save goal');
         }
         
-        // Update UI
-        updateGoalsUI(data.data);
-        
-        // Close modal
+        // Close modal first
         const modal = bootstrap.Modal.getInstance(document.getElementById('goalModal'));
         if (modal) {
             modal.hide();
         }
-        
-        // Reset form
-        form.reset();
-        
-        // Show success message
-        showAlert('Goal added successfully!', 'success');
+        // Then update UI
+        let goalProgress = document.querySelector('.goal-progress');
+        if (!goalProgress) {
+            // Insert goal progress HTML into .goal-card
+            const goalCard = document.querySelector('.goal-card .card-body');
+            if (goalCard) {
+                const firstGoal = data.data[0];
+                goalCard.innerHTML = `
+                    <div class="goal-progress text-center">
+                        <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${firstGoal.goalName}</h3>
+                        <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
+                            <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
+                                <svg class="goal-progress-svg" width="150" height="150">
+                                    <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                    <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                                </svg>
+                                <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
+                                        <span id="goalProgress">${firstGoal.progressPercentage}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="goalDetails" class="goal-details">
+                            <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">${firstGoal.target}</span></p>
+                            <p class="mb-1"><strong>Saved:</strong> $<span id="goalSaved">${firstGoal.saved}</span></p>
+                            <p class="mb-1"><strong>Remaining:</strong> $<span id="goalRemaining">${firstGoal.remaining}</span></p>
+                            ${firstGoal.message ? `<p class="mb-0"><small id="goalMessage">${firstGoal.message}</small></p>` : ''}
+                        </div>
+                    </div>
+                `;
+                // After inserting, update UI and progress circle
+                updateGoalsUI(data.data);
+                animateCards();
+            }
+            return;
+        }
+        updateGoalsUI(data.data);
+        animateCards();
         
     } catch (error) {
         console.error('Error saving goal:', error);
@@ -708,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const salaryDate = document.getElementById('salaryDate').value;
 
             try {
-                const response = await fetch('/add_salary', {
+                const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -724,21 +711,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     // Update the account balance display
                     const balanceDisplay = document.getElementById('balanceAmount');
-                    if (balanceDisplay) {
-                        // Use CountUp animation to refresh balance
-                        const newBalance = result.new_balance || 0;
-                        new CountUp('balanceAmount', newBalance, {
-                            prefix: '$',
-                            duration: 2,
-                            decimalPlaces: 2
-                        }).start();
+                    // Check if balance display exists. If not, this is the first salary addition, reload the page.
+                    if (!balanceDisplay) {
+                        window.location.reload();
+                        return;
                     }
+                    // Use CountUp animation to refresh balance
+                    const newBalance = result.new_balance || 0;
+                    new CountUp('balanceAmount', newBalance, {
+                        prefix: '$',
+                        duration: 2,
+                        decimalPlaces: 2
+                    }).start();
                     // Update budget suggestions (use backend data)
                     if (result.budgetSuggestions) {
                         const needsAmount = document.getElementById('needsAmount');
                         const wantsAmount = document.getElementById('wantsAmount');
                         const savingsAmount = document.getElementById('savingsAmount');
                         const salaryInfo = document.getElementById('salaryInfo');
+                        // Check if budget section exists. If not, this is the first salary addition, reload the page.
+                        if (!needsAmount || !wantsAmount || !savingsAmount) {
+                            window.location.reload();
+                            return;
+                        }
                         if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
                         if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
                         if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
@@ -1084,15 +1079,6 @@ document.getElementById('exportCSV')?.addEventListener('click', function() {
 document.getElementById('exportPDF')?.addEventListener('click', function() {
     // PDF export logic
 });
-
-// Theme switch
-const themeToggle = document.querySelector('.theme-toggle');
-if (themeToggle) {
-    themeToggle.addEventListener('click', function() {
-        document.body.classList.toggle('dark-theme');
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-    });
-}
 
 // Responsive handling
 function handleResponsive() {
