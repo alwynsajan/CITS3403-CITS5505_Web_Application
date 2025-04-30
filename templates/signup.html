@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WalletWhiz | Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/signup.css">
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-left">
+            <h2>Join WalletWhiz Today</h2>
+            <p>Start managing your finances smarter with our powerful budgeting tools and analytics.</p>
+        </div>
+        
+        <div class="signup-right">
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <h1>WalletWhiz</h1>
+            </div>
+            
+            <form id="signupForm">
+                <div class="name-fields">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Last name" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="username">Email</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                
+                <div class="password-fields">
+                    <div class="form-group password-field">
+                        <label for="password">Password</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Create password" required>
+                            <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group password-field">
+                        <label for="confirmPassword">Re-enter Password</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" placeholder="Confirm password" required>
+                            <i class="fas fa-eye toggle-password" id="toggleConfirmPassword"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- <div class="terms">
+                    <input type="checkbox" id="agree-terms" name="agreeTerms" required>
+                    <label for="agree-terms">I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a></label>
+                </div> -->
+                
+                <button type="submit" class="btn">Create Account</button>
+                
+                <div class="login-link">
+                    Already have an account? <a href="/login">Sign in</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+function setupPasswordToggle(passwordId, toggleId) {
+    const toggle = document.getElementById(toggleId);
+    toggle.addEventListener('click', function() {
+        const password = document.getElementById(passwordId);
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.classList.toggle('fa-eye-slash');
+        this.classList.toggle('fa-eye');
+    });
+}
+
+setupPasswordToggle('password', 'togglePassword');
+setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
+
+// Handle form submission
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        confirmPassword: document.getElementById('confirmPassword').value,
+        // agreeTerms: document.getElementById('agree-terms').checked
+    };
+
+    fetch('/addUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw err; });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        alert(data.status + ": " + data.message);
+        if (data.status === "Success" && data.redirect) {
+            window.location.href = data.redirect;  // Client-side redirect
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const message = error.message || 'An error occurred while processing your request';
+        alert("Error: " + message);
+    });
+});
+    </script>
+</body>
+</html>
