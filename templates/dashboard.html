@@ -61,29 +61,28 @@
                     <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
                 </div>
                 <div style="margin-bottom: 1.2rem;"></div>
-                <!-- Goal selector for multiple goals -->
-                {% if data.hasGoal and data.goalData and data.goalData|length > 1 %}
-                <div class="goal-selector mb-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span class="goal-counter">1/{{ data.goalData|length }}</span>
-                        <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-                {% endif %}
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
                         <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">{{ data.goalData[0].goalName }}</h3>
-                        <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
-                            <div class="progress-circle-inner">
-                                <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
-                                    <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
+
+                      <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
+                            {% if data.goalData|length > 1 %}
+                            <button class="btn btn-link goal-nav-btn" id="prevGoalBtn" style="font-size:1.5rem;">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            {% endif %}
+                            <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
+                                <div class="progress-circle-inner">
+                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
+                                        <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
+                                    </div>
                                 </div>
                             </div>
+                            {% if data.goalData|length > 1 %}
+                            <button class="btn btn-link goal-nav-btn" id="nextGoalBtn" style="font-size:1.5rem;">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            {% endif %}
                         </div>
                         <div id="goalDetails" class="goal-details">
                             <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">{{ data.goalData[0].target }}</span></p>
@@ -100,9 +99,11 @@
                             <i class="fas fa-bullseye fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Set a goal to track your progress</p>
+
                         <!-- <button id="newGoalBtn" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle me-2"></i>Set a New Goal
                         </button> -->
+
                     </div>
                 {% endif %}
             </div>
@@ -165,9 +166,11 @@
                             <i class="fas fa-chart-pie fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Add your salary to get budget suggestions</p>
+
                         <!-- <button class="btn btn-primary btn-sm add-salary-btn">
                             <i class="fas fa-plus-circle me-2"></i>Add Salary
                         </button> -->
+
                     </div>
                 {% endif %}
             </div>
