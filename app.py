@@ -17,8 +17,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Analyzer.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # CSRF protection
-csrf = CSRFProtect()
-csrf.init_app(app)
+# csrf = CSRFProtect()
+# csrf.init_app(app)
 
 # Initialize the database with the app
 db.init_app(app) 
@@ -95,7 +95,7 @@ def logout():
         "statusCode":200,
         "message":None
         }
-    return render_template('login.html',data = data)
+    return redirect(url_for('login'))
 
 @app.route('/signup')
 def signUp():

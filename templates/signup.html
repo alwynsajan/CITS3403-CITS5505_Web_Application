@@ -6,6 +6,7 @@
     <title>WalletWhiz | Sign Up</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/signup.css">
+    <script src="/static/js/authentication.js defer"></script>
 </head>
 <body>
     <div class="signup-container">
@@ -80,65 +81,5 @@
             </form>
         </div>
     </div>
-
-    <script>
-        // Toggle password visibility
-function setupPasswordToggle(passwordId, toggleId) {
-    const toggle = document.getElementById(toggleId);
-    toggle.addEventListener('click', function() {
-        const password = document.getElementById(passwordId);
-        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-        password.setAttribute('type', type);
-        this.classList.toggle('fa-eye-slash');
-        this.classList.toggle('fa-eye');
-    });
-}
-
-setupPasswordToggle('password', 'togglePassword');
-setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
-
-// Handle form submission
-document.getElementById('signupForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    const formData = {
-        firstName: document.getElementById('firstName').value,
-        lastName: document.getElementById('lastName').value,
-        username: document.getElementById('username').value,
-        password: document.getElementById('password').value,
-        confirmPassword: document.getElementById('confirmPassword').value,
-        // agreeTerms: document.getElementById('agree-terms').checked
-    };
-
-    fetch('/addUser', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken 
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => { throw err; });
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Response:', data);
-        alert(data.status + ": " + data.message);
-        if (data.status === "Success" && data.redirect) {
-            window.location.href = data.redirect;  // Client-side redirect
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        const message = error.message || 'An error occurred while processing your request';
-        alert("Error: " + message);
-    });
-});
-    </script>
 </body>
 </html>
