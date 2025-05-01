@@ -267,16 +267,22 @@ def expensePage():
         username = session['username']
         userID = session["userID"]
     else:
-        return { 
-        "status" : "Failed",
-        "statusCode":400,
-        "message":"Username not Found, Please login again!"}
+        return redirect(url_for('loginPage'))
     
-    #Fetch required user data to update expensePage from DB!!
-    data = handler.getExpensePageData(userID)
+    status = handler.getUserFirstName(session["userID"])
+
+    if status["status"] == "Success":
+
+        #Fetch required user data to update expensePage from DB!!
+        data = handler.getExpensePageData(userID)
+
+        # Render the expense template, passing the required data for graohs
+        return render_template('expense.html',  username=status["data"]["firstName"], data=data)
     
-    # Render the expense template, passing the required data for graohs
-    return render_template('expense.html', username=username, data=data)
+    else:
+        return redirect(url_for('loginPage'))
+    
+    
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
