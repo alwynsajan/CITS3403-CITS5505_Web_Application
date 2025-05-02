@@ -244,6 +244,11 @@ class serviceHandler():
             monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
             dashboardData["hasExpense"] = True
             dashboardData["monthlySpendData"] = monthlyExpenseList
+            
+            lastestExpensestatus = self.DBClient.getLastFiveExpenses(userID)
+
+            if lastestExpensestatus["status"] == "Success":
+                dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
 
         else:
             dashboardData["hasExpense"] = False

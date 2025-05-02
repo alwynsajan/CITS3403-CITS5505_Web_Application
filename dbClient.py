@@ -204,6 +204,41 @@ class dbClient:
                 "statusCode": 500,
                 "message": str(e)
             }
+        
+    # Get the last 5 expenses of a user.
+    def getLastFiveExpenses(self, userID):
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with ID '{userID}' does not exist"
+                }
+
+            # Fetching last 5 expense records ordered by date
+            expenses = Expense.query.filter_by(userId=userID).order_by(Expense.date.desc()).limit(5).all()
+
+            transaction = [
+                        {"category": expense.category, "amount": expense.amount}
+                        for expense in expenses
+                    ]
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": {
+                    "transaction": transaction
+                }
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": f"Error: {str(e)}"
+            }
+
 
     # Add a new savings or financial goal
     def addNewGoal(self, username, data):

@@ -255,8 +255,7 @@ def addExpense():
 
     data = handler.addNewExpense(username,userID,data)
 
-    # Render the expense template, passing the required data for graohs
-    return render_template('expense.html', username=username, data=data)
+    return jsonify(data)
 
 
     
