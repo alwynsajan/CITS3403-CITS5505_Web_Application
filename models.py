@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date,datetime
 
 db = SQLAlchemy()
 
@@ -66,3 +66,4 @@ class ShareReport(db.Model):
     senderLastName = db.Column(db.String(100), nullable=False)
     receiverID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.PickleType, nullable=False) 
+    sharedDate = db.Column(db.DateTime, nullable=False, default=datetime.now)
