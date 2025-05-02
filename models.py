@@ -56,3 +56,13 @@ class Salary(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     salaryDate = db.Column(db.Date, default=date.today, nullable=False)
+
+class ShareReport(db.Model):
+    __tablename__ = 'shareReports'
+
+    id = db.Column(db.Integer, primary_key=True)
+    senderID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    senderFirstName = db.Column(db.String(100), nullable=False)
+    senderLastName = db.Column(db.String(100), nullable=False)
+    receiverID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    data = db.Column(db.PickleType, nullable=False) 
