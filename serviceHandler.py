@@ -293,6 +293,67 @@ class serviceHandler():
             expenseData["hasExpense"] = False
 
         return expenseData
+    
+    def getUsernamesAndIDs(self,userID):
+
+        try:
+            status = self.DBClient.getUsernamesAndIDs(userID)
+            return status
+        
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Error : "+str(e)
+                }
+
+    def sendReport(self, userID, receiverID):
+        try:
+            # Validate sender and receiver
+            validationResult = self.DBClient.validateUsersExist(userID, receiverID)
+            if validationResult["status"] != "Success":
+                return validationResult
+
+            sender = validationResult["sender"]
+            receiver = validationResult["receiver"]
+
+            # Fetch dashboard and expense data
+            dashboardData = self.getDashboardData(userID)
+            expenseData = self.getExpensePageData(userID)
+
+            # Combine into a single dictionary
+            combinedData = {
+                "dashboardData": dashboardData,
+                "expenseData": expenseData
+            }
+
+            print("combinedData : ",combinedData)
+
+            saveStatus = self.DBClient.saveSharedReport(
+            senderID=userID,
+            senderFirstName=sender.firstName,
+            senderLastName=sender.lastName,
+            receiverID=receiverID,
+            data=combinedData
+            )
+
+            if saveStatus["status"] != "Success":
+                return saveStatus
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Report shared with {receiver.firstName}",
+                "data": None
+                    }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+
+
 
 
 

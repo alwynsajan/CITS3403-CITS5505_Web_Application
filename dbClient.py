@@ -1,4 +1,4 @@
-from models import db,User, Goal, Expense, Salary
+from models import db,User, Goal, Expense, Salary, ShareReport
 from werkzeug.security import generate_password_hash
 
 class dbClient:
@@ -239,45 +239,6 @@ class dbClient:
                 "message": f"Error: {str(e)}"
             }
 
-
-    # Add a new savings or financial goal
-    def addNewGoal(self, username, data):
-        """Adds a new goal for the specified user"""
-        try:
-            user = User.query.filter_by(username=username).first()
-            if not user:
-                return {
-                    "status": "Failed",
-                    "statusCode": 404,
-                    "message": f"User with username '{username}' does not exist"
-                }
-
-            newGoalId = self.getLastId(Goal) + 1
-            newGoal = Goal(
-                id=newGoalId,
-                userId=user.id,
-                goalName=data["goalName"],
-                targetAmount=float(data["targetAmount"]),
-                timeDuration=float(data["timeDuration"]),
-                percentageAllocation=float(data["percentageAllocation"])
-            )
-            db.session.add(newGoal)
-            db.session.commit()
-
-            return {
-                "status": "Success",
-                "statusCode": 200,
-                "message": f"Goal '{data['goalName']}' added for user {username}",
-                "data": None
-            }
-        except Exception as e:
-            db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
-
     # Get all goals created by a user
     def getGoalsByUserId(self, userID):
         """Fetches all goals for a given user ID"""
@@ -371,6 +332,72 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
+    # Add a new savings or financial goal
+    def addNewGoal(self, username, data):
+        """Adds a new goal for the specified user"""
+        try:
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with username '{username}' does not exist"
+                }
+
+            newGoalId = self.getLastId(Goal) + 1
+            newGoal = Goal(
+                id=newGoalId,
+                userId=user.id,
+                goalName=data["goalName"],
+                targetAmount=float(data["targetAmount"]),
+                timeDuration=float(data["timeDuration"]),
+                percentageAllocation=float(data["percentageAllocation"])
+            )
+            db.session.add(newGoal)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Goal '{data['goalName']}' added for user {username}",
+                "data": None
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : "+str(e)
+            }
+        
+    #Fetching usernames, first names, last names, and IDs of all users except the given userID    
+    def getUsernamesAndIDs(self, userID):
+        
+        try:
+            users = User.query.filter(User.id != userID).all()
+            userData = [
+                {
+                    "userID": user.id,
+                    "username": user.username,
+                    "firstName": user.firstName,
+                    "lastName": user.lastName
+                }
+                for user in users
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": userData
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": str(e)
+            }
+
+
     # Update the previous account balance for a given user
     def updatePreviousBalance(self, userID, newBalance):
         """Updates the previous account balance for the specified user"""
@@ -560,6 +587,65 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error : " + str(e)
             }
+
+    def validateUsersExist(self, senderID, receiverID):
+        """Validates both sender and receiver users exist in the database"""
+        sender = User.query.filter_by(id=senderID).first()
+        if not sender:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": f"Sender with userID '{senderID}' does not exist",
+                "sender": None,
+                "receiver": None
+            }
+
+        receiver = User.query.filter_by(id=receiverID).first()
+        if not receiver:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": f"Receiver with userID '{receiverID}' does not exist",
+                "sender": None,
+                "receiver": None
+            }
+
+        return {
+            "status": "Success",
+            "statusCode": 200,
+            "message": "Users validated successfully",
+            "sender": sender,
+            "receiver": receiver
+        }
+    
+    def saveSharedReport(self, senderID, senderFirstName, senderLastName, receiverID, data):
+        """Saves the shared report data to the ShareReport table"""
+        try:
+            newReport = ShareReport(
+                senderID=senderID,
+                senderFirstName=senderFirstName,
+                senderLastName=senderLastName,
+                receiverID=receiverID,
+                data=data
+            )
+            db.session.add(newReport)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Report successfully saved",
+                "data": None
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+
 
 
 
