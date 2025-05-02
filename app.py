@@ -177,10 +177,7 @@ def addGoal():
         username = session['username']
         userID = session["userID"]
     else:
-        return { 
-        "status" : "Failed",
-        "statusCode":400,
-        "message":"Username not Found, Please login again!"}
+        return redirect(url_for('loginPage'))
     
     formData = request.get_json()
 
@@ -207,10 +204,7 @@ def addSalary():
         username = session['username']
         userID = session["userID"]
     else:
-        return { 
-        "status" : "Failed",
-        "statusCode":400,
-        "message":"Username not Found, Please login again!"}
+        return redirect(url_for('loginPage'))
     
     formData = request.get_json()
 
@@ -235,10 +229,7 @@ def addExpense():
         username = session['username']
         userID = session["userID"]
     else:
-        return { 
-        "status" : "Failed",
-        "statusCode":400,
-        "message":"Username not Found, Please login again!"}
+        return redirect(url_for('loginPage'))
     
     formData = request.get_json()
 
@@ -257,8 +248,6 @@ def addExpense():
 
     return jsonify(data)
 
-
-    
 @app.route('/expense', methods=['POST'])
 def expensePage():
 
@@ -281,10 +270,47 @@ def expensePage():
     else:
         return redirect(url_for('loginPage'))
     
+@app.route('/dashboard/getUsernamesAndIDs')
+def getUsernamesAndIDs():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
     
+    requestStatus = handler.getUsernamesAndIDs(userID)
+
+    print(requestStatus)
+    
+    return jsonify(requestStatus)
+
+@app.route('/dashboard/sentReport', methods = ['POST'])
+def sentReport():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    data = request.get_json()
+
+    if data is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
+    receiversID = data.get('userID')
+
+    requestStatus = handler.sendReport(userID,receiversID)
+
+    return jsonify(requestStatus)
+
+
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
-    app.run(debug=False)
+    app.run(debug=True)
     
 
