@@ -162,6 +162,44 @@ class dbClient:
                 "statusCode": 500,
                 "message": "Error : "+str(e)
             }
+        
+    #Checks if a new goal allocation exceeds 100%, and updates it if valid.
+    def checkAndAddGoalAllocation(self, userID, percentageAllocation):
+        
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            currentAllocation = user.goalAllocationPercent
+
+            # Check if the new allocation exceeds 100%
+            if currentAllocation + percentageAllocation > 100:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Allocation exceeds limit. You can only allocate {100 - currentAllocation:.2f}% more."
+                }
+            else:
+                user.goalAllocationPercent += percentageAllocation
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Allocation updated successfully",
+                    "newAllocation": user.goalAllocationPercent
+                }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 500,
+                "message": str(e)
+            }
 
     # Add a new savings or financial goal
     def addNewGoal(self, username, data):

@@ -59,20 +59,23 @@ class serviceHandler():
                 }
             
         try:
-            status = self.DBClient.addNewGoal(username,data)
-            
-            #Getting Account Balance
+            status = self.DBClient.checkAndAddGoalAllocation(userID,data["percentageAllocation"])
+
             if status["status"] == "Success":
-                accBalanceStatus = self.DBClient.getAccountBalance(userID)
+                status = self.DBClient.addNewGoal(username,data)
+                
+                #Getting Account Balance
+                if status["status"] == "Success":
+                    accBalanceStatus = self.DBClient.getAccountBalance(userID)
 
-                #Get all goal details from db
-                if accBalanceStatus["status"] == "Success":
-                    getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
+                    #Get all goal details from db
+                    if accBalanceStatus["status"] == "Success":
+                        getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
 
-                    #Get the goal progress
-                    if getGoalsStatus["status"] == "Success":
-                        goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accBalanceStatus["data"]["accountBalance"]))
-                        status["data"] = goalProgressList
+                        #Get the goal progress
+                        if getGoalsStatus["status"] == "Success":
+                            goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accBalanceStatus["data"]["accountBalance"]))
+                            status["data"] = goalProgressList
 
             return status
             
