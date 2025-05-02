@@ -1,5 +1,6 @@
 from models import db,User, Goal, Expense, Salary, ShareReport
 from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 class dbClient:
 
@@ -626,7 +627,8 @@ class dbClient:
                 senderFirstName=senderFirstName,
                 senderLastName=senderLastName,
                 receiverID=receiverID,
-                data=data
+                data=data,
+                sharedDate=datetime.now()
             )
             db.session.add(newReport)
             db.session.commit()
@@ -665,6 +667,7 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
     #Fetches all sender details from shareReport table where receiverID equals the passed userID.
     def getSenderDetails(self, userID):
         
@@ -685,6 +688,7 @@ class dbClient:
                     "senderID": record.senderID,
                     "senderFirstName": record.senderFirstName,
                     "senderLastName": record.senderLastName,
+                    "sharedDate" : record.sharedDate.strftime("%Y-%m-%d %H:%M:%S")
                 })
 
             return {
@@ -699,6 +703,38 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
+    #Fetches the shared report based on receiver ID, sender ID, and shared date
+    def getReportData(self, userID, senderID, sharedDate):
+       
+        try:
+            report = ShareReport.query.filter_by(
+                receiverID=userID,
+                senderID=senderID,
+                sharedDate=sharedDate
+            ).first()
+
+            if report:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Report found",
+                    "data": report.data
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "No matching report found"
+                }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+
 
 
 

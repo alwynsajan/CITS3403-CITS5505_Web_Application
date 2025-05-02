@@ -327,11 +327,11 @@ class serviceHandler():
 
             # Combine into a single dictionary
             combinedData = {
+                "senderFirstName":sender.firstName,
+                "senderLastName":sender.lastName,
                 "dashboardData": dashboardData,
                 "expenseData": expenseData
             }
-
-            print("combinedData : ",combinedData)
 
             saveStatus = self.DBClient.saveSharedReport(
             senderID=userID,
@@ -367,6 +367,28 @@ class serviceHandler():
                 "statusCode": 400,
                 "message": "Error : " + str(e)
             }
+        
+    def getReportData(self,userID,sendersID,sharedDate):
+
+        try:
+            # Validate sender and receiver
+            validationResult = self.DBClient.validateUsersExist(userID, sendersID)
+            if validationResult["status"] != "Success":
+                return validationResult
+            
+            sharedDateObj = datetime.strptime(sharedDate, "%Y-%m-%d %H:%M:%S")
+            
+            reportStatus = self.DBClient.getReportData(userID,sendersID,sharedDateObj)
+
+            return reportStatus
+            
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+
 
 
 

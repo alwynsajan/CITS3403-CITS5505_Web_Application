@@ -320,6 +320,29 @@ def getSenderDetails():
 
     return jsonify(requestStatus)
 
+@app.route('/dashboard/getReport')
+def getReport():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    data = request.get_json()
+
+    if data is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
+    sendersID = data.get('userID')
+    sharedDate = data.get('date')
+
+    requestStatus = handler.getReportData(userID,sendersID,sharedDate)
+
+    return render_template("report.html",data = requestStatus[data])
+
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
