@@ -179,10 +179,14 @@ class dbClient:
 
             # Check if the new allocation exceeds 100%
             if currentAllocation + percentageAllocation > 100:
+                if currentAllocation == 100:
+                    message = "Allocation limit reached. You cannot allocate any more!"
+                else:
+                    message = f"Allocation exceeds limit. You can only allocate {100 - currentAllocation:.2f}% more."
                 return {
                     "status": "Failed",
                     "statusCode": 400,
-                    "message": f"Allocation exceeds limit. You can only allocate {100 - currentAllocation:.2f}% more."
+                    "message": message
                 }
             else:
                 user.goalAllocationPercent += percentageAllocation
