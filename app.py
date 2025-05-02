@@ -307,6 +307,18 @@ def sentReport():
 
     return jsonify(requestStatus)
 
+@app.route('/dashboard/getSenderDetails')
+def getSenderDetails():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    requestStatus = handler.getSenderDetails(userID)
+
+    return jsonify(requestStatus)
 
 
 if __name__ == '__main__':

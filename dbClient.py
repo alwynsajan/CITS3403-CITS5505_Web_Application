@@ -645,6 +645,64 @@ class dbClient:
                 "statusCode": 400,
                 "message": "DB Error: " + str(e)
             }
+        
+    #Returns the number of reports shared with the given userID
+    def getReportNumber(self, userID):
+        
+        try:
+            reportCount = ShareReport.query.filter_by(receiverID=userID).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": {
+                    "reportCount": reportCount
+                }
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+    #Fetches all sender details from shareReport table where receiverID equals the passed userID.
+    def getSenderDetails(self, userID):
+        
+        try:
+            senderRecords = ShareReport.query.filter_by(receiverID=userID).all()
+
+            if not senderRecords:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "No reports shared with this user.",
+                    "data": []
+                }
+
+            senders = []
+            for record in senderRecords:
+                senders.append({
+                    "senderID": record.senderID,
+                    "senderFirstName": record.senderFirstName,
+                    "senderLastName": record.senderLastName,
+                })
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": senders
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+
+
+
+
 
 
 

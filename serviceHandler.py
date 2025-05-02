@@ -250,6 +250,10 @@ class serviceHandler():
             if lastestExpensestatus["status"] == "Success":
                 dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
 
+            sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
+            if sharedReportNumberStatus["status"] == "Success":
+                dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
+
         else:
             dashboardData["hasExpense"] = False
 
@@ -346,6 +350,17 @@ class serviceHandler():
                 "message": f"Report shared with {receiver.firstName}",
                 "data": None
                     }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getSenderDetails(self,userID):
+        try:
+            status = self.DBClient.getSenderDetails(userID)
+            return status
         except Exception as e:
             return {
                 "status": "Failed",
