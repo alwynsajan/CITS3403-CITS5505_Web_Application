@@ -341,7 +341,7 @@ def getReport():
 
     requestStatus = handler.getReportData(userID,sendersID,sharedDate)
 
-    return render_template("report.html",data = requestStatus[data])
+    return render_template("report.html",data = requestStatus["data"])
 
 
 if __name__ == '__main__':
