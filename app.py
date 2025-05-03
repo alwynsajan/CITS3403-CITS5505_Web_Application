@@ -1,27 +1,27 @@
 from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from datetime import timedelta
 from serviceHandler import serviceHandler
+from flask_migrate import Migrate
+from config import Config
 from models import db
-
 from flask_wtf import CSRFProtect
 
 app = Flask(__name__)
-# Secret key for encrypting session data
-app.secret_key = 'C1TS3403_C1T5S0S_Gr0UP_4!'
+
+app.config.from_object(Config)
+
+# Initialize the database with the app
+db.init_app(app) 
+
+migrate = Migrate(app,db)
 
 # Set session lifetime to 7 days
 app.permanent_session_lifetime = timedelta(days=7)
-
-# Database config to use 'Analyser' as the database name
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Analyzer.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # CSRF protection
 # csrf = CSRFProtect()
 # csrf.init_app(app)
 
-# Initialize the database with the app
-db.init_app(app) 
 
 # Creates tables if they don't exist
 with app.app_context():
