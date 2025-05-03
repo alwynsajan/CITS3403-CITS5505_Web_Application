@@ -98,7 +98,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -127,7 +127,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -155,7 +155,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -214,7 +214,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID '{userID}' does not exist"
+                    "message": f"User not exist"
                 }
 
             # Fetching last 5 expense records ordered by date
@@ -408,7 +408,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             user.previousBalance = float(newBalance)
@@ -417,7 +417,7 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Previous balance updated to {newBalance} for user {userID}"
+                "message": f"Previous balance updated to {newBalance} for user."
             }
 
         except Exception as e:
@@ -437,17 +437,17 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             newSalaryId = self.getLastId(Salary) + 1
 
-            newSalary = Salary(
-                id=newSalaryId,
-                userId=userID,
-                amount=float(amount),
-                salaryDate=salaryDate 
-            )
+            newSalary = Salary.addSalary(
+            id=newSalaryId,
+            userId=userID,
+            amount=amount,
+            salaryDate=salaryDate
+                    )
 
             db.session.add(newSalary)
             db.session.commit()
@@ -455,7 +455,7 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Salary of {amount} added for user {userID}",
+                "message": f"Salary of {amount} added.",
                 "data": {
                     "salaryID": newSalaryId,
                     "userID": userID,
@@ -481,7 +481,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not nfound"
                 }
 
             user.accountBalance = float(newBalance)
@@ -596,7 +596,7 @@ class dbClient:
             return {
                 "status": "Failed",
                 "statusCode": 404,
-                "message": f"Sender with userID '{senderID}' does not exist",
+                "message": f"User not found!",
                 "sender": None,
                 "receiver": None
             }
@@ -606,7 +606,7 @@ class dbClient:
             return {
                 "status": "Failed",
                 "statusCode": 404,
-                "message": f"Receiver with userID '{receiverID}' does not exist",
+                "message": f"Receiver does not exist",
                 "sender": None,
                 "receiver": None
             }

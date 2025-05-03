@@ -57,6 +57,16 @@ class Salary(db.Model):
     amount = db.Column(db.Float, nullable=False)
     salaryDate = db.Column(db.Date, default=date.today, nullable=False)
 
+    @classmethod
+    def addSalary(cls,id, userId, amount, salaryDate):
+        """Helper method to create a new salary record"""
+        return cls(
+        id=id,
+        userId=userId,
+        amount=float(amount),
+        salaryDate=salaryDate
+            )
+
 class ShareReport(db.Model):
     __tablename__ = 'shareReports'
 
