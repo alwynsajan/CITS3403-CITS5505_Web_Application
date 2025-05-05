@@ -12,6 +12,7 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)  
     firstName = db.Column(db.String(100), nullable=False)  
     lastName = db.Column(db.String(100), nullable=False)
+    phoneNumber = db.Column(db.String(20), nullable=True) 
     accountBalance = db.Column(db.Float, nullable=False, default=0.0)
     previousBalance = db.Column(db.Float, nullable=False, default=0.0)
     goalAllocationPercent = db.Column(db.Float, nullable=False, default=0.0)
