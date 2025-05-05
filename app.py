@@ -92,7 +92,7 @@ if __name__ == "__main__":
 =======
 from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from datetime import timedelta
-from dbClient import dbClient
+from serviceHandler import serviceHandler
 from models import db
 
 app = Flask(__name__)
@@ -107,48 +107,91 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Analyzer.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database with the app
-db.init_app(app)
-with app.app_context():
-    db.create_all()  # Creates tables if they don't exist
+db.init_app(app) 
 
-# Initialize the database client to interact with the database
-DBClient = dbClient(db)
+# Creates tables if they don't exist
+with app.app_context():
+    db.create_all()  
+
+# Initialize serviceHandler to interact with the database and do other operations
+handler = serviceHandler()
 
 # Home route
 # This ensures both `/` and `/login` go to the login page
 @app.route('/')
 @app.route('/login')
 def loginPage():
+
     # If the user is already logged in, redirect them to the dashboard
     if 'username' in session:
         return redirect(url_for('dashboard'))
+    
     # Otherwise, show the login page
-
     #To show login failed msg in Login page.
-    data= {"check" : True}
+    data= { 
+        "status" : "Success",
+        "statusCode":200,
+        "message":None}
+    
     return render_template('login.html',data = data)
 
 @app.route('/login', methods=['POST'])
 def login():
+
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
         
-        # Get the username and password from the login form
-        username = request.form['username']
-        password = request.form['password']
+    # Get the username and password from the login form
+    username = formData.get('username')
+    password = formData.get('password')
 
-        # Check if the credentials are valid
-        user_id = DBClient.checkCredentials(username, password)
-        
-        # If user_id is returned, credentials are valid
-        if user_id:  
-            session.permanent = True
-            session['username'] = username
+    # Check if the credentials are valid
+    requestStatus = handler.checkCredentials(username, password)
+    
+    # If userID is returned, credentials are valid
+    if requestStatus["status"] == "Success":
 
-            return redirect(url_for('dashboard'))
-        else:
-            # If the credentials are invalid, show an error message in login page.
-            data= { "check" : False }
-            return render_template('login.html',data = data)
+        session.permanent = True
+        session['username'] = username
+        session['userID'] = requestStatus["data"]["userID"]
 
+        # Return JSON response with redirect information
+        return jsonify({
+            "status": "Success",
+            "statusCode": 200,
+            "message": "Login successfully",
+            "redirect": url_for('dashboard')  # Tell client where to redirect
+        })
+    
+    return jsonify(requestStatus)
+       
+@app.route('/logout')
+def logout():
+
+    # Remove user data from the session when logging out
+    session.pop('username', None)
+    session.pop('userID', None)
+
+    data= {
+        "status" : "Success",
+        "statusCode":200,
+        "message":None
+        }
+    return render_template('login.html',data = data)
+
+@app.route('/signup')
+def signUp():
+
+    if 'username' in session:
+        # Remove user data from the session.
+        session.pop('username', None)
+        session.pop('userID', None)
+
+    return render_template('signup.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -158,54 +201,168 @@ def dashboard():
         # Access the username and user role from the session
         username = session['username']
 
-        #Fetch user data from DB!! Need to edit this part later.
-        data= {}
+        status = handler.getUserFirstName(session["userID"])
 
-        # Render the dashboard template, passing the username and user role as variables
-        return render_template('dashboard.html', username=username, data=data)
+        if status["status"] == "Success":
+
+            #Fetch required user data to update dashboard from DB!!
+            data = handler.getDashboardData(session["userID"])
+
+            # Render the dashboard template, passing the username and user role as variables
+            return render_template('dashboard.html', username=status["data"]["firstName"], data=data)
+        
+        else:
+            return redirect(url_for('loginPage'))
     
     # If the user is not logged in, redirect to the login page
     return redirect(url_for('loginPage'))
 
-@app.route('/logout')
-def logout():
-
-    # Remove user data from the session when logging out
-    session.pop('username', None)
-
-    data= {"check" : True}
-    return render_template('login.html',data = data)
-
 @app.route('/addUser', methods=['POST'])
-def add_user():
-    data = request.get_json()
-    
-    # Validate required fields
-    if not all(field in data for field in ['username', 'password', 'firstName', 'lastName']):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    # Validate password strength (customize as needed)
-    if len(data['password']) < 8:
-        return jsonify({"error": "Password must be at least 8 characters"}), 400
-    
-    try:
-        user_id = dbClient.addUser(
-            username=data['username'],
-            password=data['password'],
-            firstname=data['firstName'],
-            lastname=data['lastName']
-        )
+def addUser():
+
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+
+    data = {}
+
+    data = {
+        "username": formData.get('username'),
+        "password": formData.get('password'),
+        "confirmPassword": formData.get("confirmPassword"),
+        "firstName": formData.get('firstName'),
+        "lastName": formData.get('lastName')
+    }
+
+    if data["password"] != data["confirmPassword"]:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"Password confirmation failed"})
+
+    requestStatus = handler.addNewUser(data)
+
+    if requestStatus["status"] == "Success":
         
-        if user_id:
-            return jsonify({
-                "success": True,
-                "user_id": user_id,
-                "message": "User created successfully"
-            }), 201
-        return jsonify({"error": "Username already exists"}), 409
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Return JSON response with redirect information
+        return jsonify({
+            "status": "Success",
+            "statusCode": 200,
+            "message": "User created successfully",
+            "redirect": url_for('login')  # Tell client where to redirect
+        })
+    
+    return jsonify(requestStatus)
+    
+@app.route('/dashboard/addGoal', methods=['POST'])
+def addGoal():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+
+    data = {}
+    data["goalName"] = formData.get('goalName')
+    data["targetAmount"] = formData.get('targetAmount')
+    data["timeDuration"] = formData.get('timeDuration')
+    data["percentageAllocation"] = formData.get('allocation')
+
+    requestStatus = handler.addNewGoal(username,userID,data)
+
+    return jsonify(requestStatus) 
+
+@app.route('/dashboard/addSalary', methods=['POST'])
+@app.route('/expense/addSalary', methods=['POST'])
+def addSalary():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
+    data = {}
+    # Get data from form.
+    data["amount"] = formData.get('amount')
+    data["salaryDate"] = formData.get('date')
+
+    requestStatus = handler.addNewSalary(username,userID,data)
+
+    return jsonify(requestStatus)
+
+@app.route('/expense/addExpense', methods=['POST'])
+def addExpense():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    formData = request.get_json()
+
+    if formData is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
+    data = {}
+    # Get data from form.
+    data["category"] = formData.get('category')
+    data["amount"] = formData.get('amount')
+    data["date"] = formData.get('date')
+
+    data = handler.addNewExpense(username,userID,data)
+
+    # Render the expense template, passing the required data for graohs
+    return render_template('expense.html', username=username, data=data)
+
+
+    
+@app.route('/expense', methods=['POST'])
+def expensePage():
+
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return { 
+        "status" : "Failed",
+        "statusCode":400,
+        "message":"Username not Found, Please login again!"}
+    
+    #Fetch required user data to update expensePage from DB!!
+    data = handler.getExpensePageData(userID)
+    
+    # Render the expense template, passing the required data for graohs
+    return render_template('expense.html', username=username, data=data)
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
