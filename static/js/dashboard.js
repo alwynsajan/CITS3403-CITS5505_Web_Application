@@ -910,6 +910,9 @@ function updateGoalsUI(goals) {
     if (circle) {
         updateGoalProgressCircle(circle, true);
     }
+
+    // 新增：同步SVG环形进度
+    updateGoalProgressCircleSVG(parseFloat(firstGoal.progressPercentage));
 }
 
 // Initialize CountUp animations
@@ -1085,15 +1088,6 @@ document.getElementById('exportPDF')?.addEventListener('click', function() {
     // PDF export logic
 });
 
-// Theme switch
-const themeToggle = document.querySelector('.theme-toggle');
-if (themeToggle) {
-    themeToggle.addEventListener('click', function() {
-        document.body.classList.toggle('dark-theme');
-        localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-    });
-}
-
 // Responsive handling
 function handleResponsive() {
     const cards = document.querySelectorAll('.card');
@@ -1106,3 +1100,27 @@ function handleResponsive() {
 
 window.addEventListener('resize', handleResponsive);
 handleResponsive();
+
+// SVG环形进度条百分比同步
+function updateGoalProgressCircleSVG(percent) {
+    const svg = document.querySelector('.progress-ring');
+    const bar = document.querySelector('.progress-ring-bar');
+    if (!svg || !bar) return;
+    const radius = bar.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+    bar.style.strokeDasharray = `${circumference} ${circumference}`;
+    bar.style.strokeDashoffset = `${circumference}`;
+    // 旋转-90度让进度从顶部开始
+    bar.style.transform = 'rotate(-90deg)';
+    bar.style.transformOrigin = '50% 50%';
+    // 设置进度
+    const offset = circumference * (1 - percent / 100);
+    bar.style.strokeDashoffset = offset;
+}
+
+// SVG环
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.goalData && window.goalData.length > 0) {
+        updateGoalProgressCircleSVG(parseFloat(window.goalData[0].progressPercentage));
+    }
+});
