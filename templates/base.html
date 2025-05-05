@@ -18,8 +18,8 @@
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-2 sidebar">
-                <div class="logo mb-4">
-                    <h2 class="py-3">
+                <div class="logo mb-4 d-flex align-items-center">
+                    <h2 class="py-3 mb-0">
                         <i class="fas fa-wallet me-2"></i>WalletWhiz
                     </h2>
                 </div>
@@ -34,6 +34,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/expenses">
                                 <i class="fas fa-receipt me-2"></i> Expenses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/shared">
+                                <i class="fas fa-share-alt me-2"></i> Shared with me
                             </a>
                         </li>
                         <li class="nav-item">
@@ -57,15 +62,22 @@
 
             <!-- Main Content -->
             <div class="col-md-10 ms-auto main-content">
-                <header class="mb-3 py-2">
+                <header class="mb-3 py-2 pt-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="h3 mb-0" style="color: var(--primary-color);">Hi, {{ username }}!</h1>
-                            <p class="text-muted small mb-0">Welcome back to WalletWhiz! Ready to master your budget?</p>
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <h1 class="h3 mb-0" style="color: var(--primary-color);">Hi, {{ username }}!</h1>
+                                <p class="text-muted small mb-0">Welcome back to WalletWhiz! Ready to master your budget?</p>
+                            </div>
                         </div>
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; padding: 8px 16px;">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-primary btn-icon" id="shareSummaryBtn" title="Share Dashboard Summary" style="width: 38px; height: 38px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                            <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; padding: 8px 16px;">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </div>
                     </div>
                 </header>
                 

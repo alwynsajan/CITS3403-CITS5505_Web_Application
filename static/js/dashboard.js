@@ -119,14 +119,26 @@ function initMonthlySpendingChart() {
         return;
     }
 
-    // Check if there is expense data
-    if (!window.monthlyExpenses || !window.monthlyExpenses.length) {
+    // Prepare data, filtering out months with 0 expense
+    const filteredLabels = [];
+    const filteredExpenses = [];
+    if (window.monthlyLabels && window.monthlyExpenses && window.monthlyLabels.length === window.monthlyExpenses.length) {
+        window.monthlyLabels.forEach((label, index) => {
+            if (window.monthlyExpenses[index] > 0) {
+                filteredLabels.push(label);
+                filteredExpenses.push(window.monthlyExpenses[index]);
+            }
+        });
+    }
+
+    // Check if there is filtered expense data
+    if (!filteredExpenses.length) {
         // If there is no data, show placeholder
         const chartContainer = chartCanvas.parentElement;
         chartContainer.innerHTML = `
             <div class="text-center py-4">
                 <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No expense data available yet</p>
+                <p class="text-muted">No spending data to display</p>
             </div>
         `;
         return;
@@ -134,7 +146,7 @@ function initMonthlySpendingChart() {
 
     // Get chart context
     const ctx = chartCanvas.getContext('2d');
-    
+
     try {
         // Define modern color scheme
         const computedStyle = getComputedStyle(document.documentElement);
@@ -145,7 +157,7 @@ function initMonthlySpendingChart() {
             computedStyle.getPropertyValue('--chart-color-4').trim(),
             computedStyle.getPropertyValue('--chart-color-5').trim()
         ];
-        
+
         // Create bar chart gradient
         const createGradient = (ctx, colorIndex) => {
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
@@ -153,18 +165,18 @@ function initMonthlySpendingChart() {
             gradient.addColorStop(1, adjustColor(chartColors[colorIndex % chartColors.length], 20));
             return gradient;
         };
-        
-        // Prepare bar chart colors
-        const backgroundColors = window.monthlyLabels.map((_, i) => createGradient(ctx, i));
-        
-        // Create chart
+
+        // Prepare bar chart colors using filtered data length
+        const backgroundColors = filteredLabels.map((_, i) => createGradient(ctx, i));
+
+        // Create chart using filtered data
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: window.monthlyLabels,
+                labels: filteredLabels, // Use filtered labels
                 datasets: [{
                     label: 'Monthly Spending',
-                    data: window.monthlyExpenses,
+                    data: filteredExpenses, // Use filtered expenses
                     backgroundColor: backgroundColors,
                     borderRadius: 10,
                     borderWidth: 0,
@@ -245,8 +257,8 @@ function initMonthlySpendingChart() {
                 }
             }
         });
-        
-        console.log('Chart initialized successfully');
+
+        console.log('Chart initialized successfully with filtered data');
     } catch (error) {
         console.error('Error initializing chart:', error);
         // Show error message
@@ -363,52 +375,41 @@ function showAlert(message, type = 'info') {
 }
 
 /**
- * Save a new goal using AJAX with modern animation feedback
+ * Save a new goal using AJAX with modern animation feedback and error handling
  */
 async function saveNewGoal(event) {
     event.preventDefault();
-    
+
     const form = document.getElementById('goalForm');
     if (!form) {
-        console.error('Form element not found');
+        console.error('Goal form element not found');
         return;
     }
-    
+
     const saveButton = document.getElementById('saveGoalBtn');
     if (!saveButton) {
-        console.error('Save button not found');
+        console.error('Save Goal button not found');
         return;
     }
-    
+
     // Basic validation
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
-    
+
     try {
         // Set loading state
         saveButton.disabled = true;
         saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        
-        // Get and process form data
-        const goalNameInput = form.querySelector('[name="goalName"]');
-        if (!goalNameInput) {
-            throw new Error('Goal name input not found');
-        }
-        
-        const goalName = goalNameInput.value.trim();
-        if (!goalName) {
-            throw new Error('Goal name cannot be empty');
-        }
-        
+
         const goalData = {
-            goalName: goalName,
+            goalName: form.querySelector('[name="goalName"]').value.trim(),
             targetAmount: parseFloat(form.querySelector('[name="targetAmount"]').value),
             timeDuration: parseInt(form.querySelector('[name="timeDuration"]').value),
             allocation: parseFloat(form.querySelector('[name="allocation"]').value)
         };
-        
+
         // Send request
         const response = await fetch('/dashboard/addGoal', {
             method: 'POST',
@@ -417,25 +418,33 @@ async function saveNewGoal(event) {
             },
             body: JSON.stringify(goalData)
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to save goal');
+
+        const result = await response.json(); // Always parse JSON
+
+        if (!response.ok || result.status !== "Success") {
+            // Use message from server if available, otherwise generic error
+            throw new Error(result.message || `HTTP error! status: ${response.status}`);
         }
-        
+
         // Close modal first
         const modal = bootstrap.Modal.getInstance(document.getElementById('goalModal'));
         if (modal) {
             modal.hide();
+            // Ensure backdrop is removed if it lingers
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         }
-        // Then update UI
+
+        // Then update UI with the returned goal data
         let goalProgress = document.querySelector('.goal-progress');
         if (!goalProgress) {
             // Insert goal progress HTML into .goal-card
             const goalCard = document.querySelector('.goal-card .card-body');
-            if (goalCard) {
-                const firstGoal = data.data[0];
+            if (goalCard && result.data && result.data.length > 0) {
+                const firstGoal = result.data[0];
                 goalCard.innerHTML = `
                     <div class="goal-progress text-center">
                         <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${firstGoal.goalName}</h3>
@@ -461,17 +470,23 @@ async function saveNewGoal(event) {
                     </div>
                 `;
                 // After inserting, update UI and progress circle
-                updateGoalsUI(data.data);
+                updateGoalsUI(result.data);
                 animateCards();
             }
-            return;
+            // Optionally, reset form here if modal listener is problematic
+            form.reset();
+            return; // Exit after handling insertion
         }
-        updateGoalsUI(data.data);
+        // If goalProgress exists, just update
+        updateGoalsUI(result.data);
         animateCards();
-        
+        form.reset(); // Reset form after successful update
+
+        showAlert(result.message || 'Goal added successfully!', 'success'); // Show success message from server
+
     } catch (error) {
         console.error('Error saving goal:', error);
-        showAlert(error.message || 'An error occurred while saving the goal. Please try again.', 'danger');
+        showAlert(error.message || 'An error occurred while saving the goal.', 'danger');
     } finally {
         // Restore button state
         if (saveButton) {
@@ -671,20 +686,23 @@ function setupAddSalaryButton() {
 // Expose updateGoalProgressCircle to window for external use
 window.updateGoalProgressCircle = updateGoalProgressCircle;
 
-// Handle salary addition
+// Handle salary addition with error handling
 document.addEventListener('DOMContentLoaded', function() {
-    const addSalaryBtn = document.querySelector('.add-salary-btn');
-    const salaryModal = new bootstrap.Modal(document.getElementById('salaryModal'));
+    const addSalaryButtons = document.querySelectorAll('.add-salary-btn'); // Select all buttons
+    const salaryModalInstance = document.getElementById('salaryModal') ? new bootstrap.Modal(document.getElementById('salaryModal')) : null;
     const saveSalaryBtn = document.getElementById('saveSalaryBtn');
     const salaryForm = document.getElementById('salaryForm');
 
-    if (addSalaryBtn) {
-        addSalaryBtn.addEventListener('click', function() {
-            salaryModal.show();
+    // Handle opening the modal from potentially multiple buttons
+    addSalaryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (salaryModalInstance) {
+                 salaryModalInstance.show();
+            }
         });
-    }
+    });
 
-    if (saveSalaryBtn) {
+    if (saveSalaryBtn && salaryForm) {
         saveSalaryBtn.addEventListener('click', async function() {
             if (!salaryForm.checkValidity()) {
                 salaryForm.reportValidity();
@@ -694,8 +712,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const salaryAmount = document.getElementById('salaryAmount').value;
             const salaryDate = document.getElementById('salaryDate').value;
 
+             // Add loading state to button
+            saveSalaryBtn.disabled = true;
+            saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
             try {
-                const response = await fetch('/dashboard/addSalary', {
+                const response = await fetch('/add_salary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -708,53 +730,127 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    // Update the account balance display
-                    const balanceDisplay = document.getElementById('balanceAmount');
-                    // Check if balance display exists. If not, this is the first salary addition, reload the page.
-                    if (!balanceDisplay) {
-                        window.location.reload();
-                        return;
-                    }
-                    // Use CountUp animation to refresh balance
-                    const newBalance = result.new_balance || 0;
-                    new CountUp('balanceAmount', newBalance, {
-                        prefix: '$',
-                        duration: 2,
-                        decimalPlaces: 2
-                    }).start();
-                    // Update budget suggestions (use backend data)
-                    if (result.budgetSuggestions) {
-                        const needsAmount = document.getElementById('needsAmount');
-                        const wantsAmount = document.getElementById('wantsAmount');
-                        const savingsAmount = document.getElementById('savingsAmount');
-                        const salaryInfo = document.getElementById('salaryInfo');
-                        // Check if budget section exists. If not, this is the first salary addition, reload the page.
-                        if (!needsAmount || !wantsAmount || !savingsAmount) {
-                            window.location.reload();
-                            return;
-                        }
-                        if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
-                        if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
-                        if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
-                        if (salaryInfo) salaryInfo.textContent = `Based on monthly salary: $${result.budgetSuggestions.salary.toFixed(2)} (${result.budgetSuggestions.salaryDate})`;
-                    }
-                    // Hide the modal
-                    salaryModal.hide();
-
-                    // Reset the form only after modal is fully hidden
-                    const salaryModalEl = document.getElementById('salaryModal');
-                    salaryModalEl.addEventListener('hidden.bs.modal', function handler() {
-                        salaryForm.reset();
-                        // Remove this event listener after it runs once
-                        salaryModalEl.removeEventListener('hidden.bs.modal', handler);
-                    });
-                } else {
-                    throw new Error(result.error || 'Failed to add salary');
+                if (!response.ok || result.status !== "Success") {
+                    throw new Error(result.message || `HTTP error! status: ${response.status}`);
                 }
+
+                // Check if balanceDisplay exists. If not, reload page for first salary.
+                 const balanceDisplay = document.getElementById('balanceAmount');
+                 if (!balanceDisplay) {
+                     window.location.reload();
+                     return;
+                 }
+
+                // Update the account balance display
+                const newBalance = result.new_balance || 0;
+                new CountUp('balanceAmount', newBalance, {
+                    prefix: '$',
+                    duration: 2,
+                    decimalPlaces: 2
+                }).start();
+
+                // Update budget suggestions
+                if (result.budgetSuggestions) {
+                    const needsAmount = document.getElementById('needsAmount');
+                    const wantsAmount = document.getElementById('wantsAmount');
+                    const savingsAmount = document.getElementById('savingsAmount');
+                    const salaryInfo = document.getElementById('salaryInfo');
+
+                    // Check if budget section exists. If not, reload.
+                     if (!needsAmount || !wantsAmount || !savingsAmount) {
+                         window.location.reload();
+                         return;
+                     }
+
+                    if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
+                    if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
+                    if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
+                    if (salaryInfo) salaryInfo.textContent = `Based on monthly salary: $${result.budgetSuggestions.salary.toFixed(2)}`; // Simplified date display
+                }
+
+                // Hide the modal
+                if (salaryModalInstance) {
+                    salaryModalInstance.hide();
+                     // Ensure backdrop is removed if it lingers
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+
+                // Reset the form
+                 salaryForm.reset();
+
+                 showAlert(result.message || 'Salary added successfully!', 'success');
+
             } catch (error) {
-                console.error('Error:', error);
-                showAlert(error.message || 'Failed to add salary. Please try again.', 'danger');
+                console.error('Error adding salary:', error);
+                showAlert(error.message || 'Failed to add salary.', 'danger');
+            } finally {
+                 // Restore button state
+                 saveSalaryBtn.disabled = false;
+                 saveSalaryBtn.innerHTML = 'Save Salary';
+            }
+        });
+    }
+
+    // Add Share Summary Logic
+    const shareButton = document.getElementById('shareSummaryBtn');
+    const shareModal = document.getElementById('shareModal') ? new bootstrap.Modal(document.getElementById('shareModal')) : null;
+    const shareTextArea = document.getElementById('shareSummaryText');
+    const copyButton = document.getElementById('copySummaryBtn');
+    const copyFeedback = document.getElementById('copyFeedback');
+
+    if (shareButton && shareModal && shareTextArea && copyButton && copyFeedback) {
+        shareButton.addEventListener('click', async () => {
+            shareButton.disabled = true;
+            shareButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/share_summary');
+                const result = await response.json();
+
+                if (!response.ok || result.status !== "Success") {
+                    throw new Error(result.message || 'Could not generate summary');
+                }
+
+                shareTextArea.value = result.summary; // Display summary in textarea
+                copyFeedback.style.display = 'none'; // Hide previous feedback
+                shareModal.show(); // Show the modal
+
+            } catch (error) {
+                console.error('Error fetching summary:', error);
+                showAlert(error.message, 'danger');
+            } finally {
+                shareButton.disabled = false;
+                shareButton.innerHTML = '<i class="fas fa-share-alt"></i>';
+            }
+        });
+
+        // Copy button inside the modal
+        copyButton.addEventListener('click', () => {
+            shareTextArea.select();
+            try {
+                navigator.clipboard.writeText(shareTextArea.value).then(() => {
+                    const feedback = document.getElementById('copyFeedback');
+                    feedback.style.display = 'block';
+                    feedback.classList.add('show');
+                    
+                    // Hide feedback after animation
+                    setTimeout(() => {
+                        feedback.classList.remove('show');
+                        setTimeout(() => {
+                            feedback.style.display = 'none';
+                        }, 300);
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Clipboard write failed: ', err);
+                    showAlert('Failed to copy to clipboard.', 'warning');
+                });
+            } catch (err) {
+                console.error('Clipboard API error: ', err);
+                showAlert('Clipboard functionality not supported.', 'warning');
             }
         });
     }

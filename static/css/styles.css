@@ -929,3 +929,111 @@ body.dark-theme .custom-theme-switch .icon.moon {
   stroke-linecap: round;
   transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);
 }
+
+/* Share Summary Button Styles */
+.btn-share {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(108,92,231,0.15);
+}
+
+.btn-share:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108,92,231,0.25);
+}
+
+.btn-share:active {
+    transform: translateY(0);
+}
+
+/* Share Modal Styles */
+.summary-preview {
+    background-color: rgba(108,92,231,0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.summary-preview:hover {
+    background-color: rgba(108,92,231,0.08);
+}
+
+#shareSummaryText {
+    box-shadow: none !important;
+    transition: all 0.3s ease;
+}
+
+#shareSummaryText:focus {
+    background-color: transparent !important;
+}
+
+#copyFeedback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 16px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1060;
+}
+
+#copyFeedback.show {
+    opacity: 1;
+}
+
+/* Dark theme support */
+.dark-theme .summary-preview {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.dark-theme .summary-preview:hover {
+    background-color: rgba(255,255,255,0.08);
+}
+
+.dark-theme #shareSummaryText {
+    color: var(--text-color);
+}
+
+/* Header Action Buttons */
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108,92,231,0.25);
+}
+
+.btn-icon:active {
+    transform: translateY(0);
+}
+
+.btn-icon i {
+    font-size: 1rem;
+}
+
+/* Dark theme support */
+.dark-theme .btn-icon {
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.dark-theme .btn-icon:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
