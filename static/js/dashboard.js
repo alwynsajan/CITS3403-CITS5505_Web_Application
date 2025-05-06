@@ -1188,3 +1188,279 @@ function handleResponsive() {
 
 window.addEventListener('resize', handleResponsive);
 handleResponsive();
+
+// Share functionality
+const userSearchModal = new bootstrap.Modal(document.getElementById('shareUserSearchModal'));
+const sharePreviewModal = new bootstrap.Modal(document.getElementById('sharePreviewModal'));
+const userSearchInput = document.getElementById('userSearchInput');
+const userSearchResults = document.getElementById('userSearchResults');
+const selectedUserName = document.getElementById('selectedUserName');
+const reportPreview = document.getElementById('reportPreview');
+const confirmShareBtn = document.getElementById('confirmShareBtn');
+
+let selectedUser = null;
+let searchTimeout = null;
+
+// Share button click handler
+document.getElementById('shareSummaryBtn').addEventListener('click', () => {
+    userSearchModal.show();
+});
+
+// User search input handler
+userSearchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.trim();
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout for search
+    searchTimeout = setTimeout(() => {
+        if (searchTerm.length > 0) {
+            searchUsers(searchTerm);
+        } else {
+            userSearchResults.innerHTML = '';
+        }
+    }, 300);
+});
+
+// Search users function
+async function searchUsers(searchTerm) {
+    try {
+        const response = await fetch(`/api/search_users?term=${encodeURIComponent(searchTerm)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            displayUserResults(data);
+        } else {
+            throw new Error(data.message || 'Failed to search users');
+        }
+    } catch (error) {
+        console.error('Error searching users:', error);
+        showErrorModal('Failed to search users. Please try again.');
+    }
+}
+
+// Display user search results
+function displayUserResults(users) {
+    userSearchResults.innerHTML = '';
+    
+    if (users.length === 0) {
+        userSearchResults.innerHTML = `
+            <div class="list-group-item text-center text-muted">
+                <i class="fas fa-user-slash me-2"></i>No users found
+            </div>
+        `;
+        return;
+    }
+    
+    users.forEach(user => {
+        const userElement = document.createElement('button');
+        userElement.className = 'list-group-item list-group-item-action';
+        userElement.innerHTML = `
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0">${user.firstName} ${user.lastName}</h6>
+                    <small class="text-muted">@${user.username}</small>
+                </div>
+            </div>
+        `;
+        
+        userElement.addEventListener('click', () => selectUser(user));
+        userSearchResults.appendChild(userElement);
+    });
+}
+
+// Select user and show preview
+async function selectUser(user) {
+    selectedUser = user;
+    userSearchModal.hide();
+    
+    try {
+        const response = await fetch('/api/generate_report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recipientId: user.userID
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || data.status === 'Failed') {
+            throw new Error(data.message || 'Failed to generate report');
+        }
+        
+        selectedUserName.textContent = `${user.firstName} ${user.lastName}`;
+        displayReportPreview(data);
+        sharePreviewModal.show();
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showErrorModal('Failed to generate report. Please try again.');
+    }
+}
+
+// Display report preview
+function displayReportPreview(reportData) {
+    // Format and display the report data
+    reportPreview.innerHTML = `
+        <div class="report-section mb-4">
+            <h5 class="mb-3">Account Overview</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Current Balance</h6>
+                            <p class="h4 mb-0">$${reportData.dashboardData.accountData.balance.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Monthly Savings</h6>
+                            <p class="h4 mb-0">$${reportData.dashboardData.budgetSuggestionData.savings.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Active Goals</h6>
+                            <p class="h4 mb-0">${reportData.dashboardData.goalData.length}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-section mb-4">
+            <h5 class="mb-3">Budget Allocation</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="budget-item">
+                        <h6>Needs</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 50%"></div>
+                        </div>
+                        <p class="mb-0">$${reportData.dashboardData.budgetSuggestionData.needs.toFixed(2)}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="budget-item">
+                        <h6>Wants</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 30%"></div>
+                        </div>
+                        <p class="mb-0">$${reportData.dashboardData.budgetSuggestionData.wants.toFixed(2)}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="budget-item">
+                        <h6>Savings</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 20%"></div>
+                        </div>
+                        <p class="mb-0">$${reportData.dashboardData.budgetSuggestionData.savings.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-section">
+            <h5 class="mb-3">Recent Transactions</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reportData.dashboardData.transaction.slice(0, 5).map(tx => `
+                            <tr>
+                                <td>${tx.category}</td>
+                                <td>$${tx.amount.toFixed(2)}</td>
+                                <td>${tx.date}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// Confirm share button handler
+confirmShareBtn.addEventListener('click', async () => {
+    if (!selectedUser) return;
+    
+    try {
+        const response = await fetch('/api/share_report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recipientId: selectedUser.userID
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || data.status === 'Failed') {
+            throw new Error(data.message || 'Failed to share report');
+        }
+        
+        sharePreviewModal.hide();
+        showSuccessToast('Report shared successfully!');
+        
+    } catch (error) {
+        console.error('Error sharing report:', error);
+        showErrorModal('Failed to share report. Please try again.');
+    }
+});
+
+// Show success toast
+function showSuccessToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast position-fixed bottom-0 end-0 m-3';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="toast-header bg-success text-white">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        document.body.removeChild(toast);
+    });
+}
+
+// Show error modal
+function showErrorModal(message) {
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    document.getElementById('errorMessage').textContent = message;
+    errorModal.show();
+}
