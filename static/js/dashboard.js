@@ -1464,3 +1464,608 @@ function showErrorModal(message) {
     document.getElementById('errorMessage').textContent = message;
     errorModal.show();
 }
+
+// Shared Reports Modal Functionality
+const sharedReportsModal = new bootstrap.Modal(document.getElementById('sharedReportsModal'));
+const reportDetailModal = new bootstrap.Modal(document.getElementById('reportDetailModal'));
+const sharedReportsList = document.getElementById('sharedReportsList');
+const sharedReportsLoading = document.getElementById('sharedReportsLoading');
+const sharedReportsEmpty = document.getElementById('sharedReportsEmpty');
+const reportDetailContent = document.getElementById('reportDetailContent');
+const reportDetailLoading = document.getElementById('reportDetailLoading');
+const refreshSharedReportsBtn = document.getElementById('refreshSharedReportsBtn');
+const backToReportsBtn = document.getElementById('backToReportsBtn');
+
+// Sidebar shared reports link click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const sharedReportsLink = document.querySelector('a[href="/shared"]');
+    if (sharedReportsLink) {
+        sharedReportsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            openSharedReportsModal();
+        });
+    }
+    
+    // Refresh button handler
+    if (refreshSharedReportsBtn) {
+        refreshSharedReportsBtn.addEventListener('click', function() {
+            loadSharedReports();
+        });
+    }
+    
+    // Back button handler
+    if (backToReportsBtn) {
+        backToReportsBtn.addEventListener('click', function() {
+            reportDetailModal.hide();
+            sharedReportsModal.show();
+        });
+    }
+});
+
+// Open shared reports modal
+function openSharedReportsModal() {
+    loadSharedReports();
+    sharedReportsModal.show();
+}
+
+// Load shared reports
+function loadSharedReports() {
+    // Show loading state
+    sharedReportsLoading.style.display = 'block';
+    sharedReportsList.style.display = 'none';
+    sharedReportsEmpty.style.display = 'none';
+    
+    // Fetch shared reports data
+    fetch('/api/shared_reports')
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading state
+            sharedReportsLoading.style.display = 'none';
+            
+            if (data.sharedReports && data.sharedReports.length > 0) {
+                renderSharedReportsList(data.sharedReports);
+            } else {
+                sharedReportsEmpty.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading shared reports:', error);
+            sharedReportsLoading.style.display = 'none';
+            sharedReportsEmpty.style.display = 'block';
+        });
+}
+
+// Render shared reports list
+function renderSharedReportsList(reports) {
+    sharedReportsList.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Sender</th>
+                        <th>Date Shared</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    const reportsTableBody = document.getElementById('reportsTableBody');
+    
+    reports.forEach(report => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3">
+                        <span class="initials">${report.senderFirstName[0]}${report.senderLastName[0]}</span>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">${report.senderFirstName} ${report.senderLastName}</h6>
+                        <small class="text-muted">ID: ${report.senderID}</small>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div>
+                    <span>${report.sharedDate}</span>
+                </div>
+            </td>
+            <td class="text-center">
+                <button class="btn btn-primary btn-sm view-report-btn" data-sender-id="${report.senderID}">
+                    <i class="fas fa-eye me-1"></i>View Report
+                </button>
+            </td>
+        `;
+        
+        reportsTableBody.appendChild(row);
+    });
+    
+    // Add event listeners to view report buttons
+    const viewReportButtons = document.querySelectorAll('.view-report-btn');
+    viewReportButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const senderId = this.getAttribute('data-sender-id');
+            openReportDetailModal(senderId);
+        });
+    });
+    
+    sharedReportsList.style.display = 'block';
+}
+
+// Open report detail modal
+function openReportDetailModal(senderId) {
+    // Hide shared reports modal and show report detail modal
+    sharedReportsModal.hide();
+    reportDetailModal.show();
+    
+    // Show loading state
+    reportDetailLoading.style.display = 'block';
+    reportDetailContent.style.display = 'none';
+    
+    // Fetch report detail data
+    fetch(`/api/shared_report/${senderId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading state
+            reportDetailLoading.style.display = 'none';
+            
+            // Render report detail content
+            renderReportDetail(data);
+        })
+        .catch(error => {
+            console.error('Error loading report detail:', error);
+            reportDetailLoading.style.display = 'none';
+            reportDetailContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-circle fa-3x"></i>
+                    </div>
+                    <h5 class="mb-2">Error Loading Report</h5>
+                    <p class="text-muted mb-0">Could not load the report details. Please try again later.</p>
+                </div>
+            `;
+            reportDetailContent.style.display = 'block';
+        });
+}
+
+// Render report detail
+function renderReportDetail(reportData) {
+    const senderName = `${reportData.senderFirstName} ${reportData.senderLastName}`;
+    document.getElementById('reportDetailModalLabel').textContent = `Report from ${senderName}`;
+    
+    // Dashboard data
+    const dashboardData = reportData.dashboardData;
+    const expenseData = reportData.expenseData;
+    
+    reportDetailContent.innerHTML = `
+        <!-- Account Overview -->
+        <div class="container-fluid px-4 py-3">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5 class="card-title mb-3">Account Overview</h5>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="stat-card p-3 rounded bg-light">
+                                <h6 class="mb-1 text-muted">Current Balance</h6>
+                                <h3 class="mb-0">$${dashboardData.accountData.balance}</h3>
+                                <div class="mt-2">
+                                    <span class="badge bg-${dashboardData.accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
+                                        <i class="fas fa-arrow-${dashboardData.accountData.trendType}"></i>
+                                        ${dashboardData.accountData.percentageChange}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card p-3 rounded bg-light">
+                                <h6 class="mb-1 text-muted">Monthly Income</h6>
+                                <h3 class="mb-0">$${dashboardData.budgetSuggestionData.salary}</h3>
+                                <div class="mt-2">
+                                    <small class="text-muted">Last updated: ${dashboardData.budgetSuggestionData.salaryDate}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card p-3 rounded bg-light">
+                                <h6 class="mb-1 text-muted">Monthly Spending</h6>
+                                <h3 class="mb-0">$${dashboardData.budgetSuggestionData.needs + dashboardData.budgetSuggestionData.wants}</h3>
+                                <div class="mt-2">
+                                    <small class="text-muted">Needs & Wants combined</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card p-3 rounded bg-light">
+                                <h6 class="mb-1 text-muted">Monthly Savings</h6>
+                                <h3 class="mb-0">$${dashboardData.budgetSuggestionData.savings}</h3>
+                                <div class="mt-2">
+                                    <small class="text-muted">20% of monthly income</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Budget & Goals -->
+            <div class="row mb-4">
+                <div class="col-md-7">
+                    <h5 class="card-title mb-3">Budget Allocation</h5>
+                    <div class="card p-3">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="chart-container" style="position: relative; height: 200px;">
+                                    <canvas id="modalBudgetChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="budget-category needs mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Needs (50%)</h6>
+                                        <span class="category-amount">$${dashboardData.budgetSuggestionData.needs}</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                                <div class="budget-category wants mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Wants (30%)</h6>
+                                        <span class="category-amount">$${dashboardData.budgetSuggestionData.wants}</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 30%"></div>
+                                    </div>
+                                </div>
+                                <div class="budget-category savings">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Savings (20%)</h6>
+                                        <span class="category-amount">$${dashboardData.budgetSuggestionData.savings}</span>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 8px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 20%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <h5 class="card-title mb-3">Financial Goals</h5>
+                    <div class="card p-3">
+                        <div id="goalsContainer">
+                            ${renderGoals(dashboardData.goalData)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Monthly Spending & Transactions -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5 class="card-title mb-3">Monthly Spending</h5>
+                    <div class="card p-3">
+                        <div class="chart-container" style="position: relative; height: 250px;">
+                            <canvas id="modalMonthlySpendingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="card-title mb-3">Recent Transactions</h5>
+                    <div class="card p-3">
+                        ${renderTransactions(dashboardData.transaction)}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expense Categories -->
+            <div class="row">
+                <div class="col-12">
+                    <h5 class="card-title mb-3">Expense Categories</h5>
+                    <div class="card p-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container" style="position: relative; height: 250px;">
+                                    <canvas id="modalCategoryExpensesChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                ${renderCategoryExpensesTable(expenseData.monthlyCategoryExpenses)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    reportDetailContent.style.display = 'block';
+    
+    // Initialize charts
+    initModalCharts(reportData);
+}
+
+// Helper function to render goals
+function renderGoals(goals) {
+    if (!goals || goals.length === 0) {
+        return `
+            <div class="text-center py-4">
+                <div class="empty-state-icon mb-2">
+                    <i class="fas fa-bullseye fa-2x text-muted"></i>
+                </div>
+                <p class="text-muted mb-0">No financial goals set</p>
+            </div>
+        `;
+    }
+    
+    return goals.map((goal, index) => `
+        <div class="goal-item mb-3 pb-3 ${index < goals.length - 1 ? 'border-bottom' : ''}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">${goal.goalName}</h6>
+                <span class="badge bg-primary">${goal.progressPercentage}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 8px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ${goal.progressPercentage}%" aria-valuenow="${goal.progressPercentage}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="d-flex justify-content-between">
+                <small class="text-muted">Target: $${goal.target}</small>
+                <small class="text-muted">Saved: $${goal.saved}</small>
+                <small class="text-muted">Remaining: $${goal.remaining}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Helper function to render transactions
+function renderTransactions(transactions) {
+    if (!transactions || transactions.length === 0) {
+        return `
+            <div class="text-center py-4">
+                <div class="empty-state-icon mb-2">
+                    <i class="fas fa-exchange-alt fa-2x text-muted"></i>
+                </div>
+                <p class="text-muted mb-0">No transactions recorded</p>
+            </div>
+        `;
+    }
+    
+    let html = '<div class="transaction-list" style="max-height: 250px; overflow-y: auto;">';
+    
+    transactions.forEach(tx => {
+        let icon = 'money-bill-wave';
+        if (tx.category === 'Grocery') icon = 'shopping-cart';
+        else if (tx.category === 'Fuel') icon = 'gas-pump';
+        else if (tx.category === 'Food') icon = 'utensils';
+        else if (tx.category === 'Bills') icon = 'file-invoice-dollar';
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                <div class="me-2">
+                    <i class="fas fa-${icon} me-2 text-secondary"></i>
+                    <span>${tx.category}</span>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold text-danger">-$${tx.amount}</span>
+                    <small class="d-block text-muted">${tx.date}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// Helper function to render category expenses table
+function renderCategoryExpensesTable(categoryExpenses) {
+    if (!categoryExpenses) {
+        return `
+            <div class="text-center py-4">
+                <div class="empty-state-icon mb-2">
+                    <i class="fas fa-chart-pie fa-2x text-muted"></i>
+                </div>
+                <p class="text-muted mb-0">No expense category data available</p>
+            </div>
+        `;
+    }
+    
+    // Calculate total expenses
+    let total = 0;
+    Object.values(categoryExpenses).forEach(amount => {
+        total += amount;
+    });
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    Object.entries(categoryExpenses).forEach(([category, amount]) => {
+        const percentage = ((amount / total) * 100).toFixed(1);
+        html += `
+            <tr>
+                <td>${category}</td>
+                <td>$${amount}</td>
+                <td>${percentage}%</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    return html;
+}
+
+// Initialize modal charts
+function initModalCharts(reportData) {
+    // Budget chart
+    const budgetCtx = document.getElementById('modalBudgetChart').getContext('2d');
+    const budgetData = [
+        reportData.dashboardData.budgetSuggestionData.needs,
+        reportData.dashboardData.budgetSuggestionData.wants,
+        reportData.dashboardData.budgetSuggestionData.savings
+    ];
+    
+    new Chart(budgetCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Needs', 'Wants', 'Savings'],
+            datasets: [{
+                data: budgetData,
+                backgroundColor: [
+                    '#6c5ce7',  // Needs - Purple
+                    '#00cec9',  // Wants - Teal
+                    '#0984e3'   // Savings - Blue
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: $${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    
+    // Monthly spending chart
+    const monthlyCtx = document.getElementById('modalMonthlySpendingChart').getContext('2d');
+    const monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthlyExpenses = reportData.dashboardData.monthlySpendData.Expenses;
+    
+    // Filter out months with zero expenses
+    const filteredExpenses = [];
+    const filteredLabels = [];
+    monthlyExpenses.forEach((expense, index) => {
+        if (expense > 0) {
+            filteredExpenses.push(expense);
+            filteredLabels.push(monthlyLabels[index]);
+        }
+    });
+    
+    // Create gradient for bars
+    const gradient = monthlyCtx.createLinearGradient(0, 0, 0, 250);
+    gradient.addColorStop(0, '#6c5ce7');
+    gradient.addColorStop(1, '#8e7cf3');
+    
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: filteredLabels,
+            datasets: [{
+                label: 'Monthly Spending',
+                data: filteredExpenses,
+                backgroundColor: gradient,
+                borderRadius: 8,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Spending: $${context.raw}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category expenses chart
+    if (reportData.expenseData.monthlyCategoryExpenses) {
+        const categoryCtx = document.getElementById('modalCategoryExpensesChart').getContext('2d');
+        const categoryLabels = Object.keys(reportData.expenseData.monthlyCategoryExpenses);
+        const categoryAmounts = Object.values(reportData.expenseData.monthlyCategoryExpenses);
+        
+        // Define chart colors
+        const chartColors = [
+            '#6c5ce7',  // Primary - Purple
+            '#00cec9',  // Teal
+            '#0984e3',  // Blue
+            '#00b894',  // Green
+            '#fdcb6e',  // Yellow
+            '#e17055',  // Orange
+            '#d63031'   // Red
+        ];
+        
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryAmounts,
+                    backgroundColor: chartColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: $${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}

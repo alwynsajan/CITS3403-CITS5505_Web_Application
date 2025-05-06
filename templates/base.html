@@ -39,6 +39,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/shared">
                                 <i class="fas fa-share-alt me-2"></i> Shared with me
+                                {% if data.ReportCount and data.ReportCount > 0 %}
+                                <span class="notification-badge">{{ data.ReportCount }}</span>
+                                {% endif %}
                             </a>
                         </li>
                         <li class="nav-item">
