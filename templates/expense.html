@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <!-- Chart.js is already included in base.html -->
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-4">
+
+  <header class="mb-4">
+    <h1>Manage Expenses</h1>
+  </header>
+
+  <!-- Top Row: Add Expense + Add Salary -->
+  <div class="row g-4 mb-4">
+
+    <!-- Add Expense (8/12) -->
+    <div class="col-md-8">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Add Expense</h5>
+          <form id="expenseForm" method="POST" action="/expense/addExpense" class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Amount</label>
+              <input type="number" name="amount" class="form-control" placeholder="e.g. 20.00" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-select" required>
+                <option value="">Select…</option>
+                <option>Shopping</option>
+                <option>Food</option>
+                <option>Medical</option>
+                <option>Grocery</option>
+                <option>Bills</option>
+                <option>Transportation</option>
+                <option>Miscellaneous</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> Add Expense
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Salary (4/12) -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Add Salary</h5>
+          <form id="salaryForm" method="POST" action="/expense/addSalary" class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Amount</label>
+              <input type="number" name="amount" class="form-control" placeholder="e.g. 3000" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-12 d-grid">
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-dollar-sign me-1"></i> Add Salary
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Second Row: Pie + Bar + Line charts -->
+  <div class="row g-4 mb-4">
+
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Category Breakdown</h5>
+          {% if not data.hasExpenses %}
+            <div class="empty-state py-5 text-center">
+              <i class="empty-state-icon bi bi-pie-chart-fill"></i>
+              <p class="mt-2 text-muted">Add expenses to view your category breakdown.</p>
+            </div>
+          {% else %}
+            <canvas id="pieChart"></canvas>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Salary vs Expenses</h5>
+          {% if not data.hasExpenses %}
+            <div class="empty-state py-5 text-center">
+              <i class="empty-state-icon bi bi-bar-chart-fill"></i>
+              <p class="mt-2 text-muted">Log salary &amp; expenses to compare them here.</p>
+            </div>
+          {% else %}
+            <canvas id="barChart"></canvas>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Weekly Expenses</h5>
+          {% if not data.hasExpenses %}
+            <div class="empty-state py-5 text-center">
+              <i class="empty-state-icon bi bi-graph-up"></i>
+              <p class="mt-2 text-muted">Your weekly spending trends will appear here.</p>
+            </div>
+          {% else %}
+            <canvas id="lineChart"></canvas>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Expense Log Table -->
+  <div class="card p-4">
+    <h5 class="card-title">Expense Log</h5>
+    {% if not data.hasExpenses %}
+      <div class="empty-state py-5 text-center">
+        <i class="empty-state-icon bi bi-table"></i>
+        <p class="mt-2 text-muted">Your expenses will be listed here once you add them.</p>
+      </div>
+    {% else %}
+      <table id="expenseLog" class="table table-striped">
+        <thead>
+          <tr><th>Date</th><th>Amount</th><th>Category</th></tr>
+        </thead>
+        <tbody>
+          <!-- JS will populate rows here -->
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- expose data to JS -->
+  <script>
+    window.expenseData = {{ data | tojson | safe }};
+  </script>
+  <!-- expense page JavaScript -->
+  <script src="{{ url_for('static', filename='js/expense.js') }}" defer></script>
+{% endblock %}
