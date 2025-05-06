@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- First Row: Budget Suggestions, Account Balance, Goal Progress -->
+<!-- First Row: Account Balance, Goal Progress, Budget -->
 <div class="row mb-3">
     <!-- Account Balance Card -->
     <div class="col-md-4">
@@ -26,7 +26,7 @@
                             <span class="badge bg-{{ 'success' if data.accountData.trendType == 'up' else 'danger' }} me-2" style="color:#fff;">
                               <i class="fas fa-{{ 'arrow-up' if data.accountData.trendType == 'up' else 'arrow-down' }}"></i>
                               {{ data.accountData.percentChange }}%
-                            </span>
+                        </span>
                             <div class="text-muted small mt-1" style="color:#b0b4ba !important;">from last Salary</div>
                           </div>
                         <button class="btn btn-primary btn-sm add-salary-btn">
@@ -64,20 +64,21 @@
                 {% if data.hasGoal and data.goalData %}
                     <div class="goal-progress text-center">
                         <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">{{ data.goalData[0].goalName }}</h3>
-
-                      <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
+                        <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
                             {% if data.goalData|length > 1 %}
                             <button class="btn btn-link goal-nav-btn" id="prevGoalBtn" style="font-size:1.5rem;">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             {% endif %}
                             <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
-                                <svg class="progress-ring" width="150" height="150">
-                                    <circle class="progress-ring-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
-                                    <circle class="progress-ring-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                                <svg class="goal-progress-svg" width="150" height="150">
+                                    <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                    <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
                                 </svg>
-                                <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;">
-                                    <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
+                                <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
+                                        <span id="goalProgress">{{ data.goalData[0].progressPercentage }}%</span>
+                                    </div>
                                 </div>
                             </div>
                             {% if data.goalData|length > 1 %}
@@ -101,17 +102,12 @@
                             <i class="fas fa-bullseye fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Set a goal to track your progress</p>
-
-                        <!-- <button id="newGoalBtn" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus-circle me-2"></i>Set a New Goal
-                        </button> -->
-
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    <!-- Budget Suggestions Card -->
+    <!-- Budget Card -->
     <div class="col-md-4">
         <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.3s;">
             <div class="card-body p-3" style="position: relative;">
@@ -158,7 +154,7 @@
                                 <div class="progress-bar bg-info" role="progressbar" style="width: 20%"></div>
                             </div>
                         </div>
-                        <div class="text-center mt-2">
+                        <div class="text-center mt-3">
                             <small class="text-muted" id="salaryInfo">Based on monthly salary: ${{ data.budgetSuggestionData.salary }}</small>
                         </div>
                     </div>
@@ -168,11 +164,6 @@
                             <i class="fas fa-chart-pie fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Add your salary to get budget suggestions</p>
-
-                        <!-- <button class="btn btn-primary btn-sm add-salary-btn">
-                            <i class="fas fa-plus-circle me-2"></i>Add Salary
-                        </button> -->
-
                     </div>
                 {% endif %}
             </div>
@@ -180,8 +171,8 @@
     </div>
 </div>
 
-<!-- Second Row: Monthly Spending (2/3), Export (1/3) -->
-<div class="row">
+<!-- Second Row: Monthly Spending (8), Transactions (4) -->
+<div class="row mb-3">
     <!-- Monthly Spending Card -->
     <div class="col-md-8">
         <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.4s;">
@@ -206,23 +197,72 @@
             </div>
         </div>
     </div>
-    <!-- Export Card -->
+    <!-- Transactions Card -->
     <div class="col-md-4">
         <div class="card h-100" style="opacity: 0; transform: translateY(20px); transition: all 0.3s ease 0.5s;">
-            <div class="card-body p-2" style="position: relative;">
+            <div class="card-body p-3" style="position: relative;">
                 <div class="d-flex align-items-center mb-2">
-                    <i class="fas fa-file-export fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
-                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Export</h5>
+                    <i class="fas fa-exchange-alt fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Transactions</h5>
                 </div>
                 <div style="margin-bottom: 1.2rem;"></div>
-                <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary btn-sm" id="exportCSV">
-                        <i class="fas fa-file-csv"></i>
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm" id="exportPDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </button>
+                {% if data.hasExpense and data.transaction %}
+                    <div class="transaction-list" style="max-height: 250px; overflow-y: auto;">
+                        {% for tx in data.transaction[:5] %} {# Show latest 5 #}
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                            <div class="me-2">
+                                <i class="fas fa-{{ 'shopping-cart' if tx.category == 'Grocery' else 'gas-pump' if tx.category == 'Fuel' else 'utensils' if tx.category == 'Food' else 'file-invoice-dollar' if tx.category == 'Bills' else 'money-bill-wave' }} me-2 text-secondary"></i>
+                                <span style="font-weight: 500;">{{ tx.category }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-danger">-${{ "%.2f"|format(tx.amount) }}</span>
+                                <small class="d-block text-muted">{{ tx.date }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if data.transaction|length > 5 %}
+                        <div class="text-center mt-2">
+                            <a href="#" class="small">View All</a> {# Link placeholder #}
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3 empty-state">
+                        <div class="empty-state-icon mb-2">
+                            <i class="fas fa-exchange-alt fa-2x text-muted"></i>
+                        </div>
+                        <p class="text-muted mb-0">No transactions recorded yet</p>
+                        {# Optionally add a button to add expense #}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="shareModalLabel">Share Your Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-preview mb-3 p-3 rounded" style="background-color: var(--card-bg);">
+                    <textarea id="shareSummaryText" class="form-control border-0 bg-transparent" rows="8" readonly style="font-size: 0.9rem; resize: none;"></textarea>
                 </div>
+                <div class="d-flex justify-content-center">
+                    <div id="copyFeedback" class="badge bg-success" style="display: none;">
+                        <i class="fas fa-check me-1"></i>Copied
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="copySummaryBtn">
+                    <i class="fas fa-copy me-1"></i>Copy
+                </button>
             </div>
         </div>
     </div>
@@ -291,17 +331,37 @@
         </div>
     </div>
 </div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <!-- Pass data to JavaScript -->
 <script>
-    // Declare global variables
-    window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    window.monthlyExpenses = {{ data.monthlySpendData | default([]) | tojson | safe }};
-    window.accountData = {{ data.accountData | default({}) | tojson | safe }};
-    window.budgetSuggestionData = {{ data.budgetSuggestionData | default({}) | tojson | safe }};
-    window.goalData = {{ data.goalData | default([]) | tojson | safe }};
+    // Declare global variables using window object
+    Object.assign(window, {
+        monthlyLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        monthlyExpenses: {{ data.monthlySpendData | default([]) | tojson | safe }},
+        accountData: {{ data.accountData | default({}) | tojson | safe }},
+        budgetSuggestionData: {{ data.budgetSuggestionData | default({}) | tojson | safe }},
+        goalData: {{ data.goalData | default([]) | tojson | safe }}
+    });
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
@@ -321,5 +381,56 @@
             updateGoalsUI(window.goalData);
         }
     });
+</script>
+<script>
+    function showLoading(element, text = 'Loading...') {
+        element.disabled = true;
+        element.dataset.originalText = element.innerHTML;
+        element.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${text}`;
+    }
+
+    function hideLoading(element) {
+        element.disabled = false;
+        element.innerHTML = element.dataset.originalText;
+    }
+</script>
+<script>
+    function validateGoalData(data) {
+        if (!data.goalName?.trim()) {
+            return { isValid: false, message: 'Goal name is required' };
+        }
+        if (!data.targetAmount || data.targetAmount <= 0) {
+            return { isValid: false, message: 'Invalid target amount' };
+        }
+        if (!data.timeDuration || data.timeDuration < 1) {
+            return { isValid: false, message: 'Invalid time duration' };
+        }
+        return { isValid: true };
+    }
+</script>
+<script>
+    function updateAccountBalance(accountData) {
+        if (!accountData) return;
+        
+        const balanceElement = document.getElementById('balanceAmount');
+        const trendElement = document.querySelector('.balance-trend');
+        
+        if (balanceElement) {
+            new CountUp('balanceAmount', accountData.balance, {
+                prefix: '$',
+                duration: 2,
+                decimalPlaces: 2
+            }).start();
+        }
+        
+        if (trendElement) {
+            trendElement.innerHTML = `
+                <span class="badge bg-${accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
+                    <i class="fas fa-arrow-${accountData.trendType}"></i>
+                    ${accountData.percentChange}%
+                </span>
+            `;
+        }
+    }
 </script>
 {% endblock %}

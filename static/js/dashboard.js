@@ -119,14 +119,26 @@ function initMonthlySpendingChart() {
         return;
     }
 
-    // Check if there is expense data
-    if (!window.monthlyExpenses || !window.monthlyExpenses.length) {
+    // Prepare data, filtering out months with 0 expense
+    const filteredLabels = [];
+    const filteredExpenses = [];
+    if (window.monthlyLabels && window.monthlyExpenses && window.monthlyLabels.length === window.monthlyExpenses.length) {
+        window.monthlyLabels.forEach((label, index) => {
+            if (window.monthlyExpenses[index] > 0) {
+                filteredLabels.push(label);
+                filteredExpenses.push(window.monthlyExpenses[index]);
+            }
+        });
+    }
+
+    // Check if there is filtered expense data
+    if (!filteredExpenses.length) {
         // If there is no data, show placeholder
         const chartContainer = chartCanvas.parentElement;
         chartContainer.innerHTML = `
             <div class="text-center py-4">
                 <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No expense data available yet</p>
+                <p class="text-muted">No spending data to display</p>
             </div>
         `;
         return;
@@ -134,7 +146,7 @@ function initMonthlySpendingChart() {
 
     // Get chart context
     const ctx = chartCanvas.getContext('2d');
-    
+
     try {
         // Define modern color scheme
         const computedStyle = getComputedStyle(document.documentElement);
@@ -145,7 +157,7 @@ function initMonthlySpendingChart() {
             computedStyle.getPropertyValue('--chart-color-4').trim(),
             computedStyle.getPropertyValue('--chart-color-5').trim()
         ];
-        
+
         // Create bar chart gradient
         const createGradient = (ctx, colorIndex) => {
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
@@ -153,18 +165,18 @@ function initMonthlySpendingChart() {
             gradient.addColorStop(1, adjustColor(chartColors[colorIndex % chartColors.length], 20));
             return gradient;
         };
-        
-        // Prepare bar chart colors
-        const backgroundColors = window.monthlyLabels.map((_, i) => createGradient(ctx, i));
-        
-        // Create chart
+
+        // Prepare bar chart colors using filtered data length
+        const backgroundColors = filteredLabels.map((_, i) => createGradient(ctx, i));
+
+        // Create chart using filtered data
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: window.monthlyLabels,
+                labels: filteredLabels, // Use filtered labels
                 datasets: [{
                     label: 'Monthly Spending',
-                    data: window.monthlyExpenses,
+                    data: filteredExpenses, // Use filtered expenses
                     backgroundColor: backgroundColors,
                     borderRadius: 10,
                     borderWidth: 0,
@@ -245,8 +257,8 @@ function initMonthlySpendingChart() {
                 }
             }
         });
-        
-        console.log('Chart initialized successfully');
+
+        console.log('Chart initialized successfully with filtered data');
     } catch (error) {
         console.error('Error initializing chart:', error);
         // Show error message
@@ -307,72 +319,29 @@ function initGoalProgress() {
 }
 
 /**
- * Update a specific goal progress circle with animation
+ * Update a specific goal progress circle with animation (SVG version)
  * @param {HTMLElement} circleElement - The progress circle element
  * @param {boolean} animate - Whether to animate the update
  */
 function updateGoalProgressCircle(circleElement, animate = false) {
     if (!circleElement) return;
-    
-    const inner = circleElement.querySelector('.progress-circle-inner');
-    if (!inner) return;
-    
-    const percentageElem = inner.querySelector('.progress-percentage');
-    if (!percentageElem) return;
-    
-    const percentage = parseFloat(percentageElem.textContent);
-    if (isNaN(percentage)) return;
-    
-    console.log('Updating goal progress circle with percentage:', percentage);
-    
-    // Reset all borders
-    inner.style.borderTop = '14px solid #eee';
-    inner.style.borderRight = '14px solid #eee';
-    inner.style.borderBottom = '14px solid #eee';
-    inner.style.borderLeft = '14px solid #eee';
-    
-    // If percentage is 0, keep all borders gray
-    if (percentage === 0) {
-        return;
-    }
-    
-    // Define color based on progress
-    let color;
-    if (percentage <= 25) {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-2').trim(); // Bright Teal
-    } else if (percentage <= 75) {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-3').trim(); // Bright Blue
-    } else {
-        color = getComputedStyle(document.documentElement).getPropertyValue('--chart-color-1').trim(); // Bright Purple
-    }
-    
-    if (animate) {
-        // Apply styles with animation delays
-        setTimeout(() => {
-            inner.style.borderTop = `14px solid ${color}`;
-            if (percentage > 25) {
-                setTimeout(() => {
-                    inner.style.borderRight = `14px solid ${color}`;
-                    if (percentage > 50) {
-                        setTimeout(() => {
-                            inner.style.borderBottom = `14px solid ${color}`;
-                            if (percentage > 75) {
-                                setTimeout(() => {
-                                    inner.style.borderLeft = `14px solid ${color}`;
-                                }, 150);
-                            }
-                        }, 150);
-                    }
-                }, 150);
-            }
-        }, 150);
-    } else {
-        // Apply styles without animation
-        inner.style.borderTop = `14px solid ${color}`;
-        if (percentage > 25) inner.style.borderRight = `14px solid ${color}`;
-        if (percentage > 50) inner.style.borderBottom = `14px solid ${color}`;
-        if (percentage > 75) inner.style.borderLeft = `14px solid ${color}`;
-    }
+    // SVG version
+    const svg = circleElement.querySelector('svg.goal-progress-svg');
+    const bar = svg ? svg.querySelector('.progress-bar') : null;
+    const percentageElem = circleElement.querySelector('.progress-percentage');
+    if (!svg || !bar || !percentageElem) return;
+    let percentage = parseFloat(percentageElem.textContent);
+    if (isNaN(percentage)) percentage = 0;
+    // Circle parameters
+    const r = 65;
+    const c = 2 * Math.PI * r;
+    // Progress
+    const progress = Math.max(0, Math.min(percentage, 100));
+    const offset = c * (1 - progress / 100);
+    bar.setAttribute('stroke-dasharray', c);
+    bar.setAttribute('stroke-dashoffset', offset);
+    bar.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim());
+    bar.setAttribute('style', 'transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: 75px 75px;');
 }
 
 /**
@@ -406,52 +375,41 @@ function showAlert(message, type = 'info') {
 }
 
 /**
- * Save a new goal using AJAX with modern animation feedback
+ * Save a new goal using AJAX with modern animation feedback and error handling
  */
 async function saveNewGoal(event) {
     event.preventDefault();
-    
+
     const form = document.getElementById('goalForm');
     if (!form) {
-        console.error('Form element not found');
+        console.error('Goal form element not found');
         return;
     }
-    
+
     const saveButton = document.getElementById('saveGoalBtn');
     if (!saveButton) {
-        console.error('Save button not found');
+        console.error('Save Goal button not found');
         return;
     }
-    
+
     // Basic validation
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
-    
+
     try {
         // Set loading state
         saveButton.disabled = true;
         saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        
-        // Get and process form data
-        const goalNameInput = form.querySelector('[name="goalName"]');
-        if (!goalNameInput) {
-            throw new Error('Goal name input not found');
-        }
-        
-        const goalName = goalNameInput.value.trim();
-        if (!goalName) {
-            throw new Error('Goal name cannot be empty');
-        }
-        
+
         const goalData = {
-            goalName: goalName,
+            goalName: form.querySelector('[name="goalName"]').value.trim(),
             targetAmount: parseFloat(form.querySelector('[name="targetAmount"]').value),
             timeDuration: parseInt(form.querySelector('[name="timeDuration"]').value),
             allocation: parseFloat(form.querySelector('[name="allocation"]').value)
         };
-        
+
         // Send request
         const response = await fetch('/dashboard/addGoal', {
             method: 'POST',
@@ -460,31 +418,75 @@ async function saveNewGoal(event) {
             },
             body: JSON.stringify(goalData)
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to save goal');
+
+        const result = await response.json(); // Always parse JSON
+
+        if (!response.ok || result.status !== "Success") {
+            // Use message from server if available, otherwise generic error
+            throw new Error(result.message || `HTTP error! status: ${response.status}`);
         }
-        
-        // Update UI
-        updateGoalsUI(data.data);
-        
-        // Close modal
+
+        // Close modal first
         const modal = bootstrap.Modal.getInstance(document.getElementById('goalModal'));
         if (modal) {
             modal.hide();
+            // Ensure backdrop is removed if it lingers
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         }
-        
-        // Reset form
-        form.reset();
-        
-        // Show success message
-        showAlert('Goal added successfully!', 'success');
-        
+
+        // Then update UI with the returned goal data
+        let goalProgress = document.querySelector('.goal-progress');
+        if (!goalProgress) {
+            // Insert goal progress HTML into .goal-card
+            const goalCard = document.querySelector('.goal-card .card-body');
+            if (goalCard && result.data && result.data.length > 0) {
+                const firstGoal = result.data[0];
+                goalCard.innerHTML = `
+                    <div class="goal-progress text-center">
+                        <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${firstGoal.goalName}</h3>
+                        <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
+                            <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
+                                <svg class="goal-progress-svg" width="150" height="150">
+                                    <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                    <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                                </svg>
+                                <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
+                                        <span id="goalProgress">${firstGoal.progressPercentage}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="goalDetails" class="goal-details">
+                            <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">${firstGoal.target}</span></p>
+                            <p class="mb-1"><strong>Saved:</strong> $<span id="goalSaved">${firstGoal.saved}</span></p>
+                            <p class="mb-1"><strong>Remaining:</strong> $<span id="goalRemaining">${firstGoal.remaining}</span></p>
+                            ${firstGoal.message ? `<p class="mb-0"><small id="goalMessage">${firstGoal.message}</small></p>` : ''}
+                        </div>
+                    </div>
+                `;
+                // After inserting, update UI and progress circle
+                updateGoalsUI(result.data);
+                animateCards();
+            }
+            // Optionally, reset form here if modal listener is problematic
+            form.reset();
+            return; // Exit after handling insertion
+        }
+        // If goalProgress exists, just update
+        updateGoalsUI(result.data);
+        animateCards();
+        form.reset(); // Reset form after successful update
+
+        showAlert(result.message || 'Goal added successfully!', 'success'); // Show success message from server
+
     } catch (error) {
         console.error('Error saving goal:', error);
-        showAlert(error.message || 'An error occurred while saving the goal. Please try again.', 'danger');
+        showAlert(error.message || 'An error occurred while saving the goal.', 'danger');
     } finally {
         // Restore button state
         if (saveButton) {
@@ -684,20 +686,23 @@ function setupAddSalaryButton() {
 // Expose updateGoalProgressCircle to window for external use
 window.updateGoalProgressCircle = updateGoalProgressCircle;
 
-// Handle salary addition
+// Handle salary addition with error handling
 document.addEventListener('DOMContentLoaded', function() {
-    const addSalaryBtn = document.querySelector('.add-salary-btn');
-    const salaryModal = new bootstrap.Modal(document.getElementById('salaryModal'));
+    const addSalaryButtons = document.querySelectorAll('.add-salary-btn'); // Select all buttons
+    const salaryModalInstance = document.getElementById('salaryModal') ? new bootstrap.Modal(document.getElementById('salaryModal')) : null;
     const saveSalaryBtn = document.getElementById('saveSalaryBtn');
     const salaryForm = document.getElementById('salaryForm');
 
-    if (addSalaryBtn) {
-        addSalaryBtn.addEventListener('click', function() {
-            salaryModal.show();
+    // Handle opening the modal from potentially multiple buttons
+    addSalaryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (salaryModalInstance) {
+                 salaryModalInstance.show();
+            }
         });
-    }
+    });
 
-    if (saveSalaryBtn) {
+    if (saveSalaryBtn && salaryForm) {
         saveSalaryBtn.addEventListener('click', async function() {
             if (!salaryForm.checkValidity()) {
                 salaryForm.reportValidity();
@@ -707,8 +712,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const salaryAmount = document.getElementById('salaryAmount').value;
             const salaryDate = document.getElementById('salaryDate').value;
 
+             // Add loading state to button
+            saveSalaryBtn.disabled = true;
+            saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
             try {
-                const response = await fetch('/dashboard/addSalary', {
+                const response = await fetch('/add_salary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -721,45 +730,127 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    // Update the account balance display
-                    const balanceDisplay = document.getElementById('balanceAmount');
-                    if (balanceDisplay) {
-                        // Use CountUp animation to refresh balance
-                        const newBalance = result.new_balance || 0;
-                        new CountUp('balanceAmount', newBalance, {
-                            prefix: '$',
-                            duration: 2,
-                            decimalPlaces: 2
-                        }).start();
-                    }
-                    // Update budget suggestions (use backend data)
-                    if (result.budgetSuggestions) {
-                        const needsAmount = document.getElementById('needsAmount');
-                        const wantsAmount = document.getElementById('wantsAmount');
-                        const savingsAmount = document.getElementById('savingsAmount');
-                        const salaryInfo = document.getElementById('salaryInfo');
-                        if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
-                        if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
-                        if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
-                        if (salaryInfo) salaryInfo.textContent = `Based on monthly salary: $${result.budgetSuggestions.salary.toFixed(2)} (${result.budgetSuggestions.salaryDate})`;
-                    }
-                    // Hide the modal
-                    salaryModal.hide();
-
-                    // Reset the form only after modal is fully hidden
-                    const salaryModalEl = document.getElementById('salaryModal');
-                    salaryModalEl.addEventListener('hidden.bs.modal', function handler() {
-                        salaryForm.reset();
-                        // Remove this event listener after it runs once
-                        salaryModalEl.removeEventListener('hidden.bs.modal', handler);
-                    });
-                } else {
-                    throw new Error(result.error || 'Failed to add salary');
+                if (!response.ok || result.status !== "Success") {
+                    throw new Error(result.message || `HTTP error! status: ${response.status}`);
                 }
+
+                // Check if balanceDisplay exists. If not, reload page for first salary.
+                 const balanceDisplay = document.getElementById('balanceAmount');
+                 if (!balanceDisplay) {
+                     window.location.reload();
+                     return;
+                 }
+
+                // Update the account balance display
+                const newBalance = result.new_balance || 0;
+                new CountUp('balanceAmount', newBalance, {
+                    prefix: '$',
+                    duration: 2,
+                    decimalPlaces: 2
+                }).start();
+
+                // Update budget suggestions
+                if (result.budgetSuggestions) {
+                    const needsAmount = document.getElementById('needsAmount');
+                    const wantsAmount = document.getElementById('wantsAmount');
+                    const savingsAmount = document.getElementById('savingsAmount');
+                    const salaryInfo = document.getElementById('salaryInfo');
+
+                    // Check if budget section exists. If not, reload.
+                     if (!needsAmount || !wantsAmount || !savingsAmount) {
+                         window.location.reload();
+                         return;
+                     }
+
+                    if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
+                    if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
+                    if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
+                    if (salaryInfo) salaryInfo.textContent = `Based on monthly salary: $${result.budgetSuggestions.salary.toFixed(2)}`; // Simplified date display
+                }
+
+                // Hide the modal
+                if (salaryModalInstance) {
+                    salaryModalInstance.hide();
+                     // Ensure backdrop is removed if it lingers
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+
+                // Reset the form
+                 salaryForm.reset();
+
+                 showAlert(result.message || 'Salary added successfully!', 'success');
+
             } catch (error) {
-                console.error('Error:', error);
-                showAlert(error.message || 'Failed to add salary. Please try again.', 'danger');
+                console.error('Error adding salary:', error);
+                showAlert(error.message || 'Failed to add salary.', 'danger');
+            } finally {
+                 // Restore button state
+                 saveSalaryBtn.disabled = false;
+                 saveSalaryBtn.innerHTML = 'Save Salary';
+            }
+        });
+    }
+
+    // Add Share Summary Logic
+    const shareButton = document.getElementById('shareSummaryBtn');
+    const shareModal = document.getElementById('shareModal') ? new bootstrap.Modal(document.getElementById('shareModal')) : null;
+    const shareTextArea = document.getElementById('shareSummaryText');
+    const copyButton = document.getElementById('copySummaryBtn');
+    const copyFeedback = document.getElementById('copyFeedback');
+
+    if (shareButton && shareModal && shareTextArea && copyButton && copyFeedback) {
+        shareButton.addEventListener('click', async () => {
+            shareButton.disabled = true;
+            shareButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/share_summary');
+                const result = await response.json();
+
+                if (!response.ok || result.status !== "Success") {
+                    throw new Error(result.message || 'Could not generate summary');
+                }
+
+                shareTextArea.value = result.summary; // Display summary in textarea
+                copyFeedback.style.display = 'none'; // Hide previous feedback
+                shareModal.show(); // Show the modal
+
+            } catch (error) {
+                console.error('Error fetching summary:', error);
+                showAlert(error.message, 'danger');
+            } finally {
+                shareButton.disabled = false;
+                shareButton.innerHTML = '<i class="fas fa-share-alt"></i>';
+            }
+        });
+
+        // Copy button inside the modal
+        copyButton.addEventListener('click', () => {
+            shareTextArea.select();
+            try {
+                navigator.clipboard.writeText(shareTextArea.value).then(() => {
+                    const feedback = document.getElementById('copyFeedback');
+                    feedback.style.display = 'block';
+                    feedback.classList.add('show');
+                    
+                    // Hide feedback after animation
+                    setTimeout(() => {
+                        feedback.classList.remove('show');
+                        setTimeout(() => {
+                            feedback.style.display = 'none';
+                        }, 300);
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Clipboard write failed: ', err);
+                    showAlert('Failed to copy to clipboard.', 'warning');
+                });
+            } catch (err) {
+                console.error('Clipboard API error: ', err);
+                showAlert('Clipboard functionality not supported.', 'warning');
             }
         });
     }
@@ -910,9 +1001,6 @@ function updateGoalsUI(goals) {
     if (circle) {
         updateGoalProgressCircle(circle, true);
     }
-
-    // 新增：同步SVG环形进度
-    updateGoalProgressCircleSVG(parseFloat(firstGoal.progressPercentage));
 }
 
 // Initialize CountUp animations
@@ -1100,27 +1188,3 @@ function handleResponsive() {
 
 window.addEventListener('resize', handleResponsive);
 handleResponsive();
-
-// SVG环形进度条百分比同步
-function updateGoalProgressCircleSVG(percent) {
-    const svg = document.querySelector('.progress-ring');
-    const bar = document.querySelector('.progress-ring-bar');
-    if (!svg || !bar) return;
-    const radius = bar.r.baseVal.value;
-    const circumference = 2 * Math.PI * radius;
-    bar.style.strokeDasharray = `${circumference} ${circumference}`;
-    bar.style.strokeDashoffset = `${circumference}`;
-    // 旋转-90度让进度从顶部开始
-    bar.style.transform = 'rotate(-90deg)';
-    bar.style.transformOrigin = '50% 50%';
-    // 设置进度
-    const offset = circumference * (1 - percent / 100);
-    bar.style.strokeDashoffset = offset;
-}
-
-// SVG环
-window.addEventListener('DOMContentLoaded', function() {
-    if (window.goalData && window.goalData.length > 0) {
-        updateGoalProgressCircleSVG(parseFloat(window.goalData[0].progressPercentage));
-    }
-});
