@@ -402,11 +402,14 @@ function createDashboardReportHTML(dashboardData) {
     
     // Goal progress card
     if (hasGoals) {
-        const goalData = dashboardData.goalData[0]; // Display the first goal
+        // Reverse goals array to show earliest first
+        const reversedGoals = [...dashboardData.goalData].reverse();
+        const goalData = reversedGoals[0]; // Display the first (earliest) goal
+        const hasMultipleGoals = reversedGoals.length > 1;
         html += `
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Goal Progress: ${goalData.goalName}</h5>
+                    <h5 class="card-title">Goal Progress: ${hasMultipleGoals ? `1/${reversedGoals.length} ` : ''}${goalData.goalName}</h5>
                     <div class="text-center py-3">
                         <div class="progress mb-3" style="height: 20px;">
                             <div class="progress-bar" role="progressbar" style="width: ${goalData.progressPercentage}%;" 
@@ -1134,8 +1137,11 @@ function renderMultipleGoals(goals) {
             const row = document.createElement('div');
             row.className = 'row goals-row';
             
+            // Reverse goals to show earliest first
+            const reversedGoals = [...goals].reverse();
+            
             // Add each goal with staggered animation
-            goals.forEach(function(goal, index) {
+            reversedGoals.forEach(function(goal, index) {
                 const goalCol = document.createElement('div');
                 goalCol.className = 'col-md-6 mb-3';
                 goalCol.style.opacity = '0';
@@ -1144,7 +1150,7 @@ function renderMultipleGoals(goals) {
                 goalCol.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">${goal.goalName}</h5>
+                            <h5 class="card-title">${reversedGoals.length > 1 ? `${index + 1}/${reversedGoals.length} ` : ''}${goal.goalName}</h5>
                             <div class="d-flex align-items-center mb-2">
                                 <div class="progress flex-grow-1 me-2" style="height: 10px;">
                                     <div class="progress-bar" role="progressbar" 
@@ -1284,6 +1290,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Ensure global currentGoalIndex is consistent with updateGoalsUI's currentIndex
+let currentGoalIndex = 0; // Defined as global variable
+
 function updateGoalsUI(goals) {
     console.log('Updating goals UI with:', goals);
     if (!goals || !goals.length) {
@@ -1291,8 +1300,13 @@ function updateGoalsUI(goals) {
         return;
     }
 
-    // Update the first goal display
-    const firstGoal = goals[0];
+    // Create a reversed copy of the goals array to handle the order correctly
+    // Since backend adds newest goals at the front, we need to reverse the array
+    // to make the earliest added goal show as 1/n
+    const reversedGoals = [...goals].reverse();
+    
+    // Update the first goal display (which should be the earliest added goal)
+    const firstGoal = reversedGoals[0];
     const goalName = document.querySelector('.goal-progress h3');
     const progressPercentage = document.querySelector('.progress-percentage');
     const goalTarget = document.getElementById('goalTarget');
@@ -1300,7 +1314,12 @@ function updateGoalsUI(goals) {
     const goalRemaining = document.getElementById('goalRemaining');
     const goalMessage = document.getElementById('goalMessage');
 
-    if (goalName) goalName.textContent = firstGoal.goalName;
+    // Don't show numbering if there's only one goal
+    if (goalName) {
+        goalName.textContent = reversedGoals.length > 1 ? 
+            `1/${reversedGoals.length} ${firstGoal.goalName}` : 
+            firstGoal.goalName;
+    }
     if (progressPercentage) progressPercentage.textContent = `${firstGoal.progressPercentage}%`;
     if (goalTarget) goalTarget.textContent = firstGoal.target;
     if (goalSaved) goalSaved.textContent = firstGoal.saved;
@@ -1311,8 +1330,8 @@ function updateGoalsUI(goals) {
     const goalCard = document.querySelector('.goal-card');
     const goalSelectorContainer = document.querySelector('.goal-selector');
     
-    if (goals.length > 1) {
-        console.log('Multiple goals detected:', goals.length);
+    if (reversedGoals.length > 1) {
+        console.log('Multiple goals detected:', reversedGoals.length);
         // If selector container doesn't exist, create it
         if (!goalSelectorContainer) {
             console.log('Creating goal selector container');
@@ -1323,7 +1342,7 @@ function updateGoalsUI(goals) {
                     <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
                         <i class="fas fa-chevron-left"></i>
                     </button>
-                    <span class="goal-counter">1/${goals.length}</span>
+                    <span class="goal-counter">1/${reversedGoals.length}</span>
                     <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
                         <i class="fas fa-chevron-right"></i>
                     </button>
@@ -1346,13 +1365,13 @@ function updateGoalsUI(goals) {
         console.log('Navigation elements:', { prevBtn, nextBtn, counter });
 
         function updateGoalDisplay(index) {
-            if (index < 0 || index >= goals.length) {
+            if (index < 0 || index >= reversedGoals.length) {
                 console.error('Invalid goal index:', index);
                 return;
             }
 
             console.log('Updating goal display for index:', index);
-            const goal = goals[index];
+            const goal = reversedGoals[index];
             console.log('Current goal:', goal);
 
             // Update all goal display elements
@@ -1366,7 +1385,12 @@ function updateGoalsUI(goals) {
             };
 
             // Update each element if it exists
-            if (elements.goalName) elements.goalName.textContent = goal.goalName;
+            // Don't show numbering if there's only one goal
+            if (elements.goalName) {
+                elements.goalName.textContent = reversedGoals.length > 1 ? 
+                    `${index + 1}/${reversedGoals.length} ${goal.goalName}` : 
+                    goal.goalName;
+            }
             if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progressPercentage}%`;
             if (elements.goalTarget) elements.goalTarget.textContent = goal.target;
             if (elements.goalSaved) elements.goalSaved.textContent = goal.saved;
@@ -1379,10 +1403,8 @@ function updateGoalsUI(goals) {
                 updateGoalProgressCircle(circle, true);
             }
 
-            // Update counter and button states
-            if (counter) counter.textContent = `${index + 1}/${goals.length}`;
-            if (prevBtn) prevBtn.disabled = index === 0;
-            if (nextBtn) nextBtn.disabled = index === goals.length - 1;
+            // Update counter but keep buttons enabled for circular navigation
+            if (counter) counter.textContent = `${index + 1}/${reversedGoals.length}`;
         }
 
         // Remove existing event listeners
@@ -1394,23 +1416,15 @@ function updateGoalsUI(goals) {
         // Add new event listeners
         newPrevBtn.addEventListener('click', () => {
             console.log('Previous button clicked');
-            // Circular navigation: go to last if at the beginning
-            if (currentIndex > 0) {
-                currentIndex--;
-            } else {
-                currentIndex = goals.length - 1;
-            }
+            // Implement full circular navigation
+            currentIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
             updateGoalDisplay(currentIndex);
         });
 
         newNextBtn.addEventListener('click', () => {
             console.log('Next button clicked');
-            // Circular navigation: go to first if at the end
-            if (currentIndex < goals.length - 1) {
-                currentIndex++;
-            } else {
-                currentIndex = 0;
-            }
+            // Implement full circular navigation
+            currentIndex = (currentIndex + 1) % reversedGoals.length;
             updateGoalDisplay(currentIndex);
         });
 
@@ -1525,12 +1539,19 @@ function switchGoal(direction) {
 function updateGoalContent() {
     if (!window.goalData || !window.goalData.length) return;
     
-    const currentGoal = window.goalData[currentGoalIndex];
+    // Reverse goalData to match our display order (earliest first)
+    const reversedGoalData = [...window.goalData].reverse();
+    const currentGoal = reversedGoalData[currentGoalIndex];
     if (!currentGoal) return;
     
     // Update goal name
     const goalName = document.querySelector('.goal-progress h3');
-    if (goalName) goalName.textContent = currentGoal.goalName;
+    // Don't show numbering if there's only one goal
+    if (goalName) {
+        goalName.textContent = reversedGoalData.length > 1 ? 
+            `${currentGoalIndex + 1}/${reversedGoalData.length} ${currentGoal.goalName}` : 
+            currentGoal.goalName;
+    }
     
     // Update progress
     const progressPercentage = document.querySelector('.progress-percentage');
@@ -1551,7 +1572,7 @@ function updateGoalContent() {
     if (goalTarget) goalTarget.textContent = currentGoal.target;
     if (goalSaved) goalSaved.textContent = currentGoal.saved;
     if (goalRemaining) goalRemaining.textContent = currentGoal.remaining;
-    if (goalMessage) goalMessage.textContent = currentGoal.message;
+    if (goalMessage) goalMessage.textContent = currentGoal.message || '';
     
     // Update progress circle
     updateProgressCircle(currentGoal.progressPercentage);
@@ -1576,12 +1597,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupGoalNavigation() {
     if (!window.goalData || window.goalData.length <= 1) return;
     
-    let currentGoalIndex = 0;
     const prevBtn = document.getElementById('prevGoalBtn');
     const nextBtn = document.getElementById('nextGoalBtn');
     
+    // Reset current index for better UX
+    currentGoalIndex = 0;
+    
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
+            // Ensure circular navigation: when at first goal, previous button goes to last goal
             currentGoalIndex = (currentGoalIndex - 1 + window.goalData.length) % window.goalData.length;
             switchGoal('prev');
         });
@@ -1589,6 +1613,7 @@ function setupGoalNavigation() {
     
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
+            // Ensure circular navigation: when at last goal, next button goes to first goal
             currentGoalIndex = (currentGoalIndex + 1) % window.goalData.length;
             switchGoal('next');
         });
