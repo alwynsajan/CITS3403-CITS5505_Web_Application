@@ -1,92 +1,133 @@
 // static/js/expense.js
 
 let pieChart, barChart, lineChart;
+let barChartInstance = null;
+let pieChartInstance = null;
+let lineChartInstance = null;
 
 /**
  * Initialize charts and table if we have expense data.
  */
 function initExpenseCharts() {
-  // guard if expenseData is ever undefined or no data
-  if (!window.expenseData || !window.expenseData.hasExpenses) return;
+  // Show/hide empty states and charts based on data
+  const hasExpenses = window.expenseData.hasExpenses;
+  const hasSalary = window.expenseData.hasSalary;
+  
+  // Weekly Expenses
+  const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
+  const lineChartEl = document.getElementById('lineChart');
+  if (weeklyEmpty && lineChartEl) {
+    weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
+    lineChartEl.style.display = hasExpenses ? 'block' : 'none';
+  }
+  
+  // Category Breakdown
+  const categoryEmpty = document.getElementById('categoryBreakdownEmpty');
+  const pieChartEl = document.getElementById('pieChart');
+  if (categoryEmpty && pieChartEl) {
+    categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
+    pieChartEl.style.display = hasExpenses ? 'block' : 'none';
+  }
+  
+  // Salary vs Expenses
+  const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
+  const barChartEl = document.getElementById('barChart');
+  if (salaryEmpty && barChartEl) {
+    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
+    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
+  }
 
-  // 1) Pie chart: category breakdown
-  const pieCtx = document.getElementById('pieChart').getContext('2d');
-  pieChart = new Chart(pieCtx, {
-    type: 'pie',
-    data: {
-      labels: window.expenseData.monthlyCategorywiseExpenses.categories,
-      datasets: [{
-        data: window.expenseData.monthlyCategorywiseExpenses.expensePercentage,
-        backgroundColor: [
-          '#6c5ce7', '#00cec9', '#0984e3', '#00b894', '#ff7675', '#fdcb6e'
-        ]
-      }]
+  // Now initialize the charts if they should be visible
+  if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
+    if (lineChartInstance) {
+      lineChartInstance.destroy();
     }
-  });
-
-  // 2) Bar chart: salary vs expenses
-  const barCtx = document.getElementById('barChart').getContext('2d');
-  barChart = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: window.expenseData.expenseAndSalary.labels,
-      datasets: [
-        {
-          label: 'Salary',
-          data: window.expenseData.expenseAndSalary.salaryData,
-          backgroundColor: '#6c5ce7'
+    lineChartInstance = new Chart(lineChartEl, {
+      type: "line",
+      data: {
+        labels: Object.keys(window.expenseData.weeklyExpense),  
+        datasets: [{
+          label: "Weekly Spending",
+          data: Object.values(window.expenseData.weeklyExpense),  
+          borderColor: "#6932dd",
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#6932dd",
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
         },
-        {
-          label: 'Expenses',
-          data: window.expenseData.expenseAndSalary.expenseData,
-          backgroundColor: '#00cec9'
+        scales: {
+          y: { display: false },
+          x: { display: false }
         }
-      ]
+      }
+    });
+  }
+
+ 
+
+  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
+    if (barChartInstance) {
+      barChartInstance.destroy();
     }
-  });
+    const salaryData = window.expenseData.expenseAndSalary?.salaryData ?? Array(12).fill(0);
+    const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
 
-  // 3) Line chart: weekly spending
-  const lineCtx = document.getElementById('lineChart').getContext('2d');
-  lineChart = new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: Object.keys(window.expenseData.weeklyExpense),
-      datasets: [{
-        label: 'Weekly Spending',
-        data: Object.values(window.expenseData.weeklyExpense),
-        fill: false,
-        borderColor: '#0984e3',
-        tension: 0.3
-      }]
-    }
-  });
-
-  // 4) Populate the expense log table
-  updateExpenseTable(window.expenseData.expenses);
-}
-
-/**
- * Render the expense table rows
- */
-function updateExpenseTable(expenses) {
-  const tbody = document.querySelector('#expenseLog tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  expenses.forEach(exp => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${exp.date}</td>
-      <td>$${exp.amount.toFixed(2)}</td>
-      <td>${exp.category}</td>
-    `;
-    tbody.appendChild(row);
-  });
+    barChartInstance = new Chart(barChartEl, {
+      type: 'bar',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        datasets: [
+          {
+            label: 'Salary',
+            data: salaryData,
+            backgroundColor: '#6c5ce7',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          },
+          {
+            label: 'Expenses',
+            data: expenseData,
+            backgroundColor: '#00cec9',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            stacked: false,
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            stacked: false,
+            grid: { color: '#f1f1f1' }
+          }
+        }
+      }
+    });
+  }
 }
 
 /**
  * Handle adding a new expense via AJAX
- */
-async function saveExpense(event) {
+ */async function saveExpense(event) {
   event.preventDefault();
   const form = document.getElementById('expenseForm');
   const btn  = form.querySelector('button[type="submit"]');
@@ -116,7 +157,6 @@ async function saveExpense(event) {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
-
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
@@ -162,6 +202,8 @@ async function saveSalary(event) {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
+
+    console.log(window.expenseData)
 
     initExpenseCharts();
     showAlert('Salary added successfully!', 'success');
