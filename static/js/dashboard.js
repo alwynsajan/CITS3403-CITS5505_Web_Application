@@ -9,6 +9,9 @@
 // var monthlyExpenses = [];
 // var goalData = [];
 
+// Store initial goal count for reload logic
+let initialGoalCount = window.goalData?.length || 0;
+
 // DOM ready handler
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard JS loaded');
@@ -25,14 +28,29 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         initMonthlySpendingChart();
         initGoalProgress();
-        initSalaryVsExpensesChart();
-        setupEventListeners();
+        // initSalaryVsExpensesChart(); // Removed: barChart ID is not in dashboard.html
+        // setupEventListeners();       // Removed: Function not defined in this file; specific listeners handled below or elsewhere
         
+        animateCards();
+        // setupAddSalaryButton(); // Removed: Functionality handled by DOMContentLoaded listener around line 1269
+
+        // Setup listener for the New Goal button
+        const newGoalButton = document.getElementById('newGoalBtn');
+        const goalModalElement = document.getElementById('goalModal');
+        if (newGoalButton && goalModalElement) {
+            const goalModal = new bootstrap.Modal(goalModalElement);
+            newGoalButton.addEventListener('click', function() {
+                goalModal.show();
+            });
+        }
+        // Ensure saveGoalBtn listener is attached if the button exists (it's also in saveNewGoal, but good to be robust)
+        const saveGoalButton = document.getElementById('saveGoalBtn');
+        if (saveGoalButton) {
+            saveGoalButton.addEventListener('click', saveNewGoal); // saveNewGoal is defined around line 939
+        }
+
         // Add entrance animations to cards
         animateCards();
-        
-        // Setup Add Salary button
-        setupAddSalaryButton();
     }, 300); // Small delay for smoother rendering
 
     // Hide unread report count by default when page loads
@@ -372,7 +390,7 @@ function createDashboardReportHTML(dashboardData) {
                         <div>
                             <span class="badge bg-${accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
                                 <i class="fas fa-arrow-${accountData.trendType}"></i>
-                                ${accountData.percentChange}%
+                                ${accountData.percentageChange}%
                             </span>
                             <div class="text-muted small mt-1">from last update</div>
                         </div>
@@ -503,7 +521,6 @@ function createDashboardReportHTML(dashboardData) {
                     </div>
                     <div class="text-end">
                         <span class="fw-bold text-danger">-$${tx.amount.toFixed(2)}</span>
-                        <small class="d-block text-muted">${tx.date}</small>
                     </div>
                 </div>
             `;
@@ -584,49 +601,102 @@ function createExpenseReportHTML(expenseData) {
         `;
     }
     
-    // Monthly category expenses
+    // Monthly category expenses for Pie Chart
     if (hasExpense && expenseData.monthlyCategoryExpenses) {
-        const categories = expenseData.monthlyCategoryExpenses;
+        const monthlyCategories = expenseData.monthlyCategoryExpenses;
+        const firstMonthName = Object.keys(monthlyCategories)[0];
+        
+        let categoriesForPie = {};
+        if (firstMonthName && monthlyCategories[firstMonthName]) {
+            // Filter out 'total' key before creating the pie chart
+            for (const category in monthlyCategories[firstMonthName]) {
+                if (category.toLowerCase() !== 'total') {
+                    categoriesForPie[category] = monthlyCategories[firstMonthName][category];
+                }
+            }
+        }
+
         html += `
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Monthly Category Expenses</h5>
-                    <div class="list-group my-3">
+                    <h5 class="card-title">Category Breakdown (${firstMonthName || 'N/A'})</h5>
         `;
-        
-        // If category data exists
-        if (categories && Object.keys(categories).length > 0) {
-            Object.entries(categories).forEach(([category, amount]) => {
-                html += `
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-${
-                                category === 'Grocery' ? 'shopping-cart' : 
-                                category === 'Fuel' ? 'gas-pump' : 
-                                category === 'Food' ? 'utensils' : 
-                                category === 'Bills' ? 'file-invoice-dollar' : 'tag'
-                            } me-2"></i>
-                            ${category}
-                        </div>
-                        <div class="badge bg-primary rounded-pill">$${amount.toFixed(2)}</div>
-                    </div>
-                `;
-            });
+
+        // Check if there are categories to display after filtering
+        if (Object.keys(categoriesForPie).length > 0) {
+            const categoryPieChartId = `categoryPieChart_${Date.now()}`;
+            html += `<div class="chart-container my-3" style="height: 300px;"><canvas id="${categoryPieChartId}"></canvas></div>`;
+            // Delay chart rendering until after HTML is injected
+            setTimeout(() => {
+                renderChart(
+                    categoryPieChartId, 
+                    'pie', 
+                    Object.keys(categoriesForPie), 
+                    Object.values(categoriesForPie),
+                    'Category Breakdown'
+                );
+            }, 0);
         } else {
             html += `
                 <div class="text-center py-3 text-muted">
-                    <i>No category data available</i>
+                    <i>No category data available for pie chart.</i>
                 </div>
             `;
         }
-        
         html += `
-                    </div>
                 </div>
             </div>
         `;
     }
-    
+
+    // Monthly category expenses
+    if (hasExpense && expenseData.monthlyCategoryExpenses) {
+        const categories = expenseData.monthlyCategoryExpenses; // This is the original categories object
+        // This part is for the LIST display, not the PIE chart.
+        // It iterates through months, and then categories within each month.
+        // The current spec for expenseData.monthlyCategoryExpenses is an object where keys are month names.
+        // Example: "April": {"Groceries": 100.0, "total": 200.5}
+        
+        // Displaying all categories for all available months in a list format
+        Object.entries(categories).forEach(([month, monthCategories]) => {
+            html += `
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Detailed Expenses for ${month}</h5>
+                    <div class="list-group my-3">
+            `;
+            if (monthCategories && Object.keys(monthCategories).length > 0) {
+                Object.entries(monthCategories).forEach(([category, amount]) => {
+                    html += `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-${
+                                    category.toLowerCase() === 'grocery' || category.toLowerCase() === 'groceries' ? 'shopping-cart' : 
+                                    category.toLowerCase() === 'fuel' ? 'gas-pump' : 
+                                    category.toLowerCase() === 'food' ? 'utensils' : 
+                                    category.toLowerCase() === 'bills' ? 'file-invoice-dollar' : 'tag'
+                                } me-2"></i>
+                                ${category}
+                            </div>
+                            <div class="badge bg-primary rounded-pill">$${typeof amount === 'number' ? amount.toFixed(2) : amount}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `
+                    <div class="text-center py-3 text-muted">
+                        <i>No category data available for ${month}.</i>
+                    </div>
+                `;
+            }
+            html += `
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+    }
+
     html += `</div>`;
     return html;
 }
@@ -940,68 +1010,29 @@ async function saveNewGoal(event) {
 
         const result = await response.json(); // Always parse JSON
 
+        // Reload for first dynamic addition when there's already at least one goal
+        if (initialGoalCount > 0 && result.data?.length > initialGoalCount) {
+            window.location.reload();
+            return;
+        }
+
         if (!response.ok || result.status !== "Success") {
             // Use message from server if available, otherwise generic error
             throw new Error(result.message || `HTTP error! status: ${response.status}`);
         }
 
-        // Close modal first
+        // Close modal and reload the page to display the newly added goal
         const modal = bootstrap.Modal.getInstance(document.getElementById('goalModal'));
         if (modal) {
             modal.hide();
-            // Ensure backdrop is removed if it lingers
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) backdrop.remove();
             document.body.classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.style.paddingRight = '';
         }
-
-        // Then update UI with the returned goal data
-        let goalProgress = document.querySelector('.goal-progress');
-        if (!goalProgress) {
-            // Insert goal progress HTML into .goal-card
-            const goalCard = document.querySelector('.goal-card .card-body');
-            if (goalCard && result.data && result.data.length > 0) {
-                const firstGoal = result.data[0];
-                goalCard.innerHTML = `
-                    <div class="goal-progress text-center">
-                        <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${firstGoal.goalName}</h3>
-                        <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
-                            <div class="progress-circle mx-auto mb-2" style="width: 150px; height: 150px;">
-                                <svg class="goal-progress-svg" width="150" height="150">
-                                    <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
-                                    <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
-                                </svg>
-                                <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-                                    <div class="progress-percentage" style="color:var(--primary-color);font-weight:700;">
-                                        <span id="goalProgress">${firstGoal.progressPercentage}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="goalDetails" class="goal-details">
-                            <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">${firstGoal.target}</span></p>
-                            <p class="mb-1"><strong>Saved:</strong> $<span id="goalSaved">${firstGoal.saved}</span></p>
-                            <p class="mb-1"><strong>Remaining:</strong> $<span id="goalRemaining">${firstGoal.remaining}</span></p>
-                            ${firstGoal.message ? `<p class="mb-0"><small id="goalMessage">${firstGoal.message}</small></p>` : ''}
-                        </div>
-                    </div>
-                `;
-                // After inserting, update UI and progress circle
-                updateGoalsUI(result.data);
-                animateCards();
-            }
-            // Optionally, reset form here if modal listener is problematic
-            form.reset();
-            return; // Exit after handling insertion
-        }
-        // If goalProgress exists, just update
-        updateGoalsUI(result.data);
-        animateCards();
-        form.reset(); // Reset form after successful update
-
-        showAlert(result.message || 'Goal added successfully!', 'success'); // Show success message from server
+        window.location.reload();
+        return;
 
     } catch (error) {
         console.error('Error saving goal:', error);
@@ -1229,86 +1260,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(result.message || `HTTP error! status: ${response.status}`);
                 }
 
-                // Check if balanceDisplay exists. If not, reload page for first salary.
-                 const balanceDisplay = document.getElementById('balanceAmount');
-                 if (!balanceDisplay) {
-                     window.location.reload();
-                     return;
-                 }
-
-                // Update the account balance display
-                const newBalance = result.new_balance || 0;
-                new CountUp('balanceAmount', newBalance, {
-                    prefix: '$',
-                    duration: 2,
-                    decimalPlaces: 2
-                }).start();
-
-                // Update budget suggestions
-                if (result.budgetSuggestions) {
-                    const needsAmount = document.getElementById('needsAmount');
-                    const wantsAmount = document.getElementById('wantsAmount');
-                    const savingsAmount = document.getElementById('savingsAmount');
-                    const salaryInfo = document.getElementById('salaryInfo');
-
-                    // Check if budget section exists. If not, reload.
-                     if (!needsAmount || !wantsAmount || !savingsAmount) {
-                         window.location.reload();
-                         return;
-                     }
-
-                    if (needsAmount) needsAmount.textContent = `$${result.budgetSuggestions.needs.toFixed(2)}`;
-                    if (wantsAmount) wantsAmount.textContent = `$${result.budgetSuggestions.wants.toFixed(2)}`;
-                    if (savingsAmount) savingsAmount.textContent = `$${result.budgetSuggestions.savings.toFixed(2)}`;
-                    if (salaryInfo) salaryInfo.textContent = `Based on monthly salary: $${result.budgetSuggestions.salary.toFixed(2)}`; // Simplified date display
-                }
-
-                // Hide the modal
+                // On success, close modal and reload to update balance card
                 if (salaryModalInstance) {
                     salaryModalInstance.hide();
-                     // Ensure backdrop is removed if it lingers
                     const backdrop = document.querySelector('.modal-backdrop');
                     if (backdrop) backdrop.remove();
                     document.body.classList.remove('modal-open');
                     document.body.style.overflow = '';
                     document.body.style.paddingRight = '';
                 }
-
-                // Reset the form
-                 salaryForm.reset();
-
-                 // Update Salary vs Expenses chart if it exists
-                const barChartCanvas = document.getElementById('barChart');
-                if (barChartCanvas) {
-                    // Get latest salary and expense data
-                    const salary = parseFloat(salaryAmount) || 0;
-                    let expenses = 0;
-                    
-                    // Try to get existing expense data from the DOM if possible
-                    // Find elements with the class 'fw-bold'
-                    const boldElements = document.querySelectorAll('.fw-bold');
-                    for (const element of boldElements) {
-                        // Check if the parent contains text about expenses
-                        const parentText = element.parentElement?.textContent || '';
-                        if (parentText.includes('Total Expenses')) {
-                            const expenseText = element.textContent.replace('$', '').trim();
-                            expenses = parseFloat(expenseText) || 0;
-                            break;
-                        }
-                    }
-                    
-                    // Update the chart
-                    updateSalaryVsExpensesChart(salary, expenses);
-                    
-                    // Show chart container and hide empty state
-                    const emptyState = document.getElementById('salaryVsExpensesEmpty');
-                    const chartContainer = barChartCanvas.parentElement;
-                    
-                    if (emptyState) emptyState.style.display = 'none';
-                    if (chartContainer) chartContainer.style.display = 'flex';
-                }
-
-                showAlert(result.message || 'Salary added successfully!', 'success');
+                window.location.reload();
+                return;
 
             } catch (error) {
                 console.error('Error adding salary:', error);
