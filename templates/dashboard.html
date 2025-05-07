@@ -142,7 +142,7 @@
                                 <div class="progress-bar bg-success" role="progressbar" style="width: 30%"></div>
                             </div>
                         </div>
-                        <div class="budget-category savings">
+                            <div class="budget-category savings">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="mb-0" style="color:var(--secondary-color);font-weight:600;">Savings (20%)</h6>
@@ -156,7 +156,7 @@
                         </div>
                         <div class="text-center mt-3">
                             <small class="text-muted" id="salaryInfo">Based on monthly salary: ${{ data.budgetSuggestionData.salary }}</small>
-                        </div>
+                    </div>
                     </div>
                 {% else %}
                     <div class="text-center py-3 empty-state">
@@ -167,9 +167,9 @@
                     </div>
                 {% endif %}
             </div>
+            </div>
         </div>
     </div>
-</div>
 
 <!-- Second Row: Monthly Spending (8), Transactions (4) -->
 <div class="row mb-3">
@@ -240,55 +240,117 @@
     </div>
 </div>
 
-<!-- Share User Search Modal -->
-<div class="modal fade" id="shareUserSearchModal" tabindex="-1" aria-labelledby="shareUserSearchModalLabel" aria-hidden="true">
+<!-- Export Report Modal -->
+<div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="shareUserSearchModalLabel">Share Report</h5>
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportReportModalLabel">Share Your Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="search-container mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-transparent border-end-0">
-                            <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" class="form-control border-start-0" id="userSearchInput" placeholder="Search user">
+                <div class="mb-3">
+                    <label for="userSearch" class="form-label">Search for a user to share with</label>
+                    <div class="position-relative">
+                        <input type="text" class="form-control" id="userSearch" placeholder="Type a name or email...">
+                        <div id="userSearchLoading" class="position-absolute end-0 top-0 d-none" style="height: 100%; display: flex; align-items: center; padding-right: 10px;">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                        </div>
+                    </div>
+                    <div id="searchResults" class="list-group mt-2" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+                </div>
+                <div id="selectedUser" class="d-none">
+                    <div class="alert alert-info d-flex justify-content-between align-items-center">
+                        <div>
+                            Share with: <span id="selectedUserName" class="fw-bold"></span>
+                        </div>
+                        <button type="button" class="btn-close btn-sm" id="clearSelectedUser" aria-label="Clear"></button>
                     </div>
                 </div>
-                <div id="userSearchResults" class="list-group" style="max-height: 300px; overflow-y: auto;">
-                    <!-- User results will be populated here -->
+                <div id="reportTypeSelection">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="reportType" id="dashboardReport" value="dashboard" checked>
+                        <label class="form-check-label" for="dashboardReport">
+                            Dashboard Report
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="reportType" id="expenseReport" value="expense">
+                        <label class="form-check-label" for="expenseReport">
+                            Expense Report
+                        </label>
+                    </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="shareReportBtn" disabled>
+                    <i class="fas fa-share-alt me-1"></i>Share Report
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Share Preview Modal -->
-<div class="modal fade" id="sharePreviewModal" tabindex="-1" aria-labelledby="sharePreviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<!-- Goal Modal -->
+<div class="modal fade" id="goalModal" tabindex="-1" aria-labelledby="goalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="sharePreviewModalLabel">Report Preview</h5>
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalModalLabel">Set a New Goal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info mb-3">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <span>Sharing report with: <strong id="selectedUserName"></strong></span>
-                </div>
-                <div class="summary-preview mb-3 p-3 rounded" style="background-color: var(--card-bg);">
-                    <div id="reportPreview" class="report-content">
-                        <!-- Report content will be populated here -->
+                <form id="goalForm">
+                    <div class="mb-3">
+                        <label for="goalName" class="form-label">Goal Name</label>
+                        <input type="text" class="form-control" id="goalName" name="goalName" placeholder="e.g., New Laptop" required>
                     </div>
-                </div>
+                    <div class="mb-3">
+                        <label for="targetAmount" class="form-label">Target Amount ($)</label>
+                        <input type="number" class="form-control" id="targetAmount" name="targetAmount" min="1" placeholder="1000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="timeDuration" class="form-label">Time Duration (months)</label>
+                        <input type="number" class="form-control" id="timeDuration" name="timeDuration" min="1" placeholder="3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="allocation" class="form-label">Allocation (%)</label>
+                        <input type="number" class="form-control" id="allocation" name="allocation" min="1" max="100" placeholder="30" required>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmShareBtn">
-                    <i class="fas fa-share-alt me-2"></i>Share Report
-                </button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveGoalBtn">Save Goal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Modal -->
+<div class="modal fade" id="salaryModal" tabindex="-1" aria-labelledby="salaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="salaryModalLabel">Add Amount</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="salaryForm">
+                    <div class="mb-3">
+                        <label for="salaryAmount" class="form-label">Salary Amount ($)</label>
+                        <input type="number" class="form-control" id="salaryAmount" name="salaryAmount" min="1" placeholder="5000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="salaryDate" class="form-label">Salary Date</label>
+                        <input type="date" class="form-control" id="salaryDate" name="salaryDate" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveSalaryBtn">Save Salary</button>
             </div>
         </div>
     </div>
@@ -307,73 +369,6 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Shared Reports Modal -->
-<div class="modal fade" id="sharedReportsModal" tabindex="-1" aria-labelledby="sharedReportsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="sharedReportsModalLabel">
-                    <i class="fas fa-share-alt me-2"></i>Shared Reports
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="sharedReportsLoading" class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading shared reports...</p>
-                </div>
-                <div id="sharedReportsList" style="display: none;">
-                    <!-- Shared reports list will be populated here -->
-                </div>
-                <div id="sharedReportsEmpty" class="text-center py-5 empty-state" style="display: none;">
-                    <div class="empty-state-icon mb-3">
-                        <i class="fas fa-share-alt fa-3x text-muted"></i>
-                    </div>
-                    <h5 class="mb-2">No Shared Reports</h5>
-                    <p class="text-muted mb-0">No one has shared any reports with you yet.</p>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="refreshSharedReportsBtn">
-                    <i class="fas fa-sync-alt me-2"></i>Refresh
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Report Detail Modal -->
-<div class="modal fade" id="reportDetailModal" tabindex="-1" aria-labelledby="reportDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="reportDetailModalLabel">Report Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div id="reportDetailLoading" class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading report details...</p>
-                </div>
-                <div id="reportDetailContent" style="display: none;">
-                    <!-- Report detail content will be populated here -->
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" id="backToReportsBtn">
-                    <i class="fas fa-arrow-left me-2"></i>Back to List
-                </button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -409,7 +404,191 @@
         if (window.goalData && window.goalData.length > 0) {
             updateGoalsUI(window.goalData);
         }
+
+        // Initialize Export Report functionality
+        setupExportReportFeature();
     });
+
+    function setupExportReportFeature() {
+        // Initialize form elements
+        const userSearchInput = document.getElementById('userSearch');
+        const searchResults = document.getElementById('searchResults');
+        const userSearchLoading = document.getElementById('userSearchLoading');
+        const selectedUserDiv = document.getElementById('selectedUser');
+        const selectedUserName = document.getElementById('selectedUserName');
+        const clearSelectedUserBtn = document.getElementById('clearSelectedUser');
+        const shareReportBtn = document.getElementById('shareReportBtn');
+        
+        // Shared state
+        let selectedUserId = null;
+        let searchTimeout = null;
+        
+        // Reset form when modal is shown (using Bootstrap event)
+        $('#exportReportModal').on('show.bs.modal', function() {
+            userSearchInput.value = '';
+            searchResults.style.display = 'none';
+            selectedUserDiv.classList.add('d-none');
+            shareReportBtn.disabled = true;
+            selectedUserId = null;
+        });
+        
+        // Handle user search input
+        userSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Hide selected user when input changes
+            selectedUserDiv.classList.add('d-none');
+            selectedUserId = null;
+            shareReportBtn.disabled = true;
+            
+            // If empty query, hide results
+            if (query.length === 0) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            
+            // Show loading indicator
+            userSearchLoading.classList.remove('d-none');
+            
+            // Set timeout to avoid too many requests
+            searchTimeout = setTimeout(() => {
+                // Fetch users that match the query
+                fetch(`/dashboard/getUsernamesAndIDs?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading indicator
+                        userSearchLoading.classList.add('d-none');
+                        
+                        if (data.status === "Success" && data.data && data.data.length > 0) {
+                            // Clear previous results
+                            searchResults.innerHTML = '';
+                            
+                            // Add each user to results
+                            data.data.forEach(user => {
+                                const userItem = document.createElement('a');
+                                userItem.href = '#';
+                                userItem.className = 'list-group-item list-group-item-action';
+                                userItem.dataset.userId = user.userID;
+                                userItem.dataset.userName = `${user.firstName} ${user.lastName}`;
+                                userItem.innerHTML = `
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">${user.firstName} ${user.lastName}</div>
+                                            <small class="text-muted">${user.username}</small>
+                                        </div>
+                                        <i class="fas fa-user-circle text-primary"></i>
+                                    </div>
+                                `;
+                                
+                                // Add click event to select user
+                                userItem.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    
+                                    // Set selected user
+                                    selectedUserId = this.dataset.userId;
+                                    selectedUserName.textContent = this.dataset.userName;
+                                    
+                                    // Show selected user, hide search results
+                                    selectedUserDiv.classList.remove('d-none');
+                                    searchResults.style.display = 'none';
+                                    
+                                    // Clear search input
+                                    userSearchInput.value = '';
+                                    
+                                    // Enable share button
+                                    shareReportBtn.disabled = false;
+                                });
+                                
+                                searchResults.appendChild(userItem);
+                            });
+                            
+                            // Show search results
+                            searchResults.style.display = 'block';
+                        } else {
+                            // No results found
+                            searchResults.innerHTML = `
+                                <div class="list-group-item text-center text-muted">
+                                    <i class="fas fa-search me-2"></i>No users found
+                                </div>
+                            `;
+                            searchResults.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching users:', error);
+                        userSearchLoading.classList.add('d-none');
+                        searchResults.innerHTML = `
+                            <div class="list-group-item text-center text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Error searching users
+                            </div>
+                        `;
+                        searchResults.style.display = 'block';
+                    });
+            }, 300);
+        });
+        
+        // Handle clear selected user button
+        clearSelectedUserBtn.addEventListener('click', function() {
+            selectedUserDiv.classList.add('d-none');
+            selectedUserId = null;
+            shareReportBtn.disabled = true;
+            userSearchInput.focus();
+        });
+        
+        // Handle share report button
+        shareReportBtn.addEventListener('click', function() {
+            // Get selected report type
+            const reportType = document.querySelector('input[name="reportType"]:checked').value;
+            
+            // Disable button and show loading
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+            
+            // Send share request
+            fetch('/dashboard/shareReport', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipientID: selectedUserId,
+                    reportType: reportType
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    
+                    if (data.status === "Success") {
+                        // Close modal
+                        $('#exportReportModal').modal('hide');
+                        
+                        // Show success message
+                        showAlert('Report shared successfully!', 'success');
+                    } else {
+                        throw new Error(data.message || 'Failed to share report');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sharing report:', error);
+                    
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    
+                    // Show error message
+                    showAlert(error.message || 'Failed to share report', 'danger');
+                });
+        });
+    }
 </script>
 <script>
     function showLoading(element, text = 'Loading...') {

@@ -36,12 +36,10 @@
                                 <i class="fas fa-receipt me-2"></i> Expenses
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/shared">
+                        <li class="nav-item position-relative">
+                            <a class="nav-link" href="javascript:void(0);" id="sharedWithMeBtn">
                                 <i class="fas fa-share-alt me-2"></i> Shared with me
-                                {% if data.ReportCount and data.ReportCount > 0 %}
-                                <span class="notification-badge">{{ data.ReportCount }}</span>
-                                {% endif %}
+                                <span class="position-absolute notification-badge bg-danger text-white" id="unreadReportCount" style="top: 0; right: 0; font-size: 0.7rem; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">0</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -91,6 +89,36 @@
         </div>
     </div>
 
+    <!-- Shared Reports Popup -->
+    <div class="modal fade" id="sharedReportsModal" tabindex="-1" aria-labelledby="sharedReportsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sharedReportsModalLabel">Reports Shared With Me</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="sharedReportsLoading" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                        <p>Loading shared reports...</p>
+                    </div>
+                    <div id="sharedReportsContent" style="display: none;">
+                        <div id="noSharedReports" class="text-center py-4" style="display: none;">
+                            <i class="fas fa-file-alt fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No reports have been shared with you yet.</p>
+                        </div>
+                        <ul class="list-group" id="sharedReportsList">
+                            <!-- Reports will be added here dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -126,5 +154,126 @@
     
     <!-- Additional scripts -->
     {% block scripts %}{% endblock %}
+
+    <!-- Shared Reports Scripts -->
+    <script>
+        $(document).ready(function() {
+            // Initialize shared reports modal
+            const sharedReportsModal = new bootstrap.Modal(document.getElementById('sharedReportsModal'));
+            
+            // Fetch unread report count
+            function fetchUnreadReportCount() {
+                fetch('/dashboard/getUnreadReportCount')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "Success") {
+                            const count = data.reportCount || 0;
+                            const unreadBadge = $('#unreadReportCount');
+                            
+                            if (count > 0) {
+                                unreadBadge.text(count > 99 ? '99+' : count);
+                                unreadBadge.show();
+                            } else {
+                                unreadBadge.hide();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching unread report count:', error);
+                    });
+            }
+            
+            // Fetch shared reports list
+            function fetchSharedReports() {
+                // Show loading state
+                $('#sharedReportsLoading').show();
+                $('#sharedReportsContent').hide();
+                
+                fetch('/dashboard/getSenderDetails')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Hide loading state
+                        $('#sharedReportsLoading').hide();
+                        $('#sharedReportsContent').show();
+                        
+                        if (data.status === "Success" && data.data && data.data.length > 0) {
+                            // Reports are available
+                            $('#noSharedReports').hide();
+                            
+                            // Clear existing list
+                            const reportsList = $('#sharedReportsList');
+                            reportsList.empty();
+                            
+                            // Add each shared report
+                            data.data.forEach(report => {
+                                const reportDate = new Date(report.sharedDate);
+                                const formattedDate = reportDate.toLocaleDateString() + ' ' + reportDate.toLocaleTimeString();
+                                
+                                const listItem = `
+                                    <li class="list-group-item shared-report-item" data-sender-id="${report.senderID}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">${report.senderFirstName} ${report.senderLastName}</h6>
+                                                <small class="text-muted">${formattedDate}</small>
+                                            </div>
+                                            <button class="btn btn-sm btn-primary view-report-btn">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </button>
+                                        </div>
+                                    </li>
+                                `;
+                                
+                                reportsList.append(listItem);
+                            });
+                            
+                            // View report button click event
+                            $('.view-report-btn').on('click', function(e) {
+                                e.stopPropagation();
+                                const senderID = $(this).closest('.shared-report-item').data('sender-id');
+                                viewSharedReport(senderID);
+                            });
+                            
+                            // List item click event can also trigger viewing
+                            $('.shared-report-item').on('click', function() {
+                                const senderID = $(this).data('sender-id');
+                                viewSharedReport(senderID);
+                            });
+                        } else {
+                            // No shared reports
+                            $('#noSharedReports').show();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching shared reports:', error);
+                        $('#sharedReportsLoading').hide();
+                        $('#sharedReportsContent').show();
+                        $('#noSharedReports').show();
+                        $('#noSharedReports p').text('Error loading shared reports. Please try again.');
+                    });
+            }
+            
+            // View shared report
+            function viewSharedReport(senderID) {
+                window.location.href = `/shared/report?senderID=${senderID}`;
+            }
+            
+            // Click on "Shared with me" button
+            $('#sharedWithMeBtn').on('click', function() {
+                fetchSharedReports();
+                sharedReportsModal.show();
+            });
+            
+            // Refresh unread count after modal is closed
+            $('#sharedReportsModal').on('hidden.bs.modal', function() {
+                fetchUnreadReportCount();
+            });
+            
+            // Initial load of unread count
+            fetchUnreadReportCount();
+            
+            // Periodically refresh unread count (every 5 minutes)
+            setInterval(fetchUnreadReportCount, 5 * 60 * 1000);
+        });
+    </script>
 </body>
 </html>

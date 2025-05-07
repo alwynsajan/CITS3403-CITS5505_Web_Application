@@ -1041,200 +1041,183 @@ body.dark-theme .custom-theme-switch .icon.moon {
     background-color: rgba(255,255,255,0.1);
 }
 
-/* Share Modal Styles */
-.search-container .input-group {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.search-container .input-group-text {
-    border: 1px solid var(--border-color);
-}
-
-.search-container .form-control {
-    border: 1px solid var(--border-color);
-}
-
-.search-container .form-control:focus {
-    box-shadow: none;
-    border-color: var(--primary-color);
-}
-
-.list-group-item-action {
-    border: none;
-    margin-bottom: 4px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.list-group-item-action:hover {
-    background-color: rgba(108,92,231,0.05);
-    transform: translateY(-2px);
-}
-
-.report-section {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.budget-item {
-    background-color: rgba(108,92,231,0.05);
-    padding: 1rem;
-    border-radius: 8px;
-}
-
-.budget-item h6 {
-    color: var(--text-color);
-    margin-bottom: 0.5rem;
-}
-
-.budget-item .progress {
-    height: 8px;
-    border-radius: 4px;
-    background-color: rgba(108,92,231,0.1);
-}
-
-.budget-item .progress-bar {
-    border-radius: 4px;
-}
-
-/* Toast Styles */
-.toast {
-    background-color: var(--card-bg);
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-radius: 12px;
-    z-index: 1060;
-}
-
-.toast .toast-header {
-    border-bottom: none;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-}
-
-.toast .btn-close-white:focus {
-    box-shadow: none;
-}
-
-/* Dark Theme Adjustments */
-.dark-theme .search-container .input-group-text,
-.dark-theme .search-container .form-control {
-    background-color: var(--card-bg);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-.dark-theme .list-group-item-action {
-    background-color: var(--card-bg);
-    color: var(--text-color);
-}
-
-.dark-theme .list-group-item-action:hover {
-    background-color: rgba(255,255,255,0.05);
-}
-
-.dark-theme .budget-item {
-    background-color: rgba(255,255,255,0.05);
-}
-
-.dark-theme .toast {
-    background-color: var(--card-bg);
-    color: var(--text-color);
-}
-
 /* Notification Badge */
 .notification-badge {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background-color: var(--primary-color);
-    color: white;
+    position: absolute;
+    top: 5px !important;
+    right: 5px !important;
+    min-width: 18px;
+    min-height: 18px;
     border-radius: 50%;
-    font-size: 0.75rem;
-    font-weight: bold;
-    margin-left: 8px;
-    box-shadow: 0 2px 4px rgba(108,92,231,0.3);
-}
-
-.dark-theme .notification-badge {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-/* Report Detail Page Styles */
-.stat-card {
-    padding: 1.25rem;
-    border-radius: 12px;
-    border: 1px solid rgba(108,92,231,0.1);
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(108,92,231,0.1);
-}
-
-.goal-item {
-    background-color: rgba(108,92,231,0.03);
-    border-radius: 10px;
-    padding: 1rem;
-    transition: all 0.3s ease;
-}
-
-.goal-item:hover {
-    background-color: rgba(108,92,231,0.05);
-    transform: translateY(-2px);
-}
-
-/* Avatar Circle for User Display */
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
+    font-size: 0.7rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: #ff4757;
     color: white;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(108,92,231,0.3);
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
 }
 
-.avatar-circle .initials {
-    font-size: 16px;
-    text-transform: uppercase;
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(255, 71, 87, 0.5);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
+    }
 }
 
-/* View Report Button */
+/* Shared Reports List */
+.shared-report-item {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.shared-report-item:hover {
+    background-color: rgba(108, 92, 231, 0.05);
+    border-left-color: var(--primary-color);
+    transform: translateX(3px);
+}
+
+.shared-report-item h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Dark Theme Support */
+.dark-theme .shared-report-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .shared-report-item h6 {
+    color: var(--primary-color);
+}
+
+/* Shared Reports Modal */
+#sharedReportsModal .modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+#sharedReportsModal .modal-header {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#sharedReportsModal .modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+#sharedReportsModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#sharedReportsLoading {
+    color: var(--primary-color);
+}
+
 .view-report-btn {
-    padding: 6px 14px;
-    border-radius: 20px;
     transition: all 0.3s ease;
 }
 
 .view-report-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(108,92,231,0.3);
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+}
+
+/* Export Report Modal */
+#exportReportModal .modal-header {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#exportReportModal .modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+#exportReportModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#searchResults {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#searchResults .list-group-item {
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+#searchResults .list-group-item:hover {
+    background-color: rgba(108, 92, 231, 0.05);
+    border-left-color: var(--primary-color);
+    transform: translateX(3px);
+}
+
+#selectedUser .alert {
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+#reportTypeSelection {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(108, 92, 231, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+#reportTypeSelection:hover {
+    background-color: rgba(108, 92, 231, 0.08);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 /* Dark Theme Support */
-.dark-theme .stat-card {
-    background-color: rgba(255,255,255,0.05) !important;
-    border-color: rgba(255,255,255,0.1);
+.dark-theme #searchResults .list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-.dark-theme .goal-item {
-    background-color: rgba(255,255,255,0.05);
+.dark-theme #reportTypeSelection {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-.dark-theme .goal-item:hover {
-    background-color: rgba(255,255,255,0.08);
+.dark-theme #reportTypeSelection:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme #selectedUser .alert {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+
+.dark-theme #userSearch {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--input-border);
+}
+
+.dark-theme #userSearch::placeholder {
+    color: var(--placeholder-color);
 }
