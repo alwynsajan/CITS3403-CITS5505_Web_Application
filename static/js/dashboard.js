@@ -9,6 +9,9 @@
 // var monthlyExpenses = [];
 // var goalData = [];
 
+// For sharing functionality, default to user ID 1 if not set in the HTML
+window.currentUserID = window.currentUserID || 1;
+
 // Store initial goal count for reload logic
 let initialGoalCount = window.goalData?.length || 0;
 
@@ -51,6 +54,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add entrance animations to cards
         animateCards();
+
+        // Initialize goals if data exists
+        if (window.goalData && window.goalData.length > 0) {
+            updateGoalsUI(window.goalData);
+        }
+
+        // Initialize Export Report functionality
+        setupExportReportFeature();
     }, 300); // Small delay for smoother rendering
 
     // Hide unread report count by default when page loads
@@ -1853,4 +1864,253 @@ function updateSalaryVsExpensesChart(salary, expenses) {
     
     if (emptyState) emptyState.style.display = 'none';
     if (chartContainer) chartContainer.style.display = 'flex';
+}
+
+/**
+ * Setup export report feature
+ * Handles user search, selection and report sharing
+ */
+function setupExportReportFeature() {
+    // Initialize form elements
+    const userSearchInput = document.getElementById('userSearch');
+    const searchResults = document.getElementById('searchResults');
+    const userSearchLoading = document.getElementById('userSearchLoading');
+    const selectedUserDiv = document.getElementById('selectedUser');
+    const selectedUserName = document.getElementById('selectedUserName');
+    const clearSelectedUserBtn = document.getElementById('clearSelectedUser');
+    const shareReportBtn = document.getElementById('shareReportBtn');
+    
+    // Shared state
+    let selectedUserId = null;
+    let searchTimeout = null;
+    
+    // Reset form when modal is shown (using Bootstrap event)
+    $('#exportReportModal').on('show.bs.modal', function() {
+        userSearchInput.value = '';
+        searchResults.style.display = 'none';
+        selectedUserDiv.classList.add('d-none');
+        shareReportBtn.disabled = true;
+        selectedUserId = null;
+    });
+    
+    // Handle user search input
+    userSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        // Hide selected user when input changes
+        selectedUserDiv.classList.add('d-none');
+        selectedUserId = null;
+        shareReportBtn.disabled = true;
+        
+        // If empty query, show prompt
+        if (query.length === 0) {
+            searchResults.innerHTML = `
+                <div class="list-group-item text-center text-muted" style="padding: 0.75rem 1.25rem; border: 1px solid rgba(0,0,0,.125);">
+                    <i class="fas fa-keyboard me-2"></i>Please type to search users
+                </div>
+            `;
+            searchResults.style.display = 'block';
+            return;
+        }
+        
+        // Show loading indicator
+        userSearchLoading.classList.remove('d-none');
+        
+        // Set timeout to avoid too many requests
+        searchTimeout = setTimeout(() => {
+            // Fetch users that match the query
+            fetch(`/dashboard/getUsernamesAndIDs?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    userSearchLoading.classList.add('d-none');
+                    
+                    if (data.status === "Success" && data.data && data.data.length > 0) {
+                        // Clear previous results
+                        searchResults.innerHTML = '';
+                        
+                        // Add each user to results
+                        data.data.forEach(user => {
+                            const userItem = document.createElement('a');
+                            userItem.href = '#';
+                            userItem.className = 'list-group-item list-group-item-action';
+                            userItem.dataset.userId = user.userID;
+                            userItem.dataset.userName = `${user.firstName} ${user.lastName}`;
+                            userItem.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">${user.firstName} ${user.lastName}</div>
+                                        <small class="text-muted">${user.username}</small>
+                                    </div>
+                                    <i class="fas fa-user-circle text-primary"></i>
+                                </div>
+                            `;
+                            
+                            // Add click event to select user
+                            userItem.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                
+                                // Set selected user
+                                selectedUserId = this.dataset.userId;
+                                selectedUserName.textContent = this.dataset.userName;
+                                
+                                // Show selected user, hide search results
+                                selectedUserDiv.classList.remove('d-none');
+                                searchResults.style.display = 'none';
+                                
+                                // Clear search input
+                                userSearchInput.value = '';
+                                
+                                // Enable share button
+                                shareReportBtn.disabled = false;
+                            });
+                            
+                            searchResults.appendChild(userItem);
+                        });
+                        
+                        // Show search results
+                        searchResults.style.display = 'block';
+                    } else {
+                        // No results found
+                        searchResults.innerHTML = `
+                            <div class="list-group-item text-center text-muted">
+                                <i class="fas fa-search me-2"></i>No users found
+                            </div>
+                        `;
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching users:', error);
+                    userSearchLoading.classList.add('d-none');
+                    searchResults.innerHTML = `
+                        <div class="list-group-item text-center text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error searching users
+                        </div>
+                    `;
+                    searchResults.style.display = 'block';
+                });
+        }, 300);
+    });
+    
+    // Handle clear selected user button
+    clearSelectedUserBtn.addEventListener('click', function() {
+        selectedUserDiv.classList.add('d-none');
+        selectedUserId = null;
+        shareReportBtn.disabled = true;
+        userSearchInput.focus();
+    });
+    
+    // Handle share report button
+    shareReportBtn.addEventListener('click', function() {
+        if (!selectedUserId) {
+            showAlert('Please select a user to share with.', 'warning');
+            return;
+        }
+
+        shareReportBtn.disabled = true;
+        shareReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+
+        const reportData = {
+            recipientID: selectedUserId,
+            reportType: 'dashboard',
+            senderID: window.currentUserID
+        };
+
+        fetch('/dashboard/shareReport', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(reportData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "Success") {
+                showAlert('Report shared successfully!', 'success');
+                $('#exportReportModal').modal('hide');
+            } else {
+                throw new Error(data.message || 'Failed to share report');
+            }
+        })
+        .catch(error => {
+            console.error('Error sharing report:', error);
+            showAlert('Share failed: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            shareReportBtn.disabled = false;
+            shareReportBtn.innerHTML = '<i class="fas fa-share-square me-2"></i>Share Report';
+        });
+    });
+}
+
+/**
+ * Show loading state on an element
+ * @param {HTMLElement} element - The element to show loading on
+ * @param {string} text - Loading text to display
+ */
+function showLoading(element, text = 'Loading...') {
+    element.disabled = true;
+    element.dataset.originalText = element.innerHTML;
+    element.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${text}`;
+}
+
+/**
+ * Hide loading state and restore original content
+ * @param {HTMLElement} element - The element to hide loading on
+ */
+function hideLoading(element) {
+    element.disabled = false;
+    element.innerHTML = element.dataset.originalText;
+}
+
+/**
+ * Validate goal data for required fields and valid values
+ * @param {Object} data - Goal data to validate
+ * @returns {Object} Validation result with isValid flag and message
+ */
+function validateGoalData(data) {
+    if (!data.goalName?.trim()) {
+        return { isValid: false, message: 'Goal name is required' };
+    }
+    if (!data.targetAmount || data.targetAmount <= 0) {
+        return { isValid: false, message: 'Invalid target amount' };
+    }
+    if (!data.timeDuration || data.timeDuration < 1) {
+        return { isValid: false, message: 'Invalid time duration' };
+    }
+    return { isValid: true };
+}
+
+/**
+ * Update account balance with animation
+ * @param {Object} accountData - Account data with balance and trend info
+ */
+function updateAccountBalance(accountData) {
+    if (!accountData) return;
+    
+    const balanceElement = document.getElementById('balanceAmount');
+    const trendElement = document.querySelector('.balance-trend');
+    
+    if (balanceElement) {
+        new CountUp('balanceAmount', accountData.balance, {
+            prefix: '$',
+            duration: 2,
+            decimalPlaces: 2
+        }).start();
+    }
+    
+    if (trendElement) {
+        trendElement.innerHTML = `
+            <span class="badge bg-${accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
+                <i class="fas fa-arrow-${accountData.trendType}"></i>
+                ${accountData.percentageChange}%
+            </span>
+        `;
+    }
 }
