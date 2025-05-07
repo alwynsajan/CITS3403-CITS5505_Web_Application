@@ -446,9 +446,14 @@
             selectedUserId = null;
             shareReportBtn.disabled = true;
             
-            // If empty query, hide results
+            // If empty query, show prompt
             if (query.length === 0) {
-                searchResults.style.display = 'none';
+                searchResults.innerHTML = `
+                    <div class="list-group-item text-center text-muted" style="padding: 0.75rem 1.25rem; border: 1px solid rgba(0,0,0,.125);">
+                        <i class="fas fa-keyboard me-2"></i>Please type to search users
+                    </div>
+                `;
+                searchResults.style.display = 'block';
                 return;
             }
             
@@ -545,6 +550,15 @@
             // Get selected report type
             const reportType = document.querySelector('input[name="reportType"]:checked').value;
             
+            // Get current user ID (ensure window.currentUserID is set by your backend template)
+            const currentUserID = window.currentUserID; 
+
+            if (!currentUserID) {
+                showAlert('Error: Could not determine the sender. Please refresh and try again.', 'danger');
+                console.error("Error: window.currentUserID is not set.");
+                return;
+            }
+
             // Disable button and show loading
             this.disabled = true;
             const originalText = this.innerHTML;
@@ -558,7 +572,8 @@
                 },
                 body: JSON.stringify({
                     recipientID: selectedUserId,
-                    reportType: reportType
+                    reportType: reportType,
+                    senderID: currentUserID
                 })
             })
                 .then(response => response.json())

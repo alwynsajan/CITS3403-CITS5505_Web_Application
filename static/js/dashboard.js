@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         initMonthlySpendingChart();
         initGoalProgress();
+        initSalaryVsExpensesChart();
         setupEventListeners();
         
         // Add entrance animations to cards
@@ -1276,7 +1277,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset the form
                  salaryForm.reset();
 
-                 showAlert(result.message || 'Salary added successfully!', 'success');
+                 // Update Salary vs Expenses chart if it exists
+                const barChartCanvas = document.getElementById('barChart');
+                if (barChartCanvas) {
+                    // Get latest salary and expense data
+                    const salary = parseFloat(salaryAmount) || 0;
+                    let expenses = 0;
+                    
+                    // Try to get existing expense data from the DOM if possible
+                    // Find elements with the class 'fw-bold'
+                    const boldElements = document.querySelectorAll('.fw-bold');
+                    for (const element of boldElements) {
+                        // Check if the parent contains text about expenses
+                        const parentText = element.parentElement?.textContent || '';
+                        if (parentText.includes('Total Expenses')) {
+                            const expenseText = element.textContent.replace('$', '').trim();
+                            expenses = parseFloat(expenseText) || 0;
+                            break;
+                        }
+                    }
+                    
+                    // Update the chart
+                    updateSalaryVsExpensesChart(salary, expenses);
+                    
+                    // Show chart container and hide empty state
+                    const emptyState = document.getElementById('salaryVsExpensesEmpty');
+                    const chartContainer = barChartCanvas.parentElement;
+                    
+                    if (emptyState) emptyState.style.display = 'none';
+                    if (chartContainer) chartContainer.style.display = 'flex';
+                }
+
+                showAlert(result.message || 'Salary added successfully!', 'success');
 
             } catch (error) {
                 console.error('Error adding salary:', error);
@@ -1717,4 +1749,121 @@ function handleShareButtonClick() {
                 showAlert(error.message || 'Failed to share summary', 'danger');
             });
     }
+}
+
+/**
+ * Initialize the Salary vs Expenses chart
+ */
+function initSalaryVsExpensesChart() {
+    const chartCanvas = document.getElementById('barChart');
+    if (!chartCanvas) {
+        console.error('Salary vs Expenses chart canvas not found');
+        return;
+    }
+
+    // Get the empty state and chart container elements
+    const emptyState = document.getElementById('salaryVsExpensesEmpty');
+    const chartContainer = chartCanvas.parentElement;
+
+    // Always initialize the chart even if there's no data
+    // This ensures the chart is ready when data is added for the first time
+    const ctx = chartCanvas.getContext('2d');
+
+    try {
+        // Define color scheme
+        const computedStyle = getComputedStyle(document.documentElement);
+        const chartColors = [
+            computedStyle.getPropertyValue('--chart-color-1').trim() || '#6c5ce7',
+            computedStyle.getPropertyValue('--chart-color-2').trim() || '#00cec9',
+        ];
+
+        // Create chart instance (will be updated when data becomes available)
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Salary', 'Expenses'],
+                datasets: [{
+                    label: 'Amount ($)',
+                    data: [0, 0], // Initialize with zeros
+                    backgroundColor: chartColors,
+                    borderRadius: 10,
+                    borderWidth: 0,
+                    barThickness: 40,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        titleColor: '#333',
+                        bodyColor: '#333',
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return `$${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)',
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log('Salary vs Expenses chart initialized');
+    } catch (error) {
+        console.error('Error initializing Salary vs Expenses chart:', error);
+        // Show error message
+        chartContainer.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                <p class="text-danger">Error loading chart</p>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Update the Salary vs Expenses chart with new data
+ * @param {number} salary - Salary amount
+ * @param {number} expenses - Expenses amount
+ */
+function updateSalaryVsExpensesChart(salary, expenses) {
+    const chartCanvas = document.getElementById('barChart');
+    if (!chartCanvas) return;
+
+    const chart = Chart.getChart(chartCanvas);
+    if (!chart) return;
+
+    // Update chart data
+    chart.data.datasets[0].data = [salary, expenses];
+    chart.update();
+
+    // Show the chart container and hide the empty state
+    const emptyState = document.getElementById('salaryVsExpensesEmpty');
+    const chartContainer = chartCanvas.parentElement;
+    
+    if (emptyState) emptyState.style.display = 'none';
+    if (chartContainer) chartContainer.style.display = 'flex';
 }
