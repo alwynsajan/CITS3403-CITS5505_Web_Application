@@ -287,14 +287,14 @@ class serviceHandler():
         expenseDataListStatus = self.DBClient.getUserExpenses(userID)
         if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
             monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
-            expenseData["hasExpense"] = True
+            expenseData["hasExpenses"] = True
             expenseAndSalary["expenseData"] = monthlyExpenseList
             expenseData["expenseAndSalary"] = expenseAndSalary
             expenseData["weeklyExpense"] = weeklyExpense
             expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
 
         else:
-            expenseData["hasExpense"] = False
+            expenseData["hasExpenses"] = False
 
         return expenseData
     

@@ -22,7 +22,6 @@ app.permanent_session_lifetime = timedelta(days=7)
 # csrf = CSRFProtect()
 # csrf.init_app(app)
 
-
 # Creates tables if they don't exist
 with app.app_context():
     db.create_all()  
@@ -248,7 +247,7 @@ def addExpense():
 
     return jsonify(data)
 
-@app.route('/expense', methods=['POST'])
+@app.route('/expense')
 def expensePage():
 
     if 'username' in session:
