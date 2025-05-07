@@ -133,7 +133,7 @@ $(document).ready(function() {
             unreadReportIds.splice(index, 1);
         }
 
-        // Mark report as read on server
+        // Mark report as read on server (non-blocking)
         fetch('/dashboard/markReportAsRead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -142,10 +142,7 @@ $(document).ready(function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'Success') {
-                // Update badge count after marking read
                 fetchUnreadBadgeCount();
-                
-                // Remove unread dot indicator
                 $(`.shared-report-item[data-sender-id="${senderID}"]`)
                     .removeClass('unread-report')
                     .find('.unread-dot')
@@ -154,8 +151,26 @@ $(document).ready(function() {
         })
         .catch(error => console.error('Error marking report as read:', error));
 
-        // Redirect to shared report view page
-        window.location.href = `/shared-report-view?senderID=${senderID}`;
+        // Fetch the full shared report data
+        fetch('/dashboard/getSharedReport', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderID: senderID, recipientID: window.currentUserID || null })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'Success') {
+                // Store report data and redirect to view page
+                sessionStorage.setItem('sharedReportData', JSON.stringify(data));
+                window.location.href = '/shared-report-view';
+            } else {
+                showAlert('Failed to load report: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching shared report:', error);
+            showAlert('Error loading report: ' + error.message, 'danger');
+        });
     }
 
     // Click handler for 'Shared with me' button
