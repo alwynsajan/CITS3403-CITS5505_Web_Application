@@ -237,6 +237,10 @@ class serviceHandler():
         else:
             dashboardData["hasGoal"] = False
 
+        sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
+        if sharedReportNumberStatus["status"] == "Success":
+            dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
+
         #Fetch Montly expenses:
         status = self.DBClient.getMonthlyExpenses(userID)
         if status["status"] == "Success" and status["data"] != []:
@@ -249,10 +253,6 @@ class serviceHandler():
 
             if lastestExpensestatus["status"] == "Success":
                 dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
-
-            sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
-            if sharedReportNumberStatus["status"] == "Success":
-                dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
 
         else:
             dashboardData["hasExpense"] = False

@@ -300,7 +300,7 @@ def sentReport():
             "statusCode":400,
             "message":"No data received"})
     
-    receiversID = data.get('userID')
+    receiversID = data.get('recipientID')
 
     requestStatus = handler.sendReport(userID,receiversID)
 
