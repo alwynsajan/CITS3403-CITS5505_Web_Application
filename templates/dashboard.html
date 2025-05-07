@@ -363,14 +363,14 @@
 
 {% block scripts %}
 <!-- Pass data to JavaScript -->
-<script> 
-    // Declare global variables 
-    window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; 
-    window.monthlyExpenses = {{ data.monthlySpendData.Expenses | default([]) | tojson | safe }}; 
-    window.accountData = {{ data.accountData | default({}) | tojson | safe }}; 
-    window.budgetSuggestionData = {{ data.budgetSuggestionData | default({}) | tojson | safe }}; 
-    window.goalData = {{ data.goalData | default([]) | tojson | safe }}; 
+<script>
+    // Declare global variables
+    window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    window.monthlyExpenses = JSON.parse('{{ data.monthlySpendData.Expenses | default([]) | tojson | safe }}');
+    window.accountData = JSON.parse('{{ data.accountData | default({}) | tojson | safe }}');
+    window.budgetSuggestionData = JSON.parse('{{ data.budgetSuggestionData | default({}) | tojson | safe }}');
+    window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
     window.currentUserID = 1; // Set current user ID, should be fetched from backend in a real application
-</script> 
+</script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

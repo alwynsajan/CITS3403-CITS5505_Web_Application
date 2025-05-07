@@ -27,6 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Goal data:', window.goalData || []);
     
+    // First, set up the critical UI components and animations
+    // This ensures core UI elements work even if API calls fail
+    animateCards();
+    
+    // Setup active navigation state
+    setupActiveNavigation();
+    
+    // Setup Share Summary button
+    setupShareSummaryButton();
+
+    // Set up "Shared with me" button click event
+    setupSharedWithMeButton();
+    
     // Initialize components with loading animations
     setTimeout(function() {
         initMonthlySpendingChart();
@@ -34,9 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // initSalaryVsExpensesChart(); // Removed: barChart ID is not in dashboard.html
         // setupEventListeners();       // Removed: Function not defined in this file; specific listeners handled below or elsewhere
         
-        animateCards();
-        // setupAddSalaryButton(); // Removed: Functionality handled by DOMContentLoaded listener around line 1269
-
         // Setup listener for the New Goal button
         const newGoalButton = document.getElementById('newGoalBtn');
         const goalModalElement = document.getElementById('goalModal');
@@ -52,9 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
             saveGoalButton.addEventListener('click', saveNewGoal); // saveNewGoal is defined around line 939
         }
 
-        // Add entrance animations to cards
-        animateCards();
-
         // Initialize goals if data exists
         if (window.goalData && window.goalData.length > 0) {
             updateGoalsUI(window.goalData);
@@ -65,54 +72,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 300); // Small delay for smoother rendering
 
     // Hide unread report count by default when page loads
-    $('#unreadReportCount').hide();
+    const unreadReportCount = document.getElementById('unreadReportCount');
+    if (unreadReportCount) {
+        unreadReportCount.style.display = 'none';
+    }
 
-    // Initial load of unread count
-    fetchUnreadReportCount();
-    
-    // Set up "Shared with me" button click event
-    setupSharedWithMeButton();
-    
-    // Setup active navigation state
-    setupActiveNavigation();
-    
-    // Setup Share Summary button
-    setupShareSummaryButton();
+    // Finally, make non-critical API calls that shouldn't block UI rendering
+    // This ensures better user experience even if these calls fail
+    setTimeout(function() {
+        // Initial load of unread count - moved to the end so it doesn't block other functionality
+        fetchUnreadReportCount();
+    }, 500);
 });
 
 /**
  * Fetch unread report count
+ * Enhanced with better error handling to prevent blocking other functionality
  */
 function fetchUnreadReportCount() {
-    fetch('/dashboard/getUnreadReportCount')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === "Success") {
-                const unreadCount = data.reportCount || 0;
-                const unreadCountElement = document.getElementById('unreadReportCount');
-                
-                if (unreadCountElement) {
-                    unreadCountElement.textContent = unreadCount > 99 ? '99+' : unreadCount;
+    // Use try-catch to ensure any uncaught errors don't block other functionality
+    try {
+        fetch('/dashboard/getUnreadReportCount')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === "Success") {
+                    const unreadCount = data.reportCount || 0;
+                    const unreadCountElement = document.getElementById('unreadReportCount');
                     
-                    // Only display count if there are unread messages
-                    if (unreadCount > 0) {
-                        unreadCountElement.style.display = 'flex';
-                        unreadCountElement.style.alignItems = 'center';
-                        unreadCountElement.style.justifyContent = 'center';
-                    } else {
-                        unreadCountElement.style.display = 'none';
+                    if (unreadCountElement) {
+                        unreadCountElement.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        
+                        // Only display count if there are unread messages
+                        if (unreadCount > 0) {
+                            unreadCountElement.style.display = 'flex';
+                            unreadCountElement.style.alignItems = 'center';
+                            unreadCountElement.style.justifyContent = 'center';
+                        } else {
+                            unreadCountElement.style.display = 'none';
+                        }
                     }
                 }
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching unread report count:', error);
-        });
+            })
+            .catch(error => {
+                console.error('Error fetching unread report count:', error);
+                // Log error but continue execution
+            });
+    } catch (error) {
+        console.error('Critical error in fetchUnreadReportCount:', error);
+        // Ensure errors don't propagate and block other functionality
+    }
 }
 
 /**
@@ -135,6 +148,7 @@ function setupSharedWithMeButton() {
 
 /**
  * Fetch shared reports list
+ * Enhanced with better error handling
  */
 function fetchSharedReports() {
     const reportsContainer = document.getElementById('sharedReportsContainer');
@@ -151,49 +165,72 @@ function fetchSharedReports() {
         </div>
     `;
     
-    // Send request to fetch report list
-    fetch('/dashboard/getSenderDetails')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Update unread count (possibly read)
-            fetchUnreadReportCount();
-            
-            // Process response data
-            if (data.status === "Success") {
-                if (!data.data || data.data.length === 0) {
-                    // If no messages, display a friendly prompt
-                    reportsContainer.innerHTML = `
-                        <div class="text-center py-4">
-                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No shared reports yet.</p>
-                        </div>
-                    `;
-                } else {
-                    displaySharedReports(data.data);
+    // Wrap in try-catch to prevent any uncaught errors from breaking functionality
+    try {
+        // Send request to fetch report list
+        fetch('/dashboard/getSenderDetails')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-            } else {
-                throw new Error('Failed to fetch shared reports');
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching shared reports:', error);
-            
-            // Show error message
+                return response.json();
+            })
+            .then(data => {
+                // Update unread count (possibly read)
+                try {
+                    fetchUnreadReportCount();
+                } catch (e) {
+                    console.error('Error updating unread count:', e);
+                    // Continue execution despite error
+                }
+                
+                // Process response data
+                if (data.status === "Success") {
+                    if (!data.data || data.data.length === 0) {
+                        // If no messages, display a friendly prompt
+                        reportsContainer.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No shared reports yet.</p>
+                            </div>
+                        `;
+                    } else {
+                        displaySharedReports(data.data);
+                    }
+                } else {
+                    throw new Error('Failed to fetch shared reports');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching shared reports:', error);
+                
+                // Show error message
+                reportsContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <p class="text-danger">Could not load shared reports. Please try again later.</p>
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="fetchSharedReports()">
+                            <i class="fas fa-sync-alt"></i> Retry
+                        </button>
+                    </div>
+                `;
+            });
+    } catch (error) {
+        console.error('Critical error in fetchSharedReports:', error);
+        
+        // Show user-friendly error message
+        if (reportsContainer) {
             reportsContainer.innerHTML = `
                 <div class="text-center py-4">
-                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <p class="text-danger">Could not load shared reports. Please try again later.</p>
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="text-warning">Something went wrong. Please try again.</p>
                     <button class="btn btn-outline-primary btn-sm mt-2" onclick="fetchSharedReports()">
                         <i class="fas fa-sync-alt"></i> Retry
                     </button>
                 </div>
             `;
-        });
+        }
+    }
 }
 
 /**
@@ -249,128 +286,145 @@ function displaySharedReports(senders) {
 /**
  * View shared report
  * @param {number} senderID - Sender ID
+ * Enhanced with better error handling
  */
 function viewSharedReport(senderID) {
-    // Check if a modal view exists, otherwise create a new page
-    const hasModalView = document.getElementById('sharedReportViewModal');
-    
-    if (hasModalView) {
-        const modalBody = document.getElementById('sharedReportViewBody');
-        const modalTitle = document.getElementById('sharedReportViewTitle');
+    // Wrap in try-catch to prevent any errors from breaking the UI
+    try {
+        // Check if a modal view exists, otherwise create a new page
+        const hasModalView = document.getElementById('sharedReportViewModal');
         
-        if (!modalBody || !modalTitle) return;
-        
-        // Show loading animation
-        modalBody.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading report...</p>
-            </div>
-        `;
-        
-        // Close shared reports list modal
-        const sharedReportsModal = bootstrap.Modal.getInstance(document.getElementById('sharedReportsModal'));
-        if (sharedReportsModal) {
-            sharedReportsModal.hide();
-        }
-        
-        // Show report view modal
-        const viewModal = new bootstrap.Modal(document.getElementById('sharedReportViewModal'));
-        viewModal.show();
-    }
-    
-    // Create current user ID (in a real application, this might be fetched from session or global variable)
-    // Assuming there's a global variable currentUserID here
-    const currentUserID = window.currentUserID || 1; // Default value is 1, should be replaced with actual value
-    
-    // Send request to fetch report details
-    fetch('/dashboard/getSharedReport', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            senderID: senderID,
-            recipientID: currentUserID
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Update unread count (read)
-        fetchUnreadReportCount();
-        
-        // If using modal display
         if (hasModalView) {
             const modalBody = document.getElementById('sharedReportViewBody');
             const modalTitle = document.getElementById('sharedReportViewTitle');
             
-            // Update modal title
-            modalTitle.textContent = `Report from ${data.senderFirstName} ${data.senderLastName}`;
+            if (!modalBody || !modalTitle) return;
             
-            // Create sender information display
-            let senderInfo = `
-                <div class="alert alert-info d-flex align-items-center mb-4">
-                    <i class="fas fa-user-circle fa-2x me-3"></i>
-                    <div>
-                        <strong>Shared by:</strong> ${data.senderFirstName} ${data.senderLastName}
+            // Show loading animation
+            modalBody.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
+                    <p class="mt-2">Loading report...</p>
                 </div>
             `;
             
-            // Display dashboard report data
-            if (data.dashboardData) {
-                modalBody.innerHTML = senderInfo + createDashboardReportHTML(data.dashboardData);
-            } 
-            // Display expense report data
-            else if (data.expenseData) {
-                modalBody.innerHTML = senderInfo + createExpenseReportHTML(data.expenseData);
+            // Close shared reports list modal
+            const sharedReportsModal = bootstrap.Modal.getInstance(document.getElementById('sharedReportsModal'));
+            if (sharedReportsModal) {
+                sharedReportsModal.hide();
             }
-            // If both data types exist, prioritize dashboard data
-            else if (data.dashboardData && data.expenseData) {
-                modalBody.innerHTML = senderInfo + createDashboardReportHTML(data.dashboardData);
+            
+            // Show report view modal
+            const viewModal = new bootstrap.Modal(document.getElementById('sharedReportViewModal'));
+            viewModal.show();
+        }
+        
+        // Create current user ID (in a real application, this might be fetched from session or global variable)
+        // Assuming there's a global variable currentUserID here
+        const currentUserID = window.currentUserID || 1; // Default value is 1, should be replaced with actual value
+        
+        // Send request to fetch report details
+        fetch('/dashboard/getSharedReport', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                senderID: senderID,
+                recipientID: currentUserID
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
-            // No data or format mismatch
-            else {
+            return response.json();
+        })
+        .then(data => {
+            // Update unread count (read)
+            try {
+                fetchUnreadReportCount();
+            } catch (e) {
+                console.error('Error updating unread count:', e);
+                // Continue execution despite error
+            }
+            
+            // If using modal display
+            if (hasModalView) {
+                const modalBody = document.getElementById('sharedReportViewBody');
+                const modalTitle = document.getElementById('sharedReportViewTitle');
+                
+                if (!modalBody || !modalTitle) return;
+                
+                // Update modal title
+                modalTitle.textContent = `Report from ${data.senderFirstName} ${data.senderLastName}`;
+                
+                // Create sender information display
+                let senderInfo = `
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        <i class="fas fa-user-circle fa-2x me-3"></i>
+                        <div>
+                            <strong>Shared by:</strong> ${data.senderFirstName} ${data.senderLastName}
+                        </div>
+                    </div>
+                `;
+                
+                // Display dashboard report data
+                if (data.dashboardData) {
+                    modalBody.innerHTML = senderInfo + createDashboardReportHTML(data.dashboardData);
+                } 
+                // Display expense report data
+                else if (data.expenseData) {
+                    modalBody.innerHTML = senderInfo + createExpenseReportHTML(data.expenseData);
+                }
+                // If both data types exist, prioritize dashboard data
+                else if (data.dashboardData && data.expenseData) {
+                    modalBody.innerHTML = senderInfo + createDashboardReportHTML(data.dashboardData);
+                }
+                // No data or format mismatch
+                else {
+                    modalBody.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
+                            <p class="text-warning">The report format is not supported or contains no data.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                // If display in a new page is needed, navigate to another page via window.location
+                // Or create page elements dynamically
+                // Example implementation: store data in sessionStorage and navigate to a dedicated page
+                sessionStorage.setItem('sharedReportData', JSON.stringify(data));
+                window.location.href = '/shared-report-view';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching report details:', error);
+            
+            if (hasModalView) {
+                const modalBody = document.getElementById('sharedReportViewBody');
+                
+                if (!modalBody) return;
+                
+                // Show error message
                 modalBody.innerHTML = `
                     <div class="text-center py-4">
-                        <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
-                        <p class="text-warning">The report format is not supported or contains no data.</p>
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <p class="text-danger">Could not load report details. Please try again later.</p>
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewSharedReport(${senderID})">
+                            <i class="fas fa-sync-alt"></i> Retry
+                        </button>
                     </div>
                 `;
             }
-        } else {
-            // If display in a new page is needed, navigate to another page via window.location
-            // Or create page elements dynamically
-            // Example implementation: store data in sessionStorage and navigate to a dedicated page
-            sessionStorage.setItem('sharedReportData', JSON.stringify(data));
-            window.location.href = '/shared-report-view';
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching report details:', error);
-        
-        if (hasModalView) {
-            const modalBody = document.getElementById('sharedReportViewBody');
-            
-            // Show error message
-            modalBody.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <p class="text-danger">Could not load report details. Please try again later.</p>
-                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewSharedReport(${senderID})">
-                        <i class="fas fa-sync-alt"></i> Retry
-                    </button>
-                </div>
-            `;
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Critical error in viewSharedReport:', error);
+        // Handle critical errors gracefully
+        // The function will continue execution and not break the UI
+    }
 }
 
 /**
@@ -2014,7 +2068,7 @@ function setupExportReportFeature() {
         }
 
         shareReportBtn.disabled = true;
-        shareReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+        shareReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
         const reportData = {
             recipientID: selectedUserId,
@@ -2022,7 +2076,8 @@ function setupExportReportFeature() {
             senderID: window.currentUserID
         };
 
-        fetch('/dashboard/shareReport', {
+        // Use the correct endpoint for sending report
+        fetch('/dashboard/sentReport', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -2032,19 +2087,19 @@ function setupExportReportFeature() {
         .then(response => response.json())
         .then(data => {
             if (data.status === "Success") {
-                showAlert('Report shared successfully!', 'success');
+                showAlert('Report sent successfully!', 'success');
                 $('#exportReportModal').modal('hide');
             } else {
-                throw new Error(data.message || 'Failed to share report');
+                throw new Error(data.message || 'Failed to send report');
             }
         })
         .catch(error => {
-            console.error('Error sharing report:', error);
-            showAlert('Share failed: ' + error.message, 'danger');
+            console.error('Error sending report:', error);
+            showAlert('Send failed: ' + error.message, 'danger');
         })
         .finally(() => {
             shareReportBtn.disabled = false;
-            shareReportBtn.innerHTML = '<i class="fas fa-share-square me-2"></i>Share Report';
+            shareReportBtn.innerHTML = '<i class="fas fa-share-square me-2"></i>Send Report';
         });
     });
 }
@@ -2113,4 +2168,22 @@ function updateAccountBalance(accountData) {
             </span>
         `;
     }
+}
+
+/**
+ * Utility: show a Bootstrap alert message
+ * @param {string} message - Alert message text
+ * @param {string} type - Bootstrap alert type (e.g., 'success','warning','danger','info')
+ */
+function showAlert(message, type = 'info') {
+    const container = document.querySelector('.main-content') || document.body;
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    container.prepend(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
 }
