@@ -225,6 +225,7 @@ class serviceHandler():
 
         else:
             dashboardData["hasAccountBalance"] = False
+            dashboardData["accountData"] = {}
 
         #Fetch GoalData:
         getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
@@ -236,10 +237,11 @@ class serviceHandler():
             
         else:
             dashboardData["hasGoal"] = False
+            dashboardData["goalData"] = []
 
-        sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
-        if sharedReportNumberStatus["status"] == "Success":
-            dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
+        # sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
+        # if sharedReportNumberStatus["status"] == "Success":
+        #     dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
 
         #Fetch Montly expenses:
         status = self.DBClient.getMonthlyExpenses(userID)
@@ -256,6 +258,7 @@ class serviceHandler():
 
         else:
             dashboardData["hasExpense"] = False
+            dashboardData["monthlySpendData"] = []
 
         #Fetch BudgetSuggestionData:
         salaryStatus  = self.DBClient.getLastSalary(userID)
@@ -266,6 +269,7 @@ class serviceHandler():
             dashboardData["hasSalary"] = True
         else:
             dashboardData["hasSalary"] = False
+            dashboardData["budgetSuggestionData"] = {}
 
         return dashboardData
     
@@ -388,6 +392,43 @@ class serviceHandler():
                 "statusCode": 400,
                 "message": "Error : " + str(e)
             }
+        
+    def getUnreadReportIds(self,userID):
+        try:
+            status = self.DBClient.getUnreadReportIds(userID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getUnreadReportCount(self,userID):
+        try:
+            status = self.DBClient.getUnreadReportCount(userID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def markReportAsRead(self,userID,reportID):
+        try:
+            status = self.DBClient.markReportAsRead(userID,reportID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+    
+
+        
+
 
 
 

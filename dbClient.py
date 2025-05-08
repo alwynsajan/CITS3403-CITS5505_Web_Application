@@ -628,7 +628,8 @@ class dbClient:
                 senderLastName=senderLastName,
                 receiverID=receiverID,
                 data=data,
-                sharedDate=datetime.now()
+                sharedDate=datetime.now(),
+                readFlag=0
             )
             db.session.add(newReport)
             db.session.commit()
@@ -734,6 +735,94 @@ class dbClient:
                 "statusCode": 400,
                 "message": "DB Error: " + str(e)
             }
+        
+    # Fetches all unread shared report IDs for a specific user.
+    # A report is considered unread if readFlag == 0 and the receiverID matches the given userId.    
+    def getUnreadReportIds(self, userId):
+        try:
+            reports = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).all()
+
+            reportIds = [report.id for report in reports]
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Found {len(reportIds)} unread report(s)",
+                "data": {
+                    "unreadReportIds": reportIds
+                }
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+    # Returns the count of unread shared reports for a specific user.
+    # A report is considered unread if readFlag == 0 and receiverID matches the given userId.
+    def getUnreadReportCount(self, userId):
+        try:
+            reportCount = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Unread report count fetched successfully",
+                "data": {
+                    "reportCount": reportCount
+                }
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+
+    # Updates the readFlag for the given reportID to 1.
+    def markReportAsRead(self, userId, reportId):
+        try:
+            report = ShareReport.query.filter_by(
+                id=reportId,
+                receiverID=userId
+            ).first()
+
+            if report:
+                report.readFlag = 1
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": f"Report ID {reportId} marked as read"
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"No unread report found for user ID {userId} and report ID {reportId}"
+                }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+
+
+
+
 
 
 

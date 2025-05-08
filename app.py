@@ -342,6 +342,50 @@ def getReport():
 
     return render_template("report.html",data = requestStatus["data"])
 
+@app.route('/dashboard/getUnreadReportIds')
+def getUnreadReportIds():
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    requestStatus = handler.getUnreadReportIds(userID)
+
+    return jsonify(requestStatus)
+
+@app.route('/dashboard/getUnreadReportCount')
+def getUnreadReportCount():
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    requestStatus = handler.getUnreadReportCount(userID)
+
+    return jsonify(requestStatus)
+
+@app.route('/dashboard/markReportAsRead',methods=['POST'])
+def markReportAsRead():
+    if 'username' in session:
+        username = session['username']
+        userID = session["userID"]
+    else:
+        return redirect(url_for('loginPage'))
+    
+    data = request.get_json()
+
+    if data is None:
+        return jsonify({"status" : "Failed",
+            "statusCode":400,
+            "message":"No data received"})
+    
+    reportID = data.get('reportId')
+    
+    requestStatus = handler.markReportAsRead(userID,reportID)
+
+    return jsonify(requestStatus)
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode
