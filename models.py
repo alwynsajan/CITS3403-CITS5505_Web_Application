@@ -78,3 +78,4 @@ class ShareReport(db.Model):
     receiverID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.PickleType, nullable=False) 
     sharedDate = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    readFlag = db.Column(db.Integer,nullable=False)
