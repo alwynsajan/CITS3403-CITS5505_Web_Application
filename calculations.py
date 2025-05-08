@@ -122,29 +122,36 @@ def getExpensePageData(expenseData):
         dateObj = datetime.strptime(expense["date"], "%Y-%m-%d")
         index = dateObj.month - 1
         monthlyExpenseList[index] += float(expense["amount"])
-
-        #weeklyExpense Data
-        if datetime.strptime(expense["weekStartDate"], "%Y-%m-%d").date() >= (datetime.today().date() - timedelta(weeks=8)):
-            if expense["weekStartDate"] in weeklyExpenseDict:
-                weeklyExpenseDict[expense["weekStartDate"]] += float(expense["amount"])
+        
+        # Weekly Expense Data (for past 8 weeks)
+        week_start = datetime.strptime(expense["weekStartDate"], "%Y-%m-%d").date()
+        if week_start >= (datetime.today().date() - timedelta(weeks=8)):
+            week_end = week_start + timedelta(days=6)
+            week_label = f"{week_start.day} {week_start.strftime('%b')} - {week_end.day} {week_end.strftime('%b')}"
+            
+            if week_label in weeklyExpenseDict:
+                weeklyExpenseDict[week_label] += float(expense["amount"])
             else:
-                weeklyExpenseDict[expense["weekStartDate"]] = float(expense["amount"])
+                weeklyExpenseDict[week_label] = float(expense["amount"])
 
-        #Monthly Category wise Data.
-        if datetime.strptime(expense["date"], "%Y-%m-%d").date() >= (datetime.today().replace(day=1) - timedelta(days=150)).date() :
-            month = datetime.strptime(expense["date"], "%Y-%m-%d").strftime("%B")
+        # Monthly Category-wise Data (for past 5 months approx)
+        if dateObj.date() >= (datetime.today().replace(day=1) - timedelta(days=150)).date():
+            month = dateObj.strftime("%B")
             category = expense["category"]
-            if  month not in categoryExpenseDict :
-               categoryExpenseDict[month] = {category:expense["amount"],"total":expense["amount"]}
-            elif month in categoryExpenseDict and category not in categoryExpenseDict[month]:
-                categoryExpenseDict[month][category] = expense["amount"]
-                categoryExpenseDict[month]["total"] += expense["amount"]
+            amount = float(expense["amount"])
+            
+            if month not in categoryExpenseDict:
+                categoryExpenseDict[month] = {category: amount, "total": amount}
+            elif category not in categoryExpenseDict[month]:
+                categoryExpenseDict[month][category] = amount
+                categoryExpenseDict[month]["total"] += amount
             else:
-                categoryExpenseDict[month][category] += expense["amount"]
-                categoryExpenseDict[month]["total"] += expense["amount"]
+                categoryExpenseDict[month][category] += amount
+                categoryExpenseDict[month]["total"] += amount
 
     categoryExpensePercentageDict = getcategoryPercentages(categoryExpenseDict)
 
-    return monthlyExpenseList,weeklyExpenseDict,categoryExpensePercentageDict
+    return monthlyExpenseList, weeklyExpenseDict, categoryExpensePercentageDict
+
 
         
