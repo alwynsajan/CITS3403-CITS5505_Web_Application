@@ -59,7 +59,7 @@ function initExpenseCharts() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        aspectRatio: 3, 
         plugins: {
           legend: { display: false }
         },
@@ -71,7 +71,81 @@ function initExpenseCharts() {
     });
   }
 
- 
+  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
+    if (pieChartInstance) {
+      pieChartInstance.destroy();
+    }
+  
+    // Get the monthly data
+    const monthlyData = window.expenseData.monthlyCategoryExpenses;
+    
+    // Get the first month's data (zeroth index)
+    const months = Object.keys(monthlyData);
+    const firstMonth = months[0];
+    const categoriesData = monthlyData[firstMonth];
+    
+    // Prepare data for the chart (filter out 'total' and convert to arrays)
+    const categories = [];
+    const amounts = [];
+    const backgroundColors = [
+      '#6c5ce7', '#00cec9', '#0984e3', 
+      '#00b894', '#ff7675', '#fdcb6e'
+    ];
+    
+    let colorIndex = 0;
+    for (const [category, amount] of Object.entries(categoriesData)) {
+      if (category !== 'total') {
+        categories.push(category);
+        amounts.push(amount);
+        colorIndex = (colorIndex + 1) % backgroundColors.length;
+      }
+    }
+  
+    // Create the pie chart
+    pieChartInstance = new Chart(pieChartEl, {
+      type: 'pie',
+      data: {
+        labels: categories,
+        datasets: [{
+          data: amounts,
+          backgroundColor: backgroundColors.slice(0, amounts.length),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        aspectRatio: 1.5, // Makes the pie chart more compact
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 12,
+              padding: 10,
+              font: {
+                size: 10
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = categoriesData.total || amounts.reduce((a, b) => a + b, 0);
+                const percentage = Math.round((context.raw / total) * 100);
+                return `${context.label}: $${context.raw.toFixed(2)} (${percentage}%)`;
+              }
+            }
+          },
+          title: {
+            display: true,
+            text: firstMonth, // Show month as title
+            font: {
+              size: 14
+            }
+          }
+        }
+      }
+    });
+  }
 
   if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
     if (barChartInstance) {
@@ -103,7 +177,7 @@ function initExpenseCharts() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        aspectRatio: 4, 
         plugins: {
           legend: { position: 'top' },
           tooltip: { mode: 'index', intersect: false }
@@ -157,6 +231,7 @@ function initExpenseCharts() {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
+    console.log(window.expenseData)
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
