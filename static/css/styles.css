@@ -1221,3 +1221,30 @@ body.dark-theme .custom-theme-switch .icon.moon {
 .dark-theme #userSearch::placeholder {
     color: var(--placeholder-color);
 }
+
+/* Unread report styles - For shared reports list */
+.unread-report {
+    background-color: rgba(108, 92, 231, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+.dark-theme .unread-report {
+    background-color: rgba(108, 92, 231, 0.1);
+}
+
+/* Unread dot indicator */
+.unread-dot {
+    width: 8px !important;
+    height: 8px !important;
+    background-color: #e74c3c !important;
+    border: 0 !important;
+    box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+    animation: pulse 1.5s infinite;
+    left: 10px !important;
+    top: 10px !important;
+}
+
+.dark-theme .unread-dot {
+    background-color: #ff5252 !important;
+    box-shadow: 0 0 5px rgba(255, 82, 82, 0.5);
+}
