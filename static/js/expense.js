@@ -5,13 +5,76 @@ let barChartInstance = null;
 let pieChartInstance = null;
 let lineChartInstance = null;
 
+function drawExpenseAndSalaryGraph(){
+  const hasExpenses = window.expenseData.hasExpenses;
+  const hasSalary = window.expenseData.hasSalary;
+
+  // Salary vs Expenses
+  const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
+  const barChartEl = document.getElementById('barChart');
+  if (salaryEmpty && barChartEl) {
+    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
+    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
+  }
+
+  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
+    if (barChartInstance) {
+      barChartInstance.destroy();
+    }
+    const salaryData = window.expenseData.expenseAndSalary?.salaryData ?? Array(12).fill(0);
+    const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
+
+    barChartInstance = new Chart(barChartEl, {
+      type: 'bar',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        datasets: [
+          {
+            label: 'Salary',
+            data: salaryData,
+            backgroundColor: '#6c5ce7',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          },
+          {
+            label: 'Expenses',
+            data: expenseData,
+            backgroundColor: '#00cec9',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        aspectRatio: 4, 
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            stacked: false,
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            stacked: false,
+            grid: { color: '#f1f1f1' }
+          }
+        }
+      }
+    });
+  }
+}
+
 /**
  * Initialize charts and table if we have expense data.
  */
 function initExpenseCharts() {
   // Show/hide empty states and charts based on data
   const hasExpenses = window.expenseData.hasExpenses;
-  const hasSalary = window.expenseData.hasSalary;
   
   // Weekly Expenses
   const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
@@ -29,14 +92,6 @@ function initExpenseCharts() {
     pieChartEl.style.display = hasExpenses ? 'block' : 'none';
   }
   
-  // Salary vs Expenses
-  const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
-  const barChartEl = document.getElementById('barChart');
-  if (salaryEmpty && barChartEl) {
-    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
-    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
-  }
-
   // Now initialize the charts if they should be visible
   if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
     if (lineChartInstance) {
@@ -147,56 +202,7 @@ function initExpenseCharts() {
     });
   }
 
-  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
-    if (barChartInstance) {
-      barChartInstance.destroy();
-    }
-    const salaryData = window.expenseData.expenseAndSalary?.salaryData ?? Array(12).fill(0);
-    const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
-
-    barChartInstance = new Chart(barChartEl, {
-      type: 'bar',
-      data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        datasets: [
-          {
-            label: 'Salary',
-            data: salaryData,
-            backgroundColor: '#6c5ce7',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
-          },
-          {
-            label: 'Expenses',
-            data: expenseData,
-            backgroundColor: '#00cec9',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        aspectRatio: 4, 
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          x: {
-            stacked: false,
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true,
-            stacked: false,
-            grid: { color: '#f1f1f1' }
-          }
-        }
-      }
-    });
-  }
+  drawExpenseAndSalaryGraph();
 }
 
 /**
@@ -231,7 +237,6 @@ function initExpenseCharts() {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
-    console.log(window.expenseData)
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
@@ -276,11 +281,9 @@ async function saveSalary(event) {
     if (!resp.ok) throw new Error(result.message || 'Failed to save salary');
 
     // unpack either { data: {...} } or raw {...}
-    window.expenseData = result.data ?? result;
+    window.expenseData.expenseAndSalary.salaryData = result.data.newSalaryData ?? result;
 
-    console.log(window.expenseData)
-
-    initExpenseCharts();
+    drawExpenseAndSalaryGraph();
     showAlert('Salary added successfully!', 'success');
     form.reset();
 

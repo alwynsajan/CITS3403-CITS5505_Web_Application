@@ -113,6 +113,19 @@ class serviceHandler():
                 if status["status"] == "Success":
                     status = self.DBClient.addSalary(userID,float(data["amount"]),salaryDate)
 
+                    if status["status"] == "Success":
+                        salaryDataListStatus = self.DBClient.getUserSalaries(userID)
+
+                        if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
+                            monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
+
+                            status["data"]["newSalaryData"] = monthlySalaryList
+                            return status
+                        else:
+                            return salaryDataListStatus
+                    else:
+                        return status
+
                 return status
             else:
                 return status
