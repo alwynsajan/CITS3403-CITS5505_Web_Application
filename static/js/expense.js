@@ -4,6 +4,8 @@ let pieChart, barChart, lineChart;
 let barChartInstance = null;
 let pieChartInstance = null;
 let lineChartInstance = null;
+let monthKeys = [];
+let currentMonthIndex = 0;
 
 function drawExpenseAndSalaryGraph(){
   const hasExpenses = window.expenseData.hasExpenses;
@@ -69,6 +71,91 @@ function drawExpenseAndSalaryGraph(){
   }
 }
 
+function drawCategoryPieChart(index) {
+
+  const hasExpenses = window.expenseData.hasExpenses;
+  monthKeys = Object.keys(window.expenseData.monthlyCategoryExpenses);
+
+  // Toggle category breakdown empty state and chart
+  const categoryEmpty = document.getElementById('categoryBreakdownEmpty');
+  const pieChartEl = document.getElementById('pieChart');
+  const prevBtn = document.getElementById('prevMonth');
+  const nextBtn = document.getElementById('nextMonth');
+
+  // Show/hide buttons only if there are multiple months
+  if (hasExpenses && monthKeys.length > 1) {
+      prevBtn.style.display = 'inline-block';
+      nextBtn.style.display = 'inline-block';
+  } else {
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+  }
+
+  // Toggle chart visibility based on expenses
+  if (categoryEmpty && pieChartEl) {
+      categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
+      pieChartEl.style.display = hasExpenses ? 'block' : 'none';
+  }
+
+  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
+      if (pieChartInstance) {
+          pieChartInstance.destroy();
+      }
+
+      // Extract and order the months from the data
+      const monthlyExpenses = window.expenseData.monthlyCategoryExpenses;
+      monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`)); // Sort by month
+
+      const month = monthKeys[index];
+      const data = monthlyExpenses[month];
+
+      // Remove the 'total' key to only include category breakdown
+      const categories = Object.keys(data).filter(k => k !== 'total');
+      const values = categories.map(cat => data[cat]);
+
+      console.log("categories "+categories);
+
+      const ctx = document.getElementById('pieChart');
+
+      if (pieChartInstance) {
+          pieChartInstance.destroy();
+      }
+
+      pieChartInstance = new Chart(ctx, {
+          type: 'pie',
+          data: {
+              labels: categories,
+              datasets: [{
+                  data: values,
+                  backgroundColor: ['#6c5ce7', '#00cec9', '#fd79a8','#fab1a0', '#ffeaa7', '#55efc4', '#a29bfe']
+              }]
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  title: {
+                      display: true,
+                      text: `Category Breakdown - ${month}`
+                  },
+                  legend: {
+                      position: 'bottom'
+                  },
+                  tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            return `${label}: $${value.toFixed(2)}`;
+                        }
+                    }
+                }
+              }
+          }
+      });
+  }
+}
+
+
 /**
  * Initialize charts and table if we have expense data.
  */
@@ -82,14 +169,6 @@ function initExpenseCharts() {
   if (weeklyEmpty && lineChartEl) {
     weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
     lineChartEl.style.display = hasExpenses ? 'block' : 'none';
-  }
-  
-  // Category Breakdown
-  const categoryEmpty = document.getElementById('categoryBreakdownEmpty');
-  const pieChartEl = document.getElementById('pieChart');
-  if (categoryEmpty && pieChartEl) {
-    categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
-    pieChartEl.style.display = hasExpenses ? 'block' : 'none';
   }
   
   // Now initialize the charts if they should be visible
@@ -126,83 +205,27 @@ function initExpenseCharts() {
     });
   }
 
-  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
-    if (pieChartInstance) {
-      pieChartInstance.destroy();
-    }
-  
-    // Get the monthly data
-    const monthlyData = window.expenseData.monthlyCategoryExpenses;
-    
-    // Get the first month's data (zeroth index)
-    const months = Object.keys(monthlyData);
-    const firstMonth = months[0];
-    const categoriesData = monthlyData[firstMonth];
-    
-    // Prepare data for the chart (filter out 'total' and convert to arrays)
-    const categories = [];
-    const amounts = [];
-    const backgroundColors = [
-      '#6c5ce7', '#00cec9', '#0984e3', 
-      '#00b894', '#ff7675', '#fdcb6e'
-    ];
-    
-    let colorIndex = 0;
-    for (const [category, amount] of Object.entries(categoriesData)) {
-      if (category !== 'total') {
-        categories.push(category);
-        amounts.push(amount);
-        colorIndex = (colorIndex + 1) % backgroundColors.length;
-      }
-    }
-  
-    // Create the pie chart
-    pieChartInstance = new Chart(pieChartEl, {
-      type: 'pie',
-      data: {
-        labels: categories,
-        datasets: [{
-          data: amounts,
-          backgroundColor: backgroundColors.slice(0, amounts.length),
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        aspectRatio: 1.5, // Makes the pie chart more compact
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              boxWidth: 12,
-              padding: 10,
-              font: {
-                size: 10
-              }
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const total = categoriesData.total || amounts.reduce((a, b) => a + b, 0);
-                const percentage = Math.round((context.raw / total) * 100);
-                return `${context.label}: $${context.raw.toFixed(2)} (${percentage}%)`;
-              }
-            }
-          },
-          title: {
-            display: true,
-            text: firstMonth, // Show month as title
-            font: {
-              size: 14
-            }
-          }
-        }
-      }
-    });
-  }
-
   drawExpenseAndSalaryGraph();
+}
+
+function handlePrevMonth() {
+  if (currentMonthIndex < monthKeys.length - 1) {
+    currentMonthIndex = currentMonthIndex+1 ;
+}
+else{
+    currentMonthIndex = 0 ;
+}
+drawCategoryPieChart(currentMonthIndex);
+}
+
+function handleNextMonth() {
+  if (currentMonthIndex > 0) {
+    currentMonthIndex--;
+}
+else{
+    currentMonthIndex = monthKeys.length - 1 ;
+}
+drawCategoryPieChart(currentMonthIndex);
 }
 
 /**
@@ -315,6 +338,9 @@ function showAlert(message, type = 'info') {
 // wire everything up on page load
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
+  drawCategoryPieChart(currentMonthIndex);
+  document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
+  document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
 });

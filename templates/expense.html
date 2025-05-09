@@ -34,7 +34,6 @@
                 <option>Grocery</option>
                 <option>Bills</option>
                 <option>Transportation</option>
-                <option>Miscellaneous</option>
                 <option>Other</option>
               </select>
             </div>
@@ -92,22 +91,34 @@
         <canvas id="lineChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
       </div>
     </div>
-  </div>
+  </div>  
 
   <!-- Category Breakdown (4/12) -->
   <div class="col-md-4">
     <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Category Breakdown</h5>
-        <div id="categoryBreakdownEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
-          <i class="empty-state-icon bi bi-pie-chart-fill"></i>
-          <p class="mt-2 text-muted">Add expenses to view your category breakdown.</p>
+        <div class="card-body">
+            <h5 class="card-title">Weekly Expenses</h5>
+            <!-- Empty State (only visible when no data) -->
+            <div id="categoryBreakdownEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
+                <i class="empty-state-icon bi bi-graph-up"></i>
+                <p class="mt-2 text-muted">Add expenses to view your category breakdown.</p>
+            </div>
+            <!-- Pie chart (only visible when there is data) -->
+            <canvas id="pieChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
+
+            <!-- Navigation buttons -->
+            <div>
+                <button id="prevMonth" class="btn btn-sm btn-outline-primary me-2" style="display: none;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="nextMonth" class="btn btn-sm btn-outline-primary" style="display: none;">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
         </div>
-        <canvas id="pieChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
-      </div>
     </div>
-  </div>
 </div>
+
 
 <!-- Third Row: Salary vs Expenses -->
 <div class="row g-4 mb-4">
