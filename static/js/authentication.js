@@ -29,13 +29,11 @@ if (loginForm) {
             password: document.getElementById('password').value,
         };
         console.log("formData :", formData);
-        // console.log("CSRF_TOKEN :", CSRF_TOKEN);
 
         fetch('/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 'X-CSRFToken': CSRF_TOKEN 
             },
             body: JSON.stringify(formData)
         })
@@ -47,21 +45,24 @@ if (loginForm) {
         })
         .then(data => {
             console.log('Response:', data);
-            
+
             if (data.status === "Success" && data.redirect) {
-                window.location.href = data.redirect;
-            }
-            else {
-                alert(data.status + ": " + data.message);
+                // Don't show alert on success, just redirect
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 100); // Immediate or minimal delay
+            } else {
+                showAlert(`${data.status}: ${data.message}`, "danger");
             }
         })
         .catch(error => {
             console.error('Error:', error);
             const message = error.message || 'An error occurred while processing your request';
-            alert("Error: " + message);
+            showAlert("Error: " + message, "danger");
         });
     });
 }
+
 
 // Signup Form Handling
 const signupForm = document.getElementById('signupForm');
@@ -85,7 +86,6 @@ if (signupForm) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 'X-CSRFToken': CSRF_TOKEN 
             },
             body: JSON.stringify(formData)
         })
@@ -97,15 +97,34 @@ if (signupForm) {
         })
         .then(data => {
             console.log('Response:', data);
-            alert(data.status + ": " + data.message);
+            showAlert(`${data.status}: ${data.message}`, data.status === "Success" ? "success" : "danger");
             if (data.status === "Success" && data.redirect) {
-                window.location.href = data.redirect;
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000); // UX delay
             }
         })
         .catch(error => {
             console.error('Error:', error);
             const message = error.message || 'An error occurred while processing your request';
-            alert("Error: " + message);
+            showAlert("Error: " + message, "danger");
         });
     });
 }
+
+/**
+ * Utility: show a Bootstrap alert
+ */
+function showAlert(message, type = 'info') {
+    const container = document.querySelector('.main-content') || document.body;
+    const alertDiv  = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    container.prepend(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+  }
+  

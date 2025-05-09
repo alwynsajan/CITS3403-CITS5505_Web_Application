@@ -20,6 +20,17 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.main-content {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    width: 100%;
+    max-width: 500px;
+    padding: 0 15px;
+  }
+
 body {
     background-color: var(--light);
     color: var(--dark);
