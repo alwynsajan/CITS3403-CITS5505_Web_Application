@@ -7,9 +7,9 @@ class serviceHandler():
     def __init__(self):
         self.DBClient = dbClient()
 
-    def checkCredentials(self,username, password):
-        status = self.DBClient.checkCredentials(username, password)
-        return status
+    # def checkCredentials(self,username, password):
+    #     status = self.DBClient.checkCredentials(username, password)
+    #     return status
     
     def addNewUser(self,data):
 
