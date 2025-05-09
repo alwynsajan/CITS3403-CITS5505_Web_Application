@@ -101,14 +101,14 @@ def getMonthlySalaryList(salaryData):
 
     return monthlySalaryList
 
-def getcategoryPercentages(categoryExpenseDict):
+# def getcategoryPercentages(categoryExpenseDict):
 
-    for month,expenses in categoryExpenseDict.items():
-        for category,expense in expenses.items():
-            if category != "total":
-                categoryExpenseDict[month][category] = round((expense*100)/categoryExpenseDict[month]["total"],2)
+#     for month,expenses in categoryExpenseDict.items():
+#         for category,expense in expenses.items():
+#             if category != "total":
+#                 categoryExpenseDict[month][category] = round((expense*100)/categoryExpenseDict[month]["total"],2)
 
-    return categoryExpenseDict
+#     return categoryExpenseDict
 
 #Returns a list of total expenses per month from expense data
 def getExpensePageData(expenseData):
@@ -124,15 +124,16 @@ def getExpensePageData(expenseData):
         monthlyExpenseList[index] += float(expense["amount"])
         
         # Weekly Expense Data (for past 8 weeks)
-        week_start = datetime.strptime(expense["weekStartDate"], "%Y-%m-%d").date()
-        if week_start >= (datetime.today().date() - timedelta(weeks=8)):
-            week_end = week_start + timedelta(days=6)
-            week_label = f"{week_start.day} {week_start.strftime('%b')} - {week_end.day} {week_end.strftime('%b')}"
+        weekStart = datetime.strptime(expense["weekStartDate"], "%Y-%m-%d").date()
+        if weekStart >= (datetime.today().date() - timedelta(weeks=8)):
+            weekEnd = weekStart + timedelta(days=6)
+            weekLabel = f"{weekStart.day} {weekStart.strftime('%b')} - {weekEnd.day} {weekEnd.strftime('%b')}"
             
-            if week_label in weeklyExpenseDict:
-                weeklyExpenseDict[week_label] += float(expense["amount"])
+            if weekLabel in weeklyExpenseDict:
+                weeklyExpenseDict[weekLabel] += float(expense["amount"])
             else:
-                weeklyExpenseDict[week_label] = float(expense["amount"])
+                weeklyExpenseDict[weekLabel] = float(expense["amount"])
+
 
         # Monthly Category-wise Data (for past 5 months approx)
         if dateObj.date() >= (datetime.today().replace(day=1) - timedelta(days=150)).date():
@@ -149,9 +150,7 @@ def getExpensePageData(expenseData):
                 categoryExpenseDict[month][category] += amount
                 categoryExpenseDict[month]["total"] += amount
 
-    categoryExpensePercentageDict = getcategoryPercentages(categoryExpenseDict)
-
-    return monthlyExpenseList, weeklyExpenseDict, categoryExpensePercentageDict
+    return monthlyExpenseList, weeklyExpenseDict, categoryExpenseDict
 
 
         
