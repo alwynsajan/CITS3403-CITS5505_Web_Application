@@ -24,7 +24,8 @@
           <form id="expenseForm" class="row g-3">
             <div class="col-md-4">
               <label class="form-label">Amount</label>
-              <input type="number" name="amount" class="form-control" placeholder="e.g. 20.00" required>
+              <input type="number" name="amount" class="form-control" placeholder="e.g. 20.00" required min="1" 
+              step="0.01" onkeydown="return event.key !== 'e' && event.key !== 'E' && event.key !== '-' && event.key !== '+';">
             </div>
             <div class="col-md-4">
               <label class="form-label">Category</label>
@@ -61,7 +62,8 @@
           <form id="salaryForm" method="POST" action="/expense/addSalary" class="row g-3">
             <div class="col-12">
               <label class="form-label">Amount</label>
-              <input type="number" name="amount" class="form-control" placeholder="e.g. 3000" required>
+              <input type="number" name="amount" class="form-control" placeholder="e.g. 20.00" required min="1"
+               step="1" onkeydown="return event.key !== 'e' && event.key !== 'E' && event.key !== '-' && event.key !== '+';">
             </div>
             <div class="col-12">
               <label class="form-label">Date</label>

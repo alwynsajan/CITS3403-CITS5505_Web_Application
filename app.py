@@ -213,9 +213,25 @@ def addSalary():
             "message":"No data received"})
     
     data = {}
-    # Get data from form.
-    data["amount"] = formData.get('amount')
-    data["salaryDate"] = formData.get('date')
+    
+    # Get data from form
+    amount = formData.get('amount')
+    salaryDate = formData.get('date')
+
+    # Validate amount
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid amount. Must be a positive number."
+        })
+
+    data["amount"] = amount
+    data["salaryDate"] = salaryDate
 
     requestStatus = handler.addNewSalary(username,userID,data)
 
@@ -239,8 +255,24 @@ def addExpense():
     
     data = {}
     # Get data from form.
+
+    # Get data from form
+    amount = formData.get('amount')
+
+    # Validate amount
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid amount. Must be a positive number."
+        })
+
+    data["amount"] = amount
     data["category"] = formData.get('category')
-    data["amount"] = formData.get('amount')
     data["date"] = formData.get('date')
 
     data = handler.addNewExpense(username,userID,data)
