@@ -1,7 +1,7 @@
 let pieChartInstance = null;
 let currentMonthIndex = 0;
 let monthKeys = [];
-let monthListLen = 0;
+
 
 function drawExpenseAndSalaryGraph(){
   
@@ -159,10 +159,25 @@ function drawWeeklyExpenseGraph(){
 }
 
 function drawCategoryPieChart(index) {
+
+    const prevBtn = document.getElementById('prevMonth');
+    const nextBtn = document.getElementById('nextMonth');
+    console.log("In drawCategoryPieChart");
+
     // Extract and order the months from the data
     const monthlyExpenses = window.expenseData.monthlyCategoryExpenses;
-     monthKeys = Object.keys(monthlyExpenses); // ['April', 'March', 'February', 'May']
-    monthKeys.sort((a, b) => new Date(`1 ${a} 2020`) - new Date(`1 ${b} 2020`)); // Sort by month
+    monthKeys = Object.keys(monthlyExpenses); // ['April', 'March', 'February', 'May']
+    monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`)); // Sort by month
+
+    // Show/hide buttons only if there are multiple months
+    if (monthKeys.length > 1) {
+        prevBtn.style.display = 'inline-block';
+        nextBtn.style.display = 'inline-block';
+        console.log("In drawCategoryPieChart");
+    } else {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        }
 
 
     const month = monthKeys[index];
@@ -203,25 +218,24 @@ function drawCategoryPieChart(index) {
 }
 
 function handlePrevMonth() {
-    console.log(currentMonthIndex)
-    if (currentMonthIndex > 0) {
-        currentMonthIndex--;
-    }
-    else{
-        currentMonthIndex = monthKeys.length - 1 ;
-    }
-    drawCategoryPieChart(currentMonthIndex);
-}
-
-function handleNextMonth() {
     if (currentMonthIndex < monthKeys.length - 1) {
-        currentMonthIndex = currentMonthIndex+1 ;
-    }
-    else{
-        currentMonthIndex = 0 ;
-    }
-    drawCategoryPieChart(currentMonthIndex);
-}
+      currentMonthIndex = currentMonthIndex+1 ;
+  }
+  else{
+      currentMonthIndex = 0 ;
+  }
+  drawCategoryPieChart(currentMonthIndex);
+  }
+  
+  function handleNextMonth() {
+    if (currentMonthIndex > 0) {
+      currentMonthIndex--;
+  }
+  else{
+      currentMonthIndex = monthKeys.length - 1 ;
+  }
+  drawCategoryPieChart(currentMonthIndex);
+  }
 
 document.addEventListener('DOMContentLoaded', () => {
     drawExpenseAndSalaryGraph();
