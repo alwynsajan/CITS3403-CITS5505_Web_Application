@@ -7,7 +7,7 @@ let lineChartInstance = null;
 let monthKeys = [];
 let currentMonthIndex = 0;
 
-function drawExpenseAndSalaryGraph(){
+function drawExpenseAndSalaryGraph() {
   const hasExpenses = window.expenseData.hasExpenses;
   const hasSalary = window.expenseData.hasSalary;
 
@@ -52,7 +52,17 @@ function drawExpenseAndSalaryGraph(){
         aspectRatio: 4, 
         plugins: {
           legend: { position: 'top' },
-          tooltip: { mode: 'index', intersect: false }
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                // Get the value from the context (data from the bar)
+                const value = context.raw;
+                return `$${value.toFixed(2)}`; 
+              }
+            }
+          }
         },
         interaction: { mode: 'index', intersect: false },
         scales: {
@@ -70,6 +80,7 @@ function drawExpenseAndSalaryGraph(){
     });
   }
 }
+
 
 function drawCategoryPieChart(index) {
 
@@ -163,27 +174,38 @@ function drawCategoryPieChart(index) {
 function initExpenseCharts() {
   // Show/hide empty states and charts based on data
   const hasExpenses = window.expenseData.hasExpenses;
-  
-  // Weekly Expenses
+
   const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
   const lineChartEl = document.getElementById('lineChart');
   if (weeklyEmpty && lineChartEl) {
     weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
     lineChartEl.style.display = hasExpenses ? 'block' : 'none';
   }
-  
-  // Now initialize the charts if they should be visible
+
   if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
     if (lineChartInstance) {
       lineChartInstance.destroy();
     }
+
+    const weeklyExpense = window.expenseData.weeklyExpense;
+
+    // Sort weekly expense data by start date
+    const sortedEntries = Object.entries(weeklyExpense).sort(([a], [b]) => {
+      const dateA = new Date(a.split(' - ')[0] + ' 2025');
+      const dateB = new Date(b.split(' - ')[0] + ' 2025');
+      return dateA - dateB;
+    });
+
+    const sortedLabels = sortedEntries.map(([label]) => label);
+    const sortedData = sortedEntries.map(([, value]) => value);
+
     lineChartInstance = new Chart(lineChartEl, {
       type: "line",
       data: {
-        labels: Object.keys(window.expenseData.weeklyExpense),  
+        labels: sortedLabels,
         datasets: [{
           label: "Weekly Spending",
-          data: Object.values(window.expenseData.weeklyExpense),  
+          data: sortedData,
           borderColor: "#6932dd",
           fill: true,
           tension: 0.4,
@@ -194,9 +216,17 @@ function initExpenseCharts() {
       },
       options: {
         responsive: true,
-        aspectRatio: 3, 
+        aspectRatio: 3,
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                return `Weekly Spending: $${value.toFixed(2)}`;
+              }
+            }
+          }
         },
         scales: {
           y: { display: false },
@@ -208,6 +238,7 @@ function initExpenseCharts() {
 
   drawExpenseAndSalaryGraph();
 }
+
 
 function handlePrevMonth() {
   if (currentMonthIndex < monthKeys.length - 1) {
