@@ -85,6 +85,8 @@ function drawExpenseAndSalaryGraph() {
 function drawCategoryPieChart(index) {
 
   const hasExpenses = window.expenseData.hasExpenses;
+
+  if (hasExpenses == true){
   monthKeys = Object.keys(window.expenseData.monthlyCategoryExpenses);
 
   // Toggle category breakdown empty state and chart
@@ -166,6 +168,7 @@ function drawCategoryPieChart(index) {
       });
   }
 }
+}
 
 
 /**
@@ -237,6 +240,7 @@ function initExpenseCharts() {
   }
 
   drawExpenseAndSalaryGraph();
+  drawCategoryPieChart(currentMonthIndex);
 }
 
 
@@ -370,7 +374,6 @@ function showAlert(message, type = 'info') {
 // wire everything up on page load
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
-  drawCategoryPieChart(currentMonthIndex);
   document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
   document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
