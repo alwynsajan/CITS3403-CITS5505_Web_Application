@@ -2,6 +2,8 @@
 
 {% block head %}
   <!-- Chart.js is already included in base.html -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/expense.css') }}">
+
 {% endblock %}
 
 {% block content %}
@@ -97,7 +99,7 @@
   <div class="col-md-4">
     <div class="card h-100">
         <div class="card-body">
-            <h5 class="card-title">Weekly Expenses</h5>
+            <h5 class="card-title">Monthly Category Breakdown</h5>
             <!-- Empty State (only visible when no data) -->
             <div id="categoryBreakdownEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
                 <i class="empty-state-icon bi bi-graph-up"></i>
@@ -108,12 +110,12 @@
 
             <!-- Navigation buttons -->
             <div>
-                <button id="prevMonth" class="btn btn-sm btn-outline-primary me-2" style="display: none;">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button id="nextMonth" class="btn btn-sm btn-outline-primary" style="display: none;">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+                <button id="prevMonth" class="month-nav-btn left-btn">
+                  <i class="fas fa-chevron-left"></i>
+              </button>
+              <button id="nextMonth" class="month-nav-btn right-btn">
+                  <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
         </div>
     </div>

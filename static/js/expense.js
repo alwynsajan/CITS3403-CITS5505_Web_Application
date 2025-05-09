@@ -132,6 +132,7 @@ function drawCategoryPieChart(index) {
           },
           options: {
               responsive: true,
+              aspectRatio: 1.2,
               plugins: {
                   title: {
                       display: true,
