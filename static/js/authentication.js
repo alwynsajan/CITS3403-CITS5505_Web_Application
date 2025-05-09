@@ -1,0 +1,130 @@
+// Common function to toggle password visibility
+function setupPasswordToggle(passwordId, toggleId) {
+    const toggle = document.getElementById(toggleId);
+    if (toggle) {
+        toggle.addEventListener('click', function() {
+            const password = document.getElementById(passwordId);
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.classList.toggle('fa-eye-slash');
+            this.classList.toggle('fa-eye');
+        });
+    }
+}
+
+// const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Login Form Handling
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+
+    // Set up password toggle for login form
+    setupPasswordToggle('password', 'togglePassword');
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+        };
+        console.log("formData :", formData);
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response:', data);
+
+            if (data.status === "Success" && data.redirect) {
+                // Don't show alert on success, just redirect
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 100); // Immediate or minimal delay
+            } else {
+                showAlert(`${data.status}: ${data.message}`, "danger");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const message = error.message || 'An error occurred while processing your request';
+            showAlert("Error: " + message, "danger");
+        });
+    });
+}
+
+
+// Signup Form Handling
+const signupForm = document.getElementById('signupForm');
+if (signupForm) {
+    // Set up password toggles for signup form
+    setupPasswordToggle('password', 'togglePassword');
+    setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
+
+    signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirmPassword').value,
+        };
+
+        fetch('/addUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response:', data);
+            showAlert(`${data.status}: ${data.message}`, data.status === "Success" ? "success" : "danger");
+            if (data.status === "Success" && data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000); // UX delay
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const message = error.message || 'An error occurred while processing your request';
+            showAlert("Error: " + message, "danger");
+        });
+    });
+}
+
+/**
+ * Utility: show a Bootstrap alert
+ */
+function showAlert(message, type = 'info') {
+    const container = document.querySelector('.main-content') || document.body;
+    const alertDiv  = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    container.prepend(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+  }
+  

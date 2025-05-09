@@ -298,3 +298,34 @@ h1, h2, h3, h4, h5, h6, p {
 @media (max-width: 992px) {
     .main-content { padding: 15px; }
 }
+
+/* Positioning for month navigation buttons */
+.month-nav-btn {
+    display:  none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    background: none;
+    border: none;
+    outline: none;
+    padding: 20px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease;
+    z-index: 2;
+}
+
+.left-btn {
+    left: 0;
+}
+
+.right-btn {
+    right: 0;
+}
+
+.month-nav-btn:hover {
+    transform: translateY(-50%) scale(1.2);
+
+    border-radius: 50%;
+}

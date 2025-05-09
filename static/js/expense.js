@@ -1,92 +1,272 @@
 // static/js/expense.js
 
 let pieChart, barChart, lineChart;
+let barChartInstance = null;
+let pieChartInstance = null;
+let lineChartInstance = null;
+let monthKeys = [];
+let currentMonthIndex = 0;
+
+function drawExpenseAndSalaryGraph() {
+  const hasExpenses = window.expenseData.hasExpenses;
+  const hasSalary = window.expenseData.hasSalary;
+
+  // Salary vs Expenses
+  const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
+  const barChartEl = document.getElementById('barChart');
+  if (salaryEmpty && barChartEl) {
+    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
+    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
+  }
+
+  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
+    if (barChartInstance) {
+      barChartInstance.destroy();
+    }
+    const salaryData = window.expenseData.expenseAndSalary?.salaryData ?? Array(12).fill(0);
+    const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
+
+    barChartInstance = new Chart(barChartEl, {
+      type: 'bar',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        datasets: [
+          {
+            label: 'Salary',
+            data: salaryData,
+            backgroundColor: '#6c5ce7',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          },
+          {
+            label: 'Expenses',
+            data: expenseData,
+            backgroundColor: '#00cec9',
+            borderRadius: { topLeft: 10, topRight: 10 },
+            barThickness: 20
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        aspectRatio: 4, 
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                // Get the value from the context (data from the bar)
+                const value = context.raw;
+                return `$${value.toFixed(2)}`; 
+              }
+            }
+          }
+        },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            stacked: false,
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            stacked: false,
+            grid: { color: '#f1f1f1' }
+          }
+        }
+      }
+    });
+  }
+}
+
+
+function drawCategoryPieChart(index) {
+
+  const hasExpenses = window.expenseData.hasExpenses;
+
+  if (hasExpenses == true){
+  monthKeys = Object.keys(window.expenseData.monthlyCategoryExpenses);
+
+  // Toggle category breakdown empty state and chart
+  const categoryEmpty = document.getElementById('categoryBreakdownEmpty');
+  const pieChartEl = document.getElementById('pieChart');
+  const prevBtn = document.getElementById('prevMonth');
+  const nextBtn = document.getElementById('nextMonth');
+
+  // Show/hide buttons only if there are multiple months
+  if (hasExpenses && monthKeys.length > 1) {
+      prevBtn.style.display = 'inline-block';
+      nextBtn.style.display = 'inline-block';
+  } else {
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+  }
+
+  // Toggle chart visibility based on expenses
+  if (categoryEmpty && pieChartEl) {
+      categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
+      pieChartEl.style.display = hasExpenses ? 'block' : 'none';
+  }
+
+  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
+      if (pieChartInstance) {
+          pieChartInstance.destroy();
+      }
+
+      // Extract and order the months from the data
+      const monthlyExpenses = window.expenseData.monthlyCategoryExpenses;
+      monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`)); // Sort by month
+
+      const month = monthKeys[index];
+      const data = monthlyExpenses[month];
+
+      // Remove the 'total' key to only include category breakdown
+      const categories = Object.keys(data).filter(k => k !== 'total');
+      const values = categories.map(cat => data[cat]);
+
+      console.log("categories "+categories);
+
+      const ctx = document.getElementById('pieChart');
+
+      if (pieChartInstance) {
+          pieChartInstance.destroy();
+      }
+
+      pieChartInstance = new Chart(ctx, {
+          type: 'pie',
+          data: {
+              labels: categories,
+              datasets: [{
+                  data: values,
+                  backgroundColor: ['#6c5ce7', '#00cec9', '#fd79a8','#fab1a0', '#ffeaa7', '#55efc4', '#a29bfe']
+              }]
+          },
+          options: {
+              responsive: true,
+              aspectRatio: 1.2,
+              plugins: {
+                  title: {
+                      display: true,
+                      text: `Category Breakdown - ${month}`
+                  },
+                  legend: {
+                      position: 'bottom'
+                  },
+                  tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            return `${label}: $${value.toFixed(2)}`;
+                        }
+                    }
+                }
+              }
+          }
+      });
+  }
+}
+}
+
 
 /**
  * Initialize charts and table if we have expense data.
  */
 function initExpenseCharts() {
-  // guard if expenseData is ever undefined or no data
-  if (!window.expenseData || !window.expenseData.hasExpenses) return;
+  // Show/hide empty states and charts based on data
+  const hasExpenses = window.expenseData.hasExpenses;
 
-  // 1) Pie chart: category breakdown
-  const pieCtx = document.getElementById('pieChart').getContext('2d');
-  pieChart = new Chart(pieCtx, {
-    type: 'pie',
-    data: {
-      labels: window.expenseData.monthlyCategorywiseExpenses.categories,
-      datasets: [{
-        data: window.expenseData.monthlyCategorywiseExpenses.expensePercentage,
-        backgroundColor: [
-          '#6c5ce7', '#00cec9', '#0984e3', '#00b894', '#ff7675', '#fdcb6e'
-        ]
-      }]
+  const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
+  const lineChartEl = document.getElementById('lineChart');
+  if (weeklyEmpty && lineChartEl) {
+    weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
+    lineChartEl.style.display = hasExpenses ? 'block' : 'none';
+  }
+
+  if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
+    if (lineChartInstance) {
+      lineChartInstance.destroy();
     }
-  });
 
-  // 2) Bar chart: salary vs expenses
-  const barCtx = document.getElementById('barChart').getContext('2d');
-  barChart = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: window.expenseData.expenseAndSalary.labels,
-      datasets: [
-        {
-          label: 'Salary',
-          data: window.expenseData.expenseAndSalary.salaryData,
-          backgroundColor: '#6c5ce7'
+    const weeklyExpense = window.expenseData.weeklyExpense;
+
+    // Sort weekly expense data by start date
+    const sortedEntries = Object.entries(weeklyExpense).sort(([a], [b]) => {
+      const dateA = new Date(a.split(' - ')[0] + ' 2025');
+      const dateB = new Date(b.split(' - ')[0] + ' 2025');
+      return dateA - dateB;
+    });
+
+    const sortedLabels = sortedEntries.map(([label]) => label);
+    const sortedData = sortedEntries.map(([, value]) => value);
+
+    lineChartInstance = new Chart(lineChartEl, {
+      type: "line",
+      data: {
+        labels: sortedLabels,
+        datasets: [{
+          label: "Weekly Spending",
+          data: sortedData,
+          borderColor: "#6932dd",
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#6932dd",
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        aspectRatio: 3,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                return `Weekly Spending: $${value.toFixed(2)}`;
+              }
+            }
+          }
         },
-        {
-          label: 'Expenses',
-          data: window.expenseData.expenseAndSalary.expenseData,
-          backgroundColor: '#00cec9'
+        scales: {
+          y: { display: false },
+          x: { display: false }
         }
-      ]
-    }
-  });
+      }
+    });
+  }
 
-  // 3) Line chart: weekly spending
-  const lineCtx = document.getElementById('lineChart').getContext('2d');
-  lineChart = new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: Object.keys(window.expenseData.weeklyExpense),
-      datasets: [{
-        label: 'Weekly Spending',
-        data: Object.values(window.expenseData.weeklyExpense),
-        fill: false,
-        borderColor: '#0984e3',
-        tension: 0.3
-      }]
-    }
-  });
-
-  // 4) Populate the expense log table
-  updateExpenseTable(window.expenseData.expenses);
+  drawExpenseAndSalaryGraph();
+  drawCategoryPieChart(currentMonthIndex);
 }
 
-/**
- * Render the expense table rows
- */
-function updateExpenseTable(expenses) {
-  const tbody = document.querySelector('#expenseLog tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  expenses.forEach(exp => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${exp.date}</td>
-      <td>$${exp.amount.toFixed(2)}</td>
-      <td>${exp.category}</td>
-    `;
-    tbody.appendChild(row);
-  });
+
+function handlePrevMonth() {
+  if (currentMonthIndex < monthKeys.length - 1) {
+    currentMonthIndex = currentMonthIndex+1 ;
+}
+else{
+    currentMonthIndex = 0 ;
+}
+drawCategoryPieChart(currentMonthIndex);
+}
+
+function handleNextMonth() {
+  if (currentMonthIndex > 0) {
+    currentMonthIndex--;
+}
+else{
+    currentMonthIndex = monthKeys.length - 1 ;
+}
+drawCategoryPieChart(currentMonthIndex);
 }
 
 /**
  * Handle adding a new expense via AJAX
- */
-async function saveExpense(event) {
+ */async function saveExpense(event) {
   event.preventDefault();
   const form = document.getElementById('expenseForm');
   const btn  = form.querySelector('button[type="submit"]');
@@ -116,7 +296,6 @@ async function saveExpense(event) {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
-
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
@@ -161,9 +340,9 @@ async function saveSalary(event) {
     if (!resp.ok) throw new Error(result.message || 'Failed to save salary');
 
     // unpack either { data: {...} } or raw {...}
-    window.expenseData = result.data ?? result;
+    window.expenseData.expenseAndSalary.salaryData = result.data.newSalaryData ?? result;
 
-    initExpenseCharts();
+    drawExpenseAndSalaryGraph();
     showAlert('Salary added successfully!', 'success');
     form.reset();
 
@@ -195,6 +374,8 @@ function showAlert(message, type = 'info') {
 // wire everything up on page load
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
+  document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
+  document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
 });
