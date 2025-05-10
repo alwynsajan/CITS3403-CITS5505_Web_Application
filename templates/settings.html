@@ -1,0 +1,48 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-5">
+  <div class="card p-4 shadow-sm">
+    <h3 class="card-title mb-4">Settings</h3>
+    <form method="POST" action="{{ url_for('settings') }}">
+      <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="firstName"
+          name="firstName"
+          value="{{ user.firstName }}"
+          required
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="lastName"
+          name="lastName"
+          value="{{ user.lastName }}"
+          required
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label"
+          >New Password
+          <small class="text-muted">(Leave blank to keep current)</small></label
+        >
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          name="password"
+          placeholder="Enter new password"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Update Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

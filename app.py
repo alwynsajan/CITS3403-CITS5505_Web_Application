@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from config import Config
 from models import db,User
 from flask_wtf import CSRFProtect
+from flask import flash
 
 app = Flask(__name__)
 
@@ -280,6 +281,25 @@ def markReportAsRead():
     reportID = data.get('reportId')
     requestStatus = handler.markReportAsRead(current_user.id, reportID)
     return jsonify(requestStatus)
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        first_name = request.form.get('firstName')
+        last_name = request.form.get('lastName')
+        password = request.form.get('password')  # optional
+
+        response = handler.updateUserSettings(current_user.id, first_name, last_name, password)
+
+        if response['status'] == 'Success':
+            flash('Settings updated successfully!', 'success')
+            return redirect(url_for('settings'))
+        else:
+            flash('Error updating settings: ' + response['message'], 'danger')
+
+    return render_template('settings.html', user=current_user)
+
 
 if __name__ == '__main__':
     # Start the Flask application in debug mode

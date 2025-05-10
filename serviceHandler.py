@@ -438,7 +438,30 @@ class serviceHandler():
                 "statusCode": 400,
                 "message": "Error : " + str(e)
             }
-    
+
+    def getUserSettings(self, userId):
+        try:
+            status = self.DBClient.getUserSettings(userId)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+
+
+    def updateUserSettings(self, userId, firstName, lastName, password=None):
+        try:
+            status = self.DBClient.updateUserSettings(userId, firstName, lastName, password)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+
 
         
 

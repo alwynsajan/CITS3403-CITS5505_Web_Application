@@ -829,6 +829,68 @@ class dbClient:
             }
 
 
+def getUserSettings(self, userId):
+    try:
+        user = User.query.get(userId)
+
+        if user:
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "User settings fetched successfully",
+                "data": {
+                    "firstName": user.firstName,
+                    "lastName": user.lastName,
+                    "username": user.username
+                }
+            }
+        else:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": "User not found"
+            }
+
+    except Exception as e:
+        return {
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "DB Error: " + str(e)
+        }
+
+
+def updateUserSettings(self, userId, firstName, lastName, newPassword=None):
+    try:
+        user = User.query.get(userId)
+
+        if not user:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": "User not found"
+            }
+
+        user.firstName = firstName
+        user.lastName = lastName
+
+        if newPassword:
+            user.password = generate_password_hash(newPassword)
+
+        db.session.commit()
+
+        return {
+            "status": "Success",
+            "statusCode": 200,
+            "message": "User settings updated successfully"
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        return {
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "DB Error: " + str(e)
+        }
 
 
 
