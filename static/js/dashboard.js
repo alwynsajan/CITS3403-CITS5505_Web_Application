@@ -793,33 +793,6 @@ function createExpenseReportHTML(expenseData) {
 }
 
 /**
- * Mark report as read
- * @param {number} reportId - Report ID
- */
-function markReportAsRead(reportId) {
-    fetch(`/api/reports/${reportId}/read`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Report marked as read:', data);
-        // Update unread count
-        fetchUnreadReportCount();
-    })
-    .catch(error => {
-        console.error('Error marking report as read:', error);
-    });
-}
-
-/**
  * Initialize the monthly spending chart with modern styling
  */
 function initMonthlySpendingChart() {
@@ -1337,7 +1310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                const response = await fetch('/add_salary', {
+                const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2095,7 +2068,6 @@ function setupExportReportFeature() {
 
         const reportData = {
             recipientID: selectedUserId,
-            reportType: 'dashboard',
             senderID: window.currentUserID
         };
 
