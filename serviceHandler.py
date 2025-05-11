@@ -451,16 +451,51 @@ class serviceHandler():
             }
 
 
-    def updateUserSettings(self, userId, firstName, lastName, password=None):
+    def updateUserSettings(self, userId, firstName, lastName, currentPassword=None, newPassword=None, confirmPassword=None):
         try:
-            status = self.DBClient.updateUserSettings(userId, firstName, lastName, password)
+            # Step 1: Get the current user object
+            user = self.DBClient.getUserSettings(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            # Step 2: Validate current password if any password update is requested
+            if newPassword or confirmPassword:
+                if not currentPassword:
+                    return {
+                        "status": "Failed",
+                        "statusCode": 400,
+                        "message": "Current password is required"
+                    }
+                if not user.checkPassword(currentPassword):
+                    return {
+                        "status": "Failed",
+                        "statusCode": 401,
+                        "message": "Current password is incorrect"
+                    }
+                if newPassword != confirmPassword:
+                    return {
+                        "status": "Failed",
+                        "statusCode": 400,
+                        "message": "New password and confirmation do not match"
+                    }
+
+            # Step 3: Proceed with the update
+            status = self.DBClient.updateUserSettings(
+                userId, firstName, lastName, newPassword if newPassword else None
+            )
             return status
+
         except Exception as e:
             return {
                 "status": "Failed",
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+
 
 
         

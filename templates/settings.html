@@ -1,8 +1,11 @@
-{% extends 'base.html' %} {% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="container mt-5">
   <div class="card p-4 shadow-sm">
     <h3 class="card-title mb-4">Settings</h3>
-    <form method="POST" action="{{ url_for('settings') }}">
+
+    <div id="settingsAlert" class="alert d-none" role="alert"></div>
+
+    <form id="settingsForm">
       <div class="mb-3">
         <label for="firstName" class="form-label">First Name</label>
         <input
@@ -28,16 +31,38 @@
       </div>
 
       <div class="mb-3">
-        <label for="password" class="form-label"
-          >New Password
-          <small class="text-muted">(Leave blank to keep current)</small></label
+        <label for="currentPassword" class="form-label">Current Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="currentPassword"
+          name="currentPassword"
+          placeholder="Enter current password"
+          required
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="newPassword" class="form-label">New Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="newPassword"
+          name="newPassword"
+          placeholder="Enter new password"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label"
+          >Confirm New Password</label
         >
         <input
           type="password"
           class="form-control"
-          id="password"
-          name="password"
-          placeholder="Enter new password"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="Confirm new password"
         />
       </div>
 
@@ -45,4 +70,6 @@
     </form>
   </div>
 </div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
 {% endblock %}

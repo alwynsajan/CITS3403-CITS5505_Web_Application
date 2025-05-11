@@ -6,7 +6,6 @@ from flask_migrate import Migrate
 from config import Config
 from models import db,User
 from flask_wtf import CSRFProtect
-from flask import flash
 
 app = Flask(__name__)
 
@@ -286,18 +285,45 @@ def markReportAsRead():
 @login_required
 def settings():
     if request.method == 'POST':
-        first_name = request.form.get('firstName')
-        last_name = request.form.get('lastName')
-        password = request.form.get('password')  # optional
+        formData = request.get_json()
 
-        response = handler.updateUserSettings(current_user.id, first_name, last_name, password)
+        if formData is None:
+            return jsonify({
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "No data received"
+            })
 
-        if response['status'] == 'Success':
-            flash('Settings updated successfully!', 'success')
-            return redirect(url_for('settings'))
+        first_name = formData.get('firstName')
+        last_name = formData.get('lastName')
+        current_password = formData.get('currentPassword')
+        new_password = formData.get('newPassword')
+        confirm_password = formData.get('confirmPassword')
+
+        # Verify current password
+        user = User.query.get(current_user.id)
+        if not user or not user.checkPassword(current_password):
+            return jsonify({
+                "status": "Failed",
+                "statusCode": 401,
+                "message": "Incorrect current password"
+            })
+
+        # If new password is provided, validate it
+        if new_password:
+            if new_password != confirm_password:
+                return jsonify({
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": "New password and confirmation do not match"
+                })
         else:
-            flash('Error updating settings: ' + response['message'], 'danger')
+            new_password = None  # To skip password update if empty
 
+        result = handler.updateUserSettings(current_user.id, first_name, last_name, new_password)
+        return jsonify(result)
+
+    # GET request — render settings page
     return render_template('settings.html', user=current_user)
 
 
