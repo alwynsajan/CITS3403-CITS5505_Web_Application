@@ -1486,7 +1486,9 @@ function getRandomColor() {
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// Handle salary addition with error handling
+/**
+ * Handle salary addition with enhanced validation and error handling
+ */
 document.addEventListener('DOMContentLoaded', function() {
     const addSalaryButtons = document.querySelectorAll('.add-salary-btn'); // Select all buttons
     const salaryModalInstance = document.getElementById('salaryModal') ? new bootstrap.Modal(document.getElementById('salaryModal')) : null;
@@ -1497,35 +1499,100 @@ document.addEventListener('DOMContentLoaded', function() {
     addSalaryButtons.forEach(button => {
         button.addEventListener('click', function() {
             if (salaryModalInstance) {
-                 salaryModalInstance.show();
+                // Set default date to today when opening the modal
+                const salaryDateInput = document.getElementById('salaryDate');
+                if (salaryDateInput && !salaryDateInput.value) {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    salaryDateInput.value = `${year}-${month}-${day}`;
+                }
+                salaryModalInstance.show();
             }
         });
     });
+
+    // Add input validation for salary amount
+    const salaryAmountInput = document.getElementById('salaryAmount');
+    if (salaryAmountInput) {
+        salaryAmountInput.addEventListener('input', function() {
+            validateSalaryAmount(this);
+        });
+    }
+
+    // Add input validation for salary date
+    const salaryDateInput = document.getElementById('salaryDate');
+    if (salaryDateInput) {
+        salaryDateInput.addEventListener('input', function() {
+            validateSalaryDate(this);
+        });
+    }
 
     if (saveSalaryBtn && salaryForm) {
         saveSalaryBtn.addEventListener('click', async function(event) {
             event.preventDefault();
 
+            // Get form values
+            const salaryAmountInput = document.getElementById('salaryAmount');
+            const salaryDateInput = document.getElementById('salaryDate');
+
+            // Enhanced validation
+            let isValid = true;
+            let errorMessage = '';
+
+            // Validate salary amount
+            const amount = parseFloat(salaryAmountInput.value);
+            if (isNaN(amount) || amount <= 0) {
+                isValid = false;
+                errorMessage = 'Salary amount must be a positive number';
+                salaryAmountInput.classList.add('is-invalid');
+            } else if (amount > 1000000) {
+                isValid = false;
+                errorMessage = 'Salary amount must be less than 1,000,000';
+                salaryAmountInput.classList.add('is-invalid');
+            } else {
+                salaryAmountInput.classList.remove('is-invalid');
+                salaryAmountInput.classList.add('is-valid');
+            }
+
+            // Validate salary date
+            const date = salaryDateInput.value;
+            if (!date) {
+                isValid = false;
+                errorMessage = 'Please select a date';
+                salaryDateInput.classList.add('is-invalid');
+            } else {
+                const selectedDate = new Date(date);
+                const today = new Date();
+                if (selectedDate > today) {
+                    isValid = false;
+                    errorMessage = 'Date cannot be in the future';
+                    salaryDateInput.classList.add('is-invalid');
+                } else {
+                    salaryDateInput.classList.remove('is-invalid');
+                    salaryDateInput.classList.add('is-valid');
+                }
+            }
+
+            // Show error message if validation fails
+            if (!isValid) {
+                showAlert(errorMessage, 'danger');
+                return;
+            }
+
+            // Basic form validation (HTML5)
             if (!salaryForm.checkValidity()) {
                 salaryForm.reportValidity();
                 return;
             }
-
-            const salaryAmount = document.getElementById('salaryAmount').value;
-            const salaryDate = document.getElementById('salaryDate').value;
 
             // Add loading state to button
             saveSalaryBtn.disabled = true;
             saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                // 确保工资金额是有效的数字
-                const amount = parseFloat(salaryAmount);
-                if (isNaN(amount) || amount <= 0) {
-                    throw new Error('Salary amount must be a positive number');
-                }
-
-                console.log('Sending salary data:', { amount, date: salaryDate });
+                console.log('Sending salary data:', { amount, date });
 
                 const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
@@ -1534,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         amount: amount,
-                        date: salaryDate
+                        date: date
                     })
                 });
 
@@ -1567,6 +1634,96 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+/**
+ * Validate salary amount input
+ * @param {HTMLInputElement} input - The salary amount input element
+ * @returns {boolean} - Whether the input is valid
+ */
+function validateSalaryAmount(input) {
+    const amount = parseFloat(input.value);
+    const errorContainer = input.nextElementSibling;
+    let isValid = true;
+    let errorMessage = '';
+
+    // Remove any existing error message
+    if (errorContainer && errorContainer.classList.contains('invalid-feedback')) {
+        errorContainer.remove();
+    }
+
+    // Validate amount
+    if (isNaN(amount) || amount <= 0) {
+        isValid = false;
+        errorMessage = 'Salary amount must be a positive number';
+    } else if (amount > 1000000) {
+        isValid = false;
+        errorMessage = 'Salary amount must be less than 1,000,000';
+    }
+
+    // Update UI based on validation
+    if (!isValid) {
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = errorMessage;
+        input.parentNode.insertBefore(errorDiv, input.nextSibling);
+    } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+    }
+
+    return isValid;
+}
+
+/**
+ * Validate salary date input
+ * @param {HTMLInputElement} input - The salary date input element
+ * @returns {boolean} - Whether the input is valid
+ */
+function validateSalaryDate(input) {
+    const date = input.value;
+    const errorContainer = input.nextElementSibling;
+    let isValid = true;
+    let errorMessage = '';
+
+    // Remove any existing error message
+    if (errorContainer && errorContainer.classList.contains('invalid-feedback')) {
+        errorContainer.remove();
+    }
+
+    // Validate date
+    if (!date) {
+        isValid = false;
+        errorMessage = 'Please select a date';
+    } else {
+        const selectedDate = new Date(date);
+        const today = new Date();
+        if (selectedDate > today) {
+            isValid = false;
+            errorMessage = 'Date cannot be in the future';
+        }
+    }
+
+    // Update UI based on validation
+    if (!isValid) {
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = errorMessage;
+        input.parentNode.insertBefore(errorDiv, input.nextSibling);
+    } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+    }
+
+    return isValid;
+}
 
 // Ensure global currentGoalIndex is consistent with updateGoalsUI's currentIndex
 let currentGoalIndex = 0; // Defined as global variable
