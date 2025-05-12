@@ -12,15 +12,16 @@
     <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body class="light-theme">
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-2 sidebar">
-                <div class="logo mb-4 d-flex align-items-center">
-                    <h2 class="py-3 mb-0">
-                        <i class="fas fa-wallet me-2"></i>WalletWhiz
+                <div class="logo mb-4" style="margin-top: -10px;">
+                    <h2 class="py-1 mb-0">
+                        <i class="fas fa-wallet me-2" style="font-size: 0.9em;"></i>WalletWhiz
                     </h2>
                 </div>
                 
@@ -67,8 +68,16 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <div>
-                                <h1 class="h3 mb-0" style="color: var(--primary-color);">Hi, {{ username }}!</h1>
-                                <p class="text-muted small mb-0">Welcome back to WalletWhiz! Ready to master your budget?</p>
+                                <h1 class="h3 mb-0"
+                                    style="background: linear-gradient(90deg, #6c5ce7 0%, #00cec9 100%);
+                                           -webkit-background-clip: text;
+                                           -webkit-text-fill-color: transparent;
+                                           background-clip: text;
+                                           color: transparent;
+                                           margin-top: -5px;">
+                                    Hi, {{ username }}!
+                                </h1>
+                                <p class="mb-0" style="color: var(--primary-color); font-weight: 300; font-size: 1rem; margin-top: 2px;">Ready to master your budget?</p>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-3">
@@ -119,161 +128,52 @@
         </div>
     </div>
 
+    <!-- Export Report Modal -->
+    <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportReportModalLabel">Send Your Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="userSearch" class="form-label">Search for a user to send report</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="userSearch" placeholder="Type a name or email...">
+                            <div id="userSearchLoading" class="position-absolute end-0 top-0 d-none" style="height: 100%; display: flex; align-items: center; padding-right: 10px;">
+                                <i class="fas fa-spinner fa-spin text-primary"></i>
+                            </div>
+                        </div>
+                        <div id="searchResults" class="list-group mt-2" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+                    </div>
+                    <div id="selectedUser" class="d-none">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <div>
+                                Send to: <span id="selectedUserName" class="fw-bold"></span>
+                            </div>
+                            <button type="button" class="btn-close btn-sm" id="clearSelectedUser" aria-label="Clear"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="shareReportBtn" disabled>
+                        <i class="fas fa-paper-plane me-1"></i>Send Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JQuery and Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Theme switcher JS -->
-    <script>
-        $(document).ready(function() {
-            // Check local storage for theme preference
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark-theme') {
-                $('body').removeClass('light-theme').addClass('dark-theme');
-                $('#theme-switch').prop('checked', true);
-            } else {
-                $('body').removeClass('dark-theme').addClass('light-theme');
-                $('#theme-switch').prop('checked', false);
-            }
-            
-            // Handle custom theme switcher click
-            $('#custom-theme-switch').on('click', function() {
-                const isDark = $('body').hasClass('dark-theme');
-                if (isDark) {
-                    $('body').removeClass('dark-theme').addClass('light-theme');
-                    $('#theme-switch').prop('checked', false);
-                    localStorage.setItem('theme', 'light-theme');
-                } else {
-                    $('body').removeClass('light-theme').addClass('dark-theme');
-                    $('#theme-switch').prop('checked', true);
-                    localStorage.setItem('theme', 'dark-theme');
-                }
-            });
-        });
-    </script>
+    <!-- Include base JS for theme switcher and shared reports functionality -->
+    <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
     
     <!-- Additional scripts -->
     {% block scripts %}{% endblock %}
-
-    <!-- Shared Reports Scripts -->
-    <script>
-        $(document).ready(function() {
-            // Initialize shared reports modal
-            const sharedReportsModal = new bootstrap.Modal(document.getElementById('sharedReportsModal'));
-            
-            // Fetch unread report count
-            function fetchUnreadReportCount() {
-                fetch('/dashboard/getUnreadReportCount')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "Success") {
-                            const count = data.reportCount || 0;
-                            const unreadBadge = $('#unreadReportCount');
-                            
-                            if (count > 0) {
-                                unreadBadge.text(count > 99 ? '99+' : count);
-                                unreadBadge.show();
-                            } else {
-                                unreadBadge.hide();
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching unread report count:', error);
-                    });
-            }
-            
-            // Fetch shared reports list
-            function fetchSharedReports() {
-                // Show loading state
-                $('#sharedReportsLoading').show();
-                $('#sharedReportsContent').hide();
-                
-                fetch('/dashboard/getSenderDetails')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Hide loading state
-                        $('#sharedReportsLoading').hide();
-                        $('#sharedReportsContent').show();
-                        
-                        if (data.status === "Success" && data.data && data.data.length > 0) {
-                            // Reports are available
-                            $('#noSharedReports').hide();
-                            
-                            // Clear existing list
-                            const reportsList = $('#sharedReportsList');
-                            reportsList.empty();
-                            
-                            // Add each shared report
-                            data.data.forEach(report => {
-                                const reportDate = new Date(report.sharedDate);
-                                const formattedDate = reportDate.toLocaleDateString() + ' ' + reportDate.toLocaleTimeString();
-                                
-                                const listItem = `
-                                    <li class="list-group-item shared-report-item" data-sender-id="${report.senderID}">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0">${report.senderFirstName} ${report.senderLastName}</h6>
-                                                <small class="text-muted">${formattedDate}</small>
-                                            </div>
-                                            <button class="btn btn-sm btn-primary view-report-btn">
-                                                <i class="fas fa-eye me-1"></i>View
-                                            </button>
-                                        </div>
-                                    </li>
-                                `;
-                                
-                                reportsList.append(listItem);
-                            });
-                            
-                            // View report button click event
-                            $('.view-report-btn').on('click', function(e) {
-                                e.stopPropagation();
-                                const senderID = $(this).closest('.shared-report-item').data('sender-id');
-                                viewSharedReport(senderID);
-                            });
-                            
-                            // List item click event can also trigger viewing
-                            $('.shared-report-item').on('click', function() {
-                                const senderID = $(this).data('sender-id');
-                                viewSharedReport(senderID);
-                            });
-                        } else {
-                            // No shared reports
-                            $('#noSharedReports').show();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching shared reports:', error);
-                        $('#sharedReportsLoading').hide();
-                        $('#sharedReportsContent').show();
-                        $('#noSharedReports').show();
-                        $('#noSharedReports p').text('Error loading shared reports. Please try again.');
-                    });
-            }
-            
-            // View shared report
-            function viewSharedReport(senderID) {
-                window.location.href = `/shared/report?senderID=${senderID}`;
-            }
-            
-            // Click on "Shared with me" button
-            $('#sharedWithMeBtn').on('click', function() {
-                fetchSharedReports();
-                sharedReportsModal.show();
-            });
-            
-            // Refresh unread count after modal is closed
-            $('#sharedReportsModal').on('hidden.bs.modal', function() {
-                fetchUnreadReportCount();
-            });
-            
-            // Initial load of unread count
-            fetchUnreadReportCount();
-            
-            // Periodically refresh unread count (every 5 minutes)
-            setInterval(fetchUnreadReportCount, 5 * 60 * 1000);
-        });
-    </script>
 </body>
 </html>
