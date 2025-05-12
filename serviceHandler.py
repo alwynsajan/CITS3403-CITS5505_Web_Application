@@ -7,9 +7,9 @@ class serviceHandler():
     def __init__(self):
         self.DBClient = dbClient()
 
-    def checkCredentials(self,username, password):
-        status = self.DBClient.checkCredentials(username, password)
-        return status
+    # def checkCredentials(self,username, password):
+    #     status = self.DBClient.checkCredentials(username, password)
+    #     return status
     
     def addNewUser(self,data):
 
@@ -59,20 +59,23 @@ class serviceHandler():
                 }
             
         try:
-            status = self.DBClient.addNewGoal(username,data)
-            
-            #Getting Account Balance
+            status = self.DBClient.checkAndAddGoalAllocation(userID,data["percentageAllocation"])
+
             if status["status"] == "Success":
-                accBalanceStatus = self.DBClient.getAccountBalance(userID)
+                status = self.DBClient.addNewGoal(username,data)
+                
+                #Getting Account Balance
+                if status["status"] == "Success":
+                    accBalanceStatus = self.DBClient.getAccountBalance(userID)
 
-                #Get all goal details from db
-                if accBalanceStatus["status"] == "Success":
-                    getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
+                    #Get all goal details from db
+                    if accBalanceStatus["status"] == "Success":
+                        getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
 
-                    #Get the goal progress
-                    if getGoalsStatus["status"] == "Success":
-                        goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accBalanceStatus["data"]["accountBalance"]))
-                        status["data"] = goalProgressList
+                        #Get the goal progress
+                        if getGoalsStatus["status"] == "Success":
+                            goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accBalanceStatus["data"]["accountBalance"]))
+                            status["data"] = goalProgressList
 
             return status
             
@@ -109,6 +112,19 @@ class serviceHandler():
 
                 if status["status"] == "Success":
                     status = self.DBClient.addSalary(userID,float(data["amount"]),salaryDate)
+
+                    if status["status"] == "Success":
+                        salaryDataListStatus = self.DBClient.getUserSalaries(userID)
+
+                        if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
+                            monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
+
+                            status["data"]["newSalaryData"] = monthlySalaryList
+                            return status
+                        else:
+                            return salaryDataListStatus
+                    else:
+                        return status
 
                 return status
             else:
@@ -222,6 +238,7 @@ class serviceHandler():
 
         else:
             dashboardData["hasAccountBalance"] = False
+            dashboardData["accountData"] = {}
 
         #Fetch GoalData:
         getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
@@ -233,6 +250,11 @@ class serviceHandler():
             
         else:
             dashboardData["hasGoal"] = False
+            dashboardData["goalData"] = []
+
+        # sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
+        # if sharedReportNumberStatus["status"] == "Success":
+        #     dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
 
         #Fetch Montly expenses:
         status = self.DBClient.getMonthlyExpenses(userID)
@@ -241,9 +263,15 @@ class serviceHandler():
             monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
             dashboardData["hasExpense"] = True
             dashboardData["monthlySpendData"] = monthlyExpenseList
+            
+            lastestExpensestatus = self.DBClient.getLastFiveExpenses(userID)
+
+            if lastestExpensestatus["status"] == "Success":
+                dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
 
         else:
             dashboardData["hasExpense"] = False
+            dashboardData["monthlySpendData"] = []
 
         #Fetch BudgetSuggestionData:
         salaryStatus  = self.DBClient.getLastSalary(userID)
@@ -254,6 +282,7 @@ class serviceHandler():
             dashboardData["hasSalary"] = True
         else:
             dashboardData["hasSalary"] = False
+            dashboardData["budgetSuggestionData"] = {}
 
         return dashboardData
     
@@ -272,19 +301,150 @@ class serviceHandler():
         else:
             expenseData["hasSalary"] = False
 
-        expenseDataListStatus = self.DBClient.getUserExpenses(userID)
+        expenseDataListStatus = self.DBClient.getMonthlyExpenses(userID)
         if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
             monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
-            expenseData["hasExpense"] = True
+            expenseData["hasExpenses"] = True
             expenseAndSalary["expenseData"] = monthlyExpenseList
             expenseData["expenseAndSalary"] = expenseAndSalary
             expenseData["weeklyExpense"] = weeklyExpense
             expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
 
         else:
-            expenseData["hasExpense"] = False
+            expenseData["hasExpenses"] = False
 
         return expenseData
+    
+    def getUsernamesAndIDs(self,userID):
+
+        try:
+            status = self.DBClient.getUsernamesAndIDs(userID)
+            return status
+        
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode":400,
+                "message": "Error : "+str(e)
+                }
+
+    def sendReport(self, userID, receiverID):
+        try:
+            # Validate sender and receiver
+            validationResult = self.DBClient.validateUsersExist(userID, receiverID)
+            if validationResult["status"] != "Success":
+                return validationResult
+
+            sender = validationResult["sender"]
+            receiver = validationResult["receiver"]
+
+            # Fetch dashboard and expense data
+            dashboardData = self.getDashboardData(userID)
+            expenseData = self.getExpensePageData(userID)
+
+            # Combine into a single dictionary
+            combinedData = {
+                "senderFirstName":sender.firstName,
+                "senderLastName":sender.lastName,
+                "dashboardData": dashboardData,
+                "expenseData": expenseData
+            }
+
+            saveStatus = self.DBClient.saveSharedReport(
+            senderID=userID,
+            senderFirstName=sender.firstName,
+            senderLastName=sender.lastName,
+            receiverID=receiverID,
+            data=combinedData
+            )
+
+            if saveStatus["status"] != "Success":
+                return saveStatus
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Report shared with {receiver.firstName}",
+                "data": None
+                    }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getSenderDetails(self,userID):
+        try:
+            status = self.DBClient.getSenderDetails(userID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getReportData(self,userID,sendersID,sharedDate):
+
+        try:
+            # Validate sender and receiver
+            validationResult = self.DBClient.validateUsersExist(userID, sendersID)
+            if validationResult["status"] != "Success":
+                return validationResult
+            
+            sharedDateObj = datetime.strptime(sharedDate, "%Y-%m-%d %H:%M:%S")
+            
+            reportStatus = self.DBClient.getReportData(userID,sendersID,sharedDateObj)
+
+            return reportStatus
+            
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getUnreadReportIds(self,userID):
+        try:
+            status = self.DBClient.getUnreadReportIds(userID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def getUnreadReportCount(self,userID):
+        try:
+            status = self.DBClient.getUnreadReportCount(userID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+        
+    def markReportAsRead(self,userID,reportID):
+        try:
+            status = self.DBClient.markReportAsRead(userID,reportID)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : " + str(e)
+            }
+    
+
+        
+
+
+
+
 
 
 

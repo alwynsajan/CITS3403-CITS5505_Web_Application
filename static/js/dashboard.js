@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set up "Shared with me" button click event
     setupSharedWithMeButton();
-
     // Initialize components with loading animations
     setTimeout(function() {
         if (isChartJsAvailable()) {
@@ -57,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         initGoalProgress();
-
         // Setup listener for the New Goal button
         const newGoalButton = document.getElementById('newGoalBtn');
         const goalModalElement = document.getElementById('goalModal');
@@ -152,7 +150,6 @@ function fetchUnreadReportCount() {
 
                     if (unreadCountElement) {
                         unreadCountElement.textContent = unreadCount > 99 ? '99+' : unreadCount;
-
                         // Only display count if there are unread messages
                         if (unreadCount > 0) {
                             unreadCountElement.style.display = 'flex';
@@ -229,7 +226,6 @@ function fetchSharedReports() {
                     console.error('Error updating unread count:', e);
                     // Continue execution despite error
                 }
-
                 // Process response data
                 if (data.status === "Success") {
                     if (!data.data || data.data.length === 0) {
@@ -249,7 +245,6 @@ function fetchSharedReports() {
             })
             .catch(error => {
                 console.error('Error fetching shared reports:', error);
-
                 // Show error message
                 reportsContainer.innerHTML = `
                     <div class="text-center py-4">
@@ -263,7 +258,6 @@ function fetchSharedReports() {
             });
     } catch (error) {
         console.error('Critical error in fetchSharedReports:', error);
-
         // Show user-friendly error message
         if (reportsContainer) {
             reportsContainer.innerHTML = `
@@ -335,6 +329,7 @@ function displaySharedReports(senders) {
 }
 
 /**
+
  * View shared report details
  * @param {number} senderID - ID of the sender
  * @param {string} reportId - Unique ID of the report to view
@@ -397,6 +392,7 @@ function viewSharedReport(senderID, reportId) {
             viewModal.show();
         }
 
+
         // Create current user ID (in a real application, this might be fetched from session or global variable)
         // Assuming there's a global variable currentUserID here
         const currentUserID = window.currentUserID || 1; // Default value is 1, should be replaced with actual value
@@ -416,6 +412,7 @@ function viewSharedReport(senderID, reportId) {
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
+
             }
             return response.json();
         })
@@ -429,7 +426,6 @@ function viewSharedReport(senderID, reportId) {
 
                 // Update modal title
                 modalTitle.textContent = `Report from ${data.senderFirstName} ${data.senderLastName}`;
-
                 // Create sender information display
                 let senderInfo = `
                     <div class="alert alert-info d-flex align-items-center mb-4">
@@ -472,6 +468,7 @@ function viewSharedReport(senderID, reportId) {
         .catch(error => {
             console.error('Error fetching report details:', error);
 
+
             if (hasModalView) {
                 const modalBody = document.getElementById('sharedReportViewBody');
 
@@ -482,7 +479,9 @@ function viewSharedReport(senderID, reportId) {
                     <div class="text-center py-4">
                         <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
                         <p class="text-danger">Could not load report details. Please try again later.</p>
+
                         <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewSharedReport(${senderID}, '${reportId}')">
+
                             <i class="fas fa-sync-alt"></i> Retry
                         </button>
                     </div>

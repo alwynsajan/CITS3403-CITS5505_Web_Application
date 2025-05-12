@@ -1,5 +1,7 @@
-from models import db,User, Goal, Expense, Salary
+from models import db,User, Goal, Expense, Salary, ShareReport
 from werkzeug.security import generate_password_hash
+from datetime import datetime
+from sqlalchemy import extract
 
 class dbClient:
 
@@ -97,7 +99,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -126,7 +128,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -154,7 +156,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
             return {
@@ -162,43 +164,81 @@ class dbClient:
                 "statusCode": 500,
                 "message": "Error : "+str(e)
             }
-
-    # Add a new savings or financial goal
-    def addNewGoal(self, username, data):
-        """Adds a new goal for the specified user"""
+        
+    #Checks if a new goal allocation exceeds 100%, and updates it if valid.
+    def checkAndAddGoalAllocation(self, userID, percentageAllocation):
+        
         try:
-            user = User.query.filter_by(username=username).first()
+            user = User.query.get(userID)
             if not user:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with username '{username}' does not exist"
+                    "message": "User not found"
                 }
 
-            newGoalId = self.getLastId(Goal) + 1
-            newGoal = Goal(
-                id=newGoalId,
-                userId=user.id,
-                goalName=data["goalName"],
-                targetAmount=float(data["targetAmount"]),
-                timeDuration=float(data["timeDuration"]),
-                percentageAllocation=float(data["percentageAllocation"])
-            )
-            db.session.add(newGoal)
-            db.session.commit()
+            currentAllocation = user.goalAllocationPercent
+
+            # Check if the new allocation exceeds 100%
+            if currentAllocation + percentageAllocation > 100:
+                if currentAllocation == 100:
+                    message = "Allocation limit reached. You cannot allocate any more!"
+                else:
+                    message = f"Allocation exceeds limit. You can only allocate {100 - currentAllocation:.2f}% more."
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": message
+                }
+            else:
+                user.goalAllocationPercent += percentageAllocation
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Allocation updated successfully",
+                    "newAllocation": user.goalAllocationPercent
+                }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 500,
+                "message": str(e)
+            }
+        
+    # Get the last 5 expenses of a user.
+    def getLastFiveExpenses(self, userID):
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User not exist"
+                }
+
+            # Fetching last 5 expense records ordered by date
+            expenses = Expense.query.filter_by(userId=userID).order_by(Expense.date.desc()).limit(5).all()
+
+            transaction = [
+                        {"category": expense.category, "amount": expense.amount}
+                        for expense in expenses
+                    ]
 
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Goal '{data['goalName']}' added for user {username}",
-                "data": None
+                "data": {
+                    "transaction": transaction
+                }
             }
+
         except Exception as e:
-            db.session.rollback()
             return {
                 "status": "Failed",
                 "statusCode": 400,
-                "message": "Error : "+str(e)
+                "message": f"Error: {str(e)}"
             }
 
     # Get all goals created by a user
@@ -231,14 +271,21 @@ class dbClient:
     def getMonthlyExpenses(self, userID):
         """Fetches all expenses for a given user ID"""
         try:
-            expenses = Expense.query.filter_by(userId=userID).all()
+            # Get the current year
+            current_year = datetime.now().year
+
+            # Filter expenses by user ID and the current year
+            expenses = Expense.query.filter(
+            Expense.userId == userID,
+            extract('year', Expense.date) == current_year
+        ).all()
             expensesData = [
                 {
                     "expenseID": expense.id,
                     "category": expense.category,
                     "amount": expense.amount,
                     "date": expense.date.strftime("%Y-%m-%d"),
-                    "weekStartDate": expense.weekStartDate,
+                    "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d"),
                 } for expense in expenses
             ]
             return {
@@ -294,6 +341,72 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
+    # Add a new savings or financial goal
+    def addNewGoal(self, username, data):
+        """Adds a new goal for the specified user"""
+        try:
+            user = User.query.filter_by(username=username).first()
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User with username '{username}' does not exist"
+                }
+
+            newGoalId = self.getLastId(Goal) + 1
+            newGoal = Goal(
+                id=newGoalId,
+                userId=user.id,
+                goalName=data["goalName"],
+                targetAmount=float(data["targetAmount"]),
+                timeDuration=float(data["timeDuration"]),
+                percentageAllocation=float(data["percentageAllocation"])
+            )
+            db.session.add(newGoal)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Goal '{data['goalName']}' added for user {username}",
+                "data": None
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error : "+str(e)
+            }
+        
+    #Fetching usernames, first names, last names, and IDs of all users except the given userID    
+    def getUsernamesAndIDs(self, userID):
+        
+        try:
+            users = User.query.filter(User.id != userID).all()
+            userData = [
+                {
+                    "userID": user.id,
+                    "username": user.username,
+                    "firstName": user.firstName,
+                    "lastName": user.lastName
+                }
+                for user in users
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": userData
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": str(e)
+            }
+
+
     # Update the previous account balance for a given user
     def updatePreviousBalance(self, userID, newBalance):
         """Updates the previous account balance for the specified user"""
@@ -303,7 +416,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             user.previousBalance = float(newBalance)
@@ -312,7 +425,7 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Previous balance updated to {newBalance} for user {userID}"
+                "message": f"Previous balance updated to {newBalance} for user."
             }
 
         except Exception as e:
@@ -332,17 +445,17 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             newSalaryId = self.getLastId(Salary) + 1
 
-            newSalary = Salary(
-                id=newSalaryId,
-                userId=userID,
-                amount=float(amount),
-                salaryDate=salaryDate 
-            )
+            newSalary = Salary.addSalary(
+            id=newSalaryId,
+            userId=userID,
+            amount=amount,
+            salaryDate=salaryDate
+                    )
 
             db.session.add(newSalary)
             db.session.commit()
@@ -350,7 +463,7 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Salary of {amount} added for user {userID}",
+                "message": f"Salary of {amount} added.",
                 "data": {
                     "salaryID": newSalaryId,
                     "userID": userID,
@@ -376,7 +489,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not nfound"
                 }
 
             user.accountBalance = float(newBalance)
@@ -435,30 +548,30 @@ class dbClient:
             }
         
     # Get all expense entries for a user
-    def getUserExpenses(self, userID):
-        """Fetches all expenses for a given user ID"""
-        try:
-            expenses = Expense.query.filter_by(userId=userID).all()
-            expensesData = [
-                {
-                    "expenseID": expense.id,
-                    "category": expense.category,
-                    "amount": expense.amount,
-                    "date": expense.date.strftime("%Y-%m-%d"),
-                    "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d")
-                } for expense in expenses
-            ]
-            return {
-                "status": "Success",
-                "statusCode": 200,
-                "data": expensesData
-            }
-        except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+    # def getUserExpenses(self, userID):
+    #     """Fetches all expenses for a given user ID"""
+    #     try:
+    #         expenses = Expense.query.filter_by(userId=userID).all()
+    #         expensesData = [
+    #             {
+    #                 "expenseID": expense.id,
+    #                 "category": expense.category,
+    #                 "amount": expense.amount,
+    #                 "date": expense.date.strftime("%Y-%m-%d"),
+    #                 "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d")
+    #             } for expense in expenses
+    #         ]
+    #         return {
+    #             "status": "Success",
+    #             "statusCode": 200,
+    #             "data": expensesData
+    #         }
+    #     except Exception as e:
+    #         return {
+    #             "status": "Failed",
+    #             "statusCode": 400,
+    #             "message": "Error : " + str(e)
+    #         }
         
     # Get all salary entries for a user
     def getUserSalaries(self, userID):
@@ -483,6 +596,247 @@ class dbClient:
                 "statusCode": 400,
                 "message": "Error : " + str(e)
             }
+
+    def validateUsersExist(self, senderID, receiverID):
+        """Validates both sender and receiver users exist in the database"""
+        sender = User.query.filter_by(id=senderID).first()
+        if not sender:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": f"User not found!",
+                "sender": None,
+                "receiver": None
+            }
+
+        receiver = User.query.filter_by(id=receiverID).first()
+        if not receiver:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": f"Receiver does not exist",
+                "sender": None,
+                "receiver": None
+            }
+
+        return {
+            "status": "Success",
+            "statusCode": 200,
+            "message": "Users validated successfully",
+            "sender": sender,
+            "receiver": receiver
+        }
+    
+    def saveSharedReport(self, senderID, senderFirstName, senderLastName, receiverID, data):
+        """Saves the shared report data to the ShareReport table"""
+        try:
+            newReport = ShareReport(
+                senderID=senderID,
+                senderFirstName=senderFirstName,
+                senderLastName=senderLastName,
+                receiverID=receiverID,
+                data=data,
+                sharedDate=datetime.now(),
+                readFlag=0
+            )
+            db.session.add(newReport)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Report successfully saved",
+                "data": None
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+    #Returns the number of reports shared with the given userID
+    def getReportNumber(self, userID):
+        
+        try:
+            reportCount = ShareReport.query.filter_by(receiverID=userID).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": {
+                    "reportCount": reportCount
+                }
+            }
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+        
+    #Fetches all sender details from shareReport table where receiverID equals the passed userID.
+    def getSenderDetails(self, userID):
+        
+        try:
+            senderRecords = ShareReport.query.filter_by(receiverID=userID).all()
+
+            if not senderRecords:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "No reports shared with this user.",
+                    "data": []
+                }
+
+            senders = []
+            for record in senderRecords:
+                senders.append({
+                    "senderID": record.senderID,
+                    "senderFirstName": record.senderFirstName,
+                    "senderLastName": record.senderLastName,
+                    "sharedDate" : record.sharedDate.strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": senders
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+        
+    #Fetches the shared report based on receiver ID, sender ID, and shared date
+    def getReportData(self, userID, senderID, sharedDate):
+       
+        try:
+            report = ShareReport.query.filter_by(
+                receiverID=userID,
+                senderID=senderID,
+                sharedDate=sharedDate
+            ).first()
+
+            if report:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Report found",
+                    "data": report.data
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "No matching report found"
+                }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+    # Fetches all unread shared report IDs for a specific user.
+    # A report is considered unread if readFlag == 0 and the receiverID matches the given userId.    
+    def getUnreadReportIds(self, userId):
+        try:
+            reports = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).all()
+
+            reportIds = [report.id for report in reports]
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Found {len(reportIds)} unread report(s)",
+                "data": {
+                    "unreadReportIds": reportIds
+                }
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+    # Returns the count of unread shared reports for a specific user.
+    # A report is considered unread if readFlag == 0 and receiverID matches the given userId.
+    def getUnreadReportCount(self, userId):
+        try:
+            reportCount = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Unread report count fetched successfully",
+                "data": {
+                    "reportCount": reportCount
+                }
+            }
+
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+        
+
+    # Updates the readFlag for the given reportID to 1.
+    def markReportAsRead(self, userId, reportId):
+        try:
+            report = ShareReport.query.filter_by(
+                id=reportId,
+                receiverID=userId
+            ).first()
+
+            if report:
+                report.readFlag = 1
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": f"Report ID {reportId} marked as read"
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"No unread report found for user ID {userId} and report ID {reportId}"
+                }
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "DB Error: " + str(e)
+            }
+
+
+
+
+
+
+
+
+
+
 
 
 
