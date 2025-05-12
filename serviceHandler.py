@@ -15,16 +15,36 @@ class serviceHandler():
     # def checkCredentials(self,username, password):
     #     status = self.DBClient.checkCredentials(username, password)
     #     return status
-    
-        """
-        Register a new user with validation checks
+
+    """
+    Centralized error handling method
+    Args:
+        error: Exception object
+        context: String describing what operation was being attempted
+    Returns:
+        dict: Standard error response format
+    """
+    def handleError(self, error, context="operation"):
         
-        Args:
-            data (dict): Contains user registration data (username, password, firstName, lastName)
-            
-        Returns:
-            dict: Status dictionary with success/failure information
-        """
+        # Log the full error to terminal for debugging
+        print(f"SYSTEM ERROR during {context}: {str(error)}")
+        
+        # Return user-friendly message
+        return {
+            "status": "Failed",
+            "statusCode": 500,
+            "message": f"An error occurred while processing your request. Please try again."
+        }
+    
+    """
+    Register a new user with validation checks
+    
+    Args:
+        data (dict): Contains user registration data (username, password, firstName, lastName)
+        
+    Returns:
+        dict: Status dictionary with success/failure information
+    """
     def addNewUser(self,data):
 
         # Validate required fields for empty or None
@@ -54,11 +74,7 @@ class serviceHandler():
             return status
             
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Error : "+str(e)
-                }
+            return self.handleError(e, "user registration")
         
     """
     Add a new financial goal for a user with allocation validation
@@ -104,11 +120,7 @@ class serviceHandler():
             return status
             
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Error : "+str(e)
-                }
+            return self.handleError(e, "adding new goal")
         
     """
     Record a new salary entry and update account balance
@@ -180,46 +192,51 @@ class serviceHandler():
     """
     def addNewExpense(self,username,userID,data):
 
-        # Validate all required fields
-        for key, value in data.items():
-            if value is None or str(value).strip() == "":
-                return {
-                    "status": "Failed",
-                    "statusCode": 400,
-                    "message": f"Missing required field: {key}"
-                }
-            
-        startOfWeek = calculations.getStartOfWeek(data["date"])
-        date = datetime.strptime(data["date"], "%Y-%m-%d").date()
-        
-        status = self.DBClient.getAccountBalance(userID)
+        try:
 
-        if status["status"] == "Success":
-            #Update the previous Account Balance
-            previousAccBalance = status["data"]["accountBalance"]
-            status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
+            # Validate all required fields
+            for key, value in data.items():
+                if value is None or str(value).strip() == "":
+                    return {
+                        "status": "Failed",
+                        "statusCode": 400,
+                        "message": f"Missing required field: {key}"
+                    }
+                
+            startOfWeek = calculations.getStartOfWeek(data["date"])
+            date = datetime.strptime(data["date"], "%Y-%m-%d").date()
+            
+            status = self.DBClient.getAccountBalance(userID)
 
             if status["status"] == "Success":
-                newBalance = float(previousAccBalance) - float(data["amount"])
-                status = self.DBClient.updateAccountBalance(userID, newBalance)
+                #Update the previous Account Balance
+                previousAccBalance = status["data"]["accountBalance"]
+                status = self.DBClient.updatePreviousBalance(userID,float(previousAccBalance) )
 
                 if status["status"] == "Success":
-                    status = self.DBClient.addNewExpense(userID, data["amount"], data["category"], date,startOfWeek)
-                    # return status #for testing
+                    newBalance = float(previousAccBalance) - float(data["amount"])
+                    status = self.DBClient.updateAccountBalance(userID, newBalance)
 
                     if status["status"] == "Success":
-                        #Call functions to update the graph data for expense page.
-                        expensePageData = self.getExpensePageData(userID)
-                        return expensePageData
+                        status = self.DBClient.addNewExpense(userID, data["amount"], data["category"], date,startOfWeek)
+                        # return status #for testing
+
+                        if status["status"] == "Success":
+                            #Call functions to update the graph data for expense page.
+                            expensePageData = self.getExpensePageData(userID)
+                            return expensePageData
+                        else:
+                            return status
+
                     else:
                         return status
-
                 else:
                     return status
             else:
                 return status
-        else:
-            return status
+            
+        except Exception as e:
+            return self.handleError(e, "adding new expense")
         
     """
     Retrieve a user's first name
@@ -237,11 +254,7 @@ class serviceHandler():
             return status
         
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Error : "+str(e)
-                }
+            return self.handleError(e, "Fetching user firstname")
 
     """
     Get monthly aggregated expense data for a user
@@ -268,11 +281,7 @@ class serviceHandler():
             return status
             
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Error : "+str(e)
-                }
+            return self.handleError(e, "Fetching user monthly expenses.")
         
     """
     Compile all data needed for the user dashboard
@@ -289,77 +298,82 @@ class serviceHandler():
     """
     def getDashboardData(self,userID):
 
-        dashboardData = {}
+        try:
 
-        accBalanceStatus = self.DBClient.getAccountBalance(userID)
+            dashboardData = {}
 
-        accountBalance = 0.0
-        previousBalance = 0.0
+            accBalanceStatus = self.DBClient.getAccountBalance(userID)
 
-        #Fetch Account Data:
-        if accBalanceStatus["status"] == "Success":
-            if accBalanceStatus["data"]["accountBalance"] != 0:
-                accountBalance = accBalanceStatus["data"]["accountBalance"]
-                dashboardData["hasAccountBalance"] = True
+            accountBalance = 0.0
+            previousBalance = 0.0
 
-                previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
-                if previousAccBalanceStatus["status"] == "Success":
-                    previousBalance = previousAccBalanceStatus["data"]["previousBalance"]
-                accountData = calculations.getAccountData(float(accountBalance),float(previousBalance))
+            #Fetch Account Data:
+            if accBalanceStatus["status"] == "Success":
+                if accBalanceStatus["data"]["accountBalance"] != 0:
+                    accountBalance = accBalanceStatus["data"]["accountBalance"]
+                    dashboardData["hasAccountBalance"] = True
 
-                dashboardData["accountData"] = accountData
+                    previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
+                    if previousAccBalanceStatus["status"] == "Success":
+                        previousBalance = previousAccBalanceStatus["data"]["previousBalance"]
+                    accountData = calculations.getAccountData(float(accountBalance),float(previousBalance))
+
+                    dashboardData["accountData"] = accountData
+                else:
+                    dashboardData["hasAccountBalance"] = False
+
             else:
                 dashboardData["hasAccountBalance"] = False
+                dashboardData["accountData"] = {}
 
-        else:
-            dashboardData["hasAccountBalance"] = False
-            dashboardData["accountData"] = {}
+            #Fetch GoalData:
+            getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
+            #Get the goal progress
+            if getGoalsStatus["status"] == "Success" and getGoalsStatus["data"] != []:
+                goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accountBalance))
+                dashboardData["hasGoal"] = True
+                dashboardData["goalData"] = goalProgressList
+                
+            else:
+                dashboardData["hasGoal"] = False
+                dashboardData["goalData"] = []
 
-        #Fetch GoalData:
-        getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
-        #Get the goal progress
-        if getGoalsStatus["status"] == "Success" and getGoalsStatus["data"] != []:
-            goalProgressList = calculations.getGoalProgress(getGoalsStatus["data"],float(accountBalance))
-            dashboardData["hasGoal"] = True
-            dashboardData["goalData"] = goalProgressList
-            
-        else:
-            dashboardData["hasGoal"] = False
-            dashboardData["goalData"] = []
+            # sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
+            # if sharedReportNumberStatus["status"] == "Success":
+            #     dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
 
-        # sharedReportNumberStatus = self.DBClient.getReportNumber(userID)
-        # if sharedReportNumberStatus["status"] == "Success":
-        #     dashboardData["reportCount"] = sharedReportNumberStatus["data"]["reportCount"]
+            #Fetch Montly expenses:
+            status = self.DBClient.getMonthlyExpenses(userID)
+            if status["status"] == "Success" and status["data"] != []:
+                #Get the monthly expenses in a list.
+                monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
+                dashboardData["hasExpense"] = True
+                dashboardData["monthlySpendData"] = monthlyExpenseList
+                
+                lastestExpensestatus = self.DBClient.getLastFiveExpenses(userID)
 
-        #Fetch Montly expenses:
-        status = self.DBClient.getMonthlyExpenses(userID)
-        if status["status"] == "Success" and status["data"] != []:
-            #Get the monthly expenses in a list.
-            monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
-            dashboardData["hasExpense"] = True
-            dashboardData["monthlySpendData"] = monthlyExpenseList
-            
-            lastestExpensestatus = self.DBClient.getLastFiveExpenses(userID)
+                if lastestExpensestatus["status"] == "Success":
+                    dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
 
-            if lastestExpensestatus["status"] == "Success":
-                dashboardData["transaction"] = lastestExpensestatus["data"]["transaction"]
+            else:
+                dashboardData["hasExpense"] = False
+                dashboardData["monthlySpendData"] = []
 
-        else:
-            dashboardData["hasExpense"] = False
-            dashboardData["monthlySpendData"] = []
+            #Fetch BudgetSuggestionData:
+            salaryStatus  = self.DBClient.getLastSalary(userID)
+            if  salaryStatus["status"] == "Success" and salaryStatus["data"] != None:
+                salarySuggestions = calculations.calculate_50_30_20_Percentages(float(salaryStatus["data"]["amount"]))
+                salarySuggestions["salaryDate"] = salaryStatus["data"]["salaryDate"]
+                dashboardData["budgetSuggestionData"] = salarySuggestions
+                dashboardData["hasSalary"] = True
+            else:
+                dashboardData["hasSalary"] = False
+                dashboardData["budgetSuggestionData"] = {}
 
-        #Fetch BudgetSuggestionData:
-        salaryStatus  = self.DBClient.getLastSalary(userID)
-        if  salaryStatus["status"] == "Success" and salaryStatus["data"] != None:
-            salarySuggestions = calculations.calculate_50_30_20_Percentages(float(salaryStatus["data"]["amount"]))
-            salarySuggestions["salaryDate"] = salaryStatus["data"]["salaryDate"]
-            dashboardData["budgetSuggestionData"] = salarySuggestions
-            dashboardData["hasSalary"] = True
-        else:
-            dashboardData["hasSalary"] = False
-            dashboardData["budgetSuggestionData"] = {}
-
-        return dashboardData
+            return dashboardData
+        
+        except Exception as e:
+            return self.handleError(e, "loading dashboard data")
     
     """
     Compile all data needed for the expense tracking page
@@ -375,32 +389,36 @@ class serviceHandler():
     """
     def getExpensePageData(self,userID):
 
-        expenseData = {}
-        expenseAndSalary = {}
+        try:
+            expenseData = {}
+            expenseAndSalary = {}
 
-        salaryDataListStatus = self.DBClient.getUserSalaries(userID)
+            salaryDataListStatus = self.DBClient.getUserSalaries(userID)
 
-        if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
-            monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
-            expenseData["hasSalary"] = True
-            expenseAndSalary["salaryData"] = monthlySalaryList
-            expenseData["expenseAndSalary"] = expenseAndSalary
-        else:
-            expenseData["hasSalary"] = False
+            if salaryDataListStatus["status"] == "Success" and salaryDataListStatus["data"] != []:
+                monthlySalaryList = calculations.getMonthlySalaryList(salaryDataListStatus["data"])
+                expenseData["hasSalary"] = True
+                expenseAndSalary["salaryData"] = monthlySalaryList
+                expenseData["expenseAndSalary"] = expenseAndSalary
+            else:
+                expenseData["hasSalary"] = False
 
-        expenseDataListStatus = self.DBClient.getMonthlyExpenses(userID)
-        if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
-            monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
-            expenseData["hasExpenses"] = True
-            expenseAndSalary["expenseData"] = monthlyExpenseList
-            expenseData["expenseAndSalary"] = expenseAndSalary
-            expenseData["weeklyExpense"] = weeklyExpense
-            expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
+            expenseDataListStatus = self.DBClient.getMonthlyExpenses(userID)
+            if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
+                monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
+                expenseData["hasExpenses"] = True
+                expenseAndSalary["expenseData"] = monthlyExpenseList
+                expenseData["expenseAndSalary"] = expenseAndSalary
+                expenseData["weeklyExpense"] = weeklyExpense
+                expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
 
-        else:
-            expenseData["hasExpenses"] = False
+            else:
+                expenseData["hasExpenses"] = False
 
-        return expenseData
+            return expenseData
+        
+        except Exception as e:
+            return self.handleError(e, "loading expense data")
     
     """
     Retrieve list of usernames and IDs (excluding current user)
@@ -418,11 +436,7 @@ class serviceHandler():
             return status
         
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode":400,
-                "message": "Error : "+str(e)
-                }
+            return self.handleError(e, "get username and id")
 
     """
     Share a financial report with another user
@@ -474,11 +488,7 @@ class serviceHandler():
                 "data": None
                     }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "sharing report")
         
     """
     Retrieve details of users who have shared reports with current user
@@ -494,11 +504,7 @@ class serviceHandler():
             status = self.DBClient.getSenderDetails(userID)
             return status
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "sharing report")
         
     """
     Retrieve a specific shared report's data
@@ -526,11 +532,7 @@ class serviceHandler():
             return reportStatus
             
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "retrieving report")
         
     """
     Get IDs of unread reports for a user
@@ -546,11 +548,7 @@ class serviceHandler():
             status = self.DBClient.getUnreadReportIds(userID)
             return status
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "retrieving unread report ids")
         
     """
     Get count of unread reports for a user
@@ -566,11 +564,7 @@ class serviceHandler():
             status = self.DBClient.getUnreadReportCount(userID)
             return status
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "retrieving unread report count")
         
     """
     Mark a report as read for a user
@@ -587,11 +581,7 @@ class serviceHandler():
             status = self.DBClient.markReportAsRead(userID,reportID)
             return status
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "marking report as read")
     
 
         

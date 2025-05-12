@@ -3,13 +3,38 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime
 from sqlalchemy import extract
 
+"""
+Database client class that handles all database operations.
+Provides meaningful error messages to users while logging technical details.
+"""
 class dbClient:
+
+    def handleError(self, error, context="database operation"):
+        """
+        Centralized error handling method
+        Args:
+            error: Exception object
+            context: String describing what operation was being attempted
+        Returns:
+            dict: Standard error response format
+        """
+        error_msg = f"Error during {context}: {str(error)}"
+        print(f"DB ERROR: {error_msg}")  # Log technical error to console
+        return {
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "A system error occurred. Please try again later."
+        }
 
     # Get the last ID used in a given table
     def getLastId(self, table):
         """Returns the highest ID in a table or 0 if empty"""
-        lastEntry = table.query.order_by(table.id.desc()).first()
-        return lastEntry.id if lastEntry else 0
+        try:
+            lastEntry = table.query.order_by(table.id.desc()).first()
+            return lastEntry.id if lastEntry else 0
+        except Exception as e:
+            print(f"Error getting last ID: {str(e)}")
+            return 0
 
     # Add a new user if the username is not already taken
     def addUser(self, username, password, firstName, lastName):  
@@ -45,40 +70,39 @@ class dbClient:
                 }
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
+            db.session.rollback()
+            return self.handleError(e, "user registration")
 
     # Validate user login credentials
     def checkCredentials(self, username, password): 
-        """Validates username and password"""
-        user = User.query.filter_by(username=username).first()
+        """Validates user credentials with secure error messages"""
+        try:
+            user = User.query.filter_by(username=username).first()
 
-        if not user:
-            return {
-                "status": "Failed",
-                "statusCode": 404,
-                "message": "User not found"
-            }
-
-        if user.checkPassword(password):
-            return {
-                "status": "Success",
-                "statusCode": 200,
-                "message": "Login successful",
-                "data": {
-                    "username": username,
-                    "userID": user.id
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Account not found. Please check your username."
                 }
-            }
-        else:
+
+            if user.checkPassword(password):
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Login successful",
+                    "data": {
+                        "username": username,
+                        "userID": user.id
+                    }
+                }
             return {
                 "status": "Failed",
                 "statusCode": 401,
-                "message": "Incorrect password"
+                "message": "Incorrect password. Please try again."
             }
+        except Exception as e:
+            return self.handleError(e, "login validation")
         
     # Fetch first name of user
     def getUserFirstName(self, userID):
@@ -102,11 +126,7 @@ class dbClient:
                     "message": f"User not found"
                 }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "User Firsname retrieval")
 
 
     # Fetch current account balance of user
@@ -131,11 +151,7 @@ class dbClient:
                     "message": f"User not found"
                 }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "balance retrieval")
 
     # Fetch previous account balance of user
     def getPreviousAccountBalance(self, userID):
@@ -159,11 +175,7 @@ class dbClient:
                     "message": f"User not found"
                 }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "previous balance retrieval")
         
     #Checks if a new goal allocation exceeds 100%, and updates it if valid.
     def checkAndAddGoalAllocation(self, userID, percentageAllocation):
@@ -201,11 +213,8 @@ class dbClient:
                 }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": str(e)
-            }
+            db.session.rollback()
+            return self.handleError(e, "goal allocation update")
         
     # Get the last 5 expenses of a user.
     def getLastFiveExpenses(self, userID):
@@ -235,11 +244,7 @@ class dbClient:
             }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": f"Error: {str(e)}"
-            }
+            return self.handleError(e, "fetching recent expenses")
 
     # Get all goals created by a user
     def getGoalsByUserId(self, userID):
@@ -261,11 +266,7 @@ class dbClient:
                 "data": goalsData
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": str(e)
-            }
+            return self.handleError(e, "fetching user goals")
 
     # Get all expense entries for a user
     def getMonthlyExpenses(self, userID):
@@ -294,11 +295,7 @@ class dbClient:
                 "data": expensesData
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "fetching monthly expenses")
 
     # Get the most recent salary received by user
     def getLastSalary(self, userID):
@@ -336,11 +333,7 @@ class dbClient:
                 }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "fetching salary information")
         
     # Add a new savings or financial goal
     def addNewGoal(self, username, data):
@@ -374,11 +367,7 @@ class dbClient:
             }
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "creating new goal")
         
     #Fetching usernames, first names, last names, and IDs of all users except the given userID    
     def getUsernamesAndIDs(self, userID):
@@ -400,11 +389,7 @@ class dbClient:
                 "data": userData
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": str(e)
-            }
+            return self.handleError(e, "Fetching username and id")
 
 
     # Update the previous account balance for a given user
@@ -430,11 +415,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Updaying previous balance")
         
     # Add a new salary entry for a user
     def addSalary(self, userID, amount, salaryDate):
@@ -474,11 +455,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "add salary")
 
     # Update the account balance for a given user
     def updateAccountBalance(self, userID, newBalance):
@@ -503,11 +480,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Updating account balance")
         
     # Add a new expense to the database
     def addNewExpense(self,userId, amount, category, date,startOfWeek):
@@ -541,11 +514,7 @@ class dbClient:
             }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Adding new expense")
         
     # Get all expense entries for a user
     # def getUserExpenses(self, userID):
@@ -591,42 +560,45 @@ class dbClient:
                 "data": salaryData
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : " + str(e)
-            }
+            return self.handleError(e, "Fetching user salaries")
 
     #Checks if the senderID and receiverID is present in DB.
     def validateUsersExist(self, senderID, receiverID):
         """Validates both sender and receiver users exist in the database"""
-        sender = User.query.filter_by(id=senderID).first()
-        if not sender:
+        try:
+            # Validate sender exists
+            sender = User.query.filter_by(id=senderID).first()
+            if not sender:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Sender account not found. Please check the user ID.",
+                    "sender": None,
+                    "receiver": None
+                }
+
+            # Validate receiver exists
+            receiver = User.query.filter_by(id=receiverID).first()
+            if not receiver:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Recipient account not found. Please check the user ID.",
+                    "sender": None,
+                    "receiver": None
+                }
+
             return {
-                "status": "Failed",
-                "statusCode": 404,
-                "message": f"User not found!",
-                "sender": None,
-                "receiver": None
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Both users validated successfully",
+                "sender": sender,
+                "receiver": receiver
             }
 
-        receiver = User.query.filter_by(id=receiverID).first()
-        if not receiver:
-            return {
-                "status": "Failed",
-                "statusCode": 404,
-                "message": f"Receiver does not exist",
-                "sender": None,
-                "receiver": None
-            }
-
-        return {
-            "status": "Success",
-            "statusCode": 200,
-            "message": "Users validated successfully",
-            "sender": sender,
-            "receiver": receiver
-        }
+        except Exception as e:
+            # Use centralized error handler for unexpected errors
+            return self.handleError(e, "user validation")
     
     #The shared report is saved in the shareReport table with relevant sender details.
     def saveSharedReport(self, senderID, senderFirstName, senderLastName, receiverID, data):
@@ -653,11 +625,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "report sharing")
         
     #Returns the number of reports shared with the given userID
     def getReportNumber(self, userID):
@@ -709,11 +677,7 @@ class dbClient:
             }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Fetching sender details")
         
     #Fetches the shared report based on receiver ID, sender ID, and shared date
     def getReportData(self, userID, senderID, sharedDate):
@@ -740,11 +704,7 @@ class dbClient:
                 }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "report retrieval")
         
     # Fetches all unread shared report IDs for a specific user.
     # A report is considered unread if readFlag == 0 and the receiverID matches the given userId.    
@@ -767,11 +727,7 @@ class dbClient:
             }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "Fetching unread report ids")
         
     # Returns the count of unread shared reports for a specific user.
     # A report is considered unread if readFlag == 0 and receiverID matches the given userId.
@@ -792,11 +748,7 @@ class dbClient:
             }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "Fetching unread report count")
         
 
     # Updates the readFlag for the given reportID to 1.
@@ -824,11 +776,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "marking report as read")
 
 
 
