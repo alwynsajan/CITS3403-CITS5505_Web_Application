@@ -1547,9 +1547,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
                 errorMessage = 'Salary amount must be a positive number';
                 salaryAmountInput.classList.add('is-invalid');
+            } else if (amount < 10) {
+                isValid = false;
+                errorMessage = 'Salary amount must be at least $10';
+                salaryAmountInput.classList.add('is-invalid');
             } else if (amount > 1000000) {
                 isValid = false;
-                errorMessage = 'Salary amount must be less than 1,000,000';
+                errorMessage = 'Salary amount must be less than $1,000,000';
                 salaryAmountInput.classList.add('is-invalid');
             } else {
                 salaryAmountInput.classList.remove('is-invalid');
@@ -1655,9 +1659,12 @@ function validateSalaryAmount(input) {
     if (isNaN(amount) || amount <= 0) {
         isValid = false;
         errorMessage = 'Salary amount must be a positive number';
+    } else if (amount < 10) {
+        isValid = false;
+        errorMessage = 'Salary amount must be at least $10';
     } else if (amount > 1000000) {
         isValid = false;
-        errorMessage = 'Salary amount must be less than 1,000,000';
+        errorMessage = 'Salary amount must be less than $1,000,000';
     }
 
     // Update UI based on validation
