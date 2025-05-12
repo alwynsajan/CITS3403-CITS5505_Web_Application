@@ -43,6 +43,7 @@ def load_user(user_id):
 
 # Home route
 # This ensures both `/` and `/login` go to the login page
+# Login page route (GET)
 @app.route('/')
 @app.route('/login')
 def loginPage():
@@ -51,6 +52,7 @@ def loginPage():
 
     return render_template('login.html')
 
+# Login route (POST) - Authenticates user credentials
 @app.route('/login', methods=['POST'])
 def login():
     formData = request.get_json()
@@ -81,18 +83,21 @@ def login():
         "message": "Invalid username or password"
     })
        
+# Logout route
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('loginPage'))
 
+# Signup page route
 @app.route('/signup')
 def signUp():
     if current_user.is_authenticated:
         logout_user()
     return render_template('signup.html')
 
+# Dashboard view route
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -102,7 +107,7 @@ def dashboard():
         return render_template('dashboard.html', username=status["data"]["firstName"], data=data)
     return redirect(url_for('loginPage'))
 
-
+# Route to create a new user account
 @app.route('/addUser', methods=['POST'])
 def addUser():
 
@@ -142,6 +147,7 @@ def addUser():
     
     return jsonify(requestStatus)
     
+# Route to add a new savings goal
 @app.route('/dashboard/addGoal', methods=['POST'])
 @login_required
 def addGoal():
@@ -159,6 +165,7 @@ def addGoal():
     requestStatus = handler.addNewGoal(current_user.username, current_user.id, data)
     return jsonify(requestStatus)
 
+# Route to add a new salary entry (accessible from both dashboard and expense pages)
 @app.route('/dashboard/addSalary', methods=['POST'])
 @app.route('/expense/addSalary', methods=['POST'])
 @login_required
@@ -186,6 +193,7 @@ def addSalary():
     requestStatus = handler.addNewSalary(current_user.username, current_user.id, data)
     return jsonify(requestStatus)
 
+# Route to add a new expense entry
 @app.route('/expense/addExpense', methods=['POST'])
 @login_required
 def addExpense():
@@ -213,6 +221,7 @@ def addExpense():
     result = handler.addNewExpense(current_user.username, current_user.id, data)
     return jsonify(result)
 
+# Expense page view route
 @app.route('/expense')
 @login_required
 def expensePage():
@@ -222,12 +231,14 @@ def expensePage():
         return render_template('expense.html', username=status["data"]["firstName"], data=data)
     return redirect(url_for('loginPage'))
     
+# Route to fetch usernames and their IDs for sharing reports
 @app.route('/dashboard/getUsernamesAndIDs')
 @login_required
 def getUsernamesAndIDs():
     requestStatus = handler.getUsernamesAndIDs(current_user.id)
     return jsonify(requestStatus)
 
+# Route to send report to another user, report is saved in db.
 @app.route('/dashboard/sentReport', methods=['POST'])
 @login_required
 def sentReport():
@@ -239,12 +250,14 @@ def sentReport():
     requestStatus = handler.sendReport(current_user.id, receiversID)
     return jsonify(requestStatus)
 
+# Route to get sender details for received reports
 @app.route('/dashboard/getSenderDetails')
 @login_required
 def getSenderDetails():
     requestStatus = handler.getSenderDetails(current_user.id)
     return jsonify(requestStatus)
 
+# Route to view a specific shared report
 @app.route('/dashboard/getReport')
 @login_required
 def getReport():
@@ -258,18 +271,21 @@ def getReport():
     requestStatus = handler.getReportData(current_user.id, sendersID, sharedDate)
     return render_template("report.html", data=requestStatus["data"])
 
+# Route to get IDs of unread reports
 @app.route('/dashboard/getUnreadReportIds')
 @login_required
 def getUnreadReportIds():
     requestStatus = handler.getUnreadReportIds(current_user.id)
     return jsonify(requestStatus)
 
+# Route to get the count of unread reports
 @app.route('/dashboard/getUnreadReportCount')
 @login_required
 def getUnreadReportCount():
     requestStatus = handler.getUnreadReportCount(current_user.id)
     return jsonify(requestStatus)
 
+# Route to mark a report as read
 @app.route('/dashboard/markReportAsRead', methods=['POST'])
 @login_required
 def markReportAsRead():
@@ -281,8 +297,9 @@ def markReportAsRead():
     requestStatus = handler.markReportAsRead(current_user.id, reportID)
     return jsonify(requestStatus)
 
+
+
 if __name__ == '__main__':
-    # Start the Flask application in debug mode
     app.run(debug=True)
     
 

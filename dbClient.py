@@ -597,6 +597,7 @@ class dbClient:
                 "message": "Error : " + str(e)
             }
 
+    #Checks if the senderID and receiverID is present in DB.
     def validateUsersExist(self, senderID, receiverID):
         """Validates both sender and receiver users exist in the database"""
         sender = User.query.filter_by(id=senderID).first()
@@ -627,6 +628,7 @@ class dbClient:
             "receiver": receiver
         }
     
+    #The shared report is saved in the shareReport table with relevant sender details.
     def saveSharedReport(self, senderID, senderFirstName, senderLastName, receiverID, data):
         """Saves the shared report data to the ShareReport table"""
         try:

@@ -1,4 +1,8 @@
-// Common function to toggle password visibility
+/**
+ * Common function to toggle password visibility in input fields
+ * @param {string} passwordId - The ID of the password input element
+ * @param {string} toggleId - The ID of the toggle button/icon element
+ */
 function setupPasswordToggle(passwordId, toggleId) {
     const toggle = document.getElementById(toggleId);
     if (toggle) {
@@ -47,7 +51,6 @@ if (loginForm) {
             console.log('Response:', data);
 
             if (data.status === "Success" && data.redirect) {
-                // Don't show alert on success, just redirect
                 setTimeout(() => {
                     window.location.href = data.redirect;
                 }, 100); // Immediate or minimal delay
@@ -82,6 +85,7 @@ if (signupForm) {
             confirmPassword: document.getElementById('confirmPassword').value,
         };
 
+        // Send signup request to server
         fetch('/addUser', {
             method: 'POST',
             headers: {
@@ -97,11 +101,12 @@ if (signupForm) {
         })
         .then(data => {
             console.log('Response:', data);
+            // Show success/error message to user
             showAlert(`${data.status}: ${data.message}`, data.status === "Success" ? "success" : "danger");
             if (data.status === "Success" && data.redirect) {
                 setTimeout(() => {
                     window.location.href = data.redirect;
-                }, 2000); // UX delay
+                }, 1000); 
             }
         })
         .catch(error => {
@@ -113,7 +118,9 @@ if (signupForm) {
 }
 
 /**
- * Utility: show a Bootstrap alert
+ * Utility function to show Bootstrap-style alert messages
+ * @param {string} message - The message text to display
+ * @param {string} type - The alert type (e.g., 'success', 'danger', 'info')
  */
 function showAlert(message, type = 'info') {
     const container = document.querySelector('.main-content') || document.body;

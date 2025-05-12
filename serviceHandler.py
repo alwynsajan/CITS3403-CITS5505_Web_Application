@@ -3,14 +3,28 @@ import calculations
 from datetime import datetime
 
 class serviceHandler():
+    """
+    Main service handler class that acts as an intermediary between the API layer and database layer.
+    Handles business logic, data validation, and orchestrates database operations with calculations.
+    """
 
     def __init__(self):
+        """Initialize the service handler with a database client instance"""
         self.DBClient = dbClient()
 
     # def checkCredentials(self,username, password):
     #     status = self.DBClient.checkCredentials(username, password)
     #     return status
     
+        """
+        Register a new user with validation checks
+        
+        Args:
+            data (dict): Contains user registration data (username, password, firstName, lastName)
+            
+        Returns:
+            dict: Status dictionary with success/failure information
+        """
     def addNewUser(self,data):
 
         # Validate required fields for empty or None
@@ -46,7 +60,17 @@ class serviceHandler():
                 "message": "Error : "+str(e)
                 }
         
-    #adds new goal to the db and return the whole goalProgressList.
+    """
+    Add a new financial goal for a user with allocation validation
+    
+    Args:
+        username (str): Username of the goal creator
+        userID (int): ID of the user
+        data (dict): Goal data including name, targetAmount, etc.
+        
+    Returns:
+        dict: Status with goal progress list if successful
+    """
     def addNewGoal(self,username,userID,data):
 
         # Validate all required fields
@@ -86,6 +110,17 @@ class serviceHandler():
                 "message": "Error : "+str(e)
                 }
         
+    """
+    Record a new salary entry and update account balance
+    
+    Args:
+        username (str): Username (unused in current implementation)
+        userID (int): ID of the user
+        data (dict): Salary data including amount and date
+        
+    Returns:
+        dict: Status with monthly salary list if successful
+    """
     def addNewSalary(self,username,userID,data):
 
         # Validate all required fields
@@ -131,7 +166,18 @@ class serviceHandler():
                 return status
         else:
             return status
-            
+    
+    """
+    Record a new expense and update account balance
+    
+    Args:
+        username (str): Username (unused in current implementation)
+        userID (int): ID of the user
+        data (dict): Expense data including amount, category and date
+        
+    Returns:
+        dict: Status with updated expense page data if successful
+    """
     def addNewExpense(self,username,userID,data):
 
         # Validate all required fields
@@ -175,6 +221,15 @@ class serviceHandler():
         else:
             return status
         
+    """
+    Retrieve a user's first name
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Status with first name if successful
+    """
     def getUserFirstName(self,userID):
 
         try:
@@ -188,7 +243,15 @@ class serviceHandler():
                 "message": "Error : "+str(e)
                 }
 
-    #Gets  the monthlyExpenseList from the db.Returns a list of expenses based on months. 
+    """
+    Get monthly aggregated expense data for a user
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Status with monthly expense list if successful
+    """
     def getMonthlyExpenses(self,userID):
 
         try:
@@ -211,7 +274,19 @@ class serviceHandler():
                 "message": "Error : "+str(e)
                 }
         
-    #Gets all the necessary data from the db for dashboard.
+    """
+    Compile all data needed for the user dashboard
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Complete dashboard data including:
+            - Account balance information
+            - Goal progress
+            - Monthly spending
+            - Budget suggestions
+    """
     def getDashboardData(self,userID):
 
         dashboardData = {}
@@ -286,6 +361,18 @@ class serviceHandler():
 
         return dashboardData
     
+    """
+    Compile all data needed for the expense tracking page
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Complete expense page data including:
+            - Salary information (if exists)
+            - Expense breakdown by month and category
+            - Weekly spending data
+    """
     def getExpensePageData(self,userID):
 
         expenseData = {}
@@ -315,6 +402,15 @@ class serviceHandler():
 
         return expenseData
     
+    """
+    Retrieve list of usernames and IDs (excluding current user)
+    
+    Args:
+        userID (int): ID of the current user
+        
+    Returns:
+        dict: Status with list of other users if successful
+    """
     def getUsernamesAndIDs(self,userID):
 
         try:
@@ -328,6 +424,16 @@ class serviceHandler():
                 "message": "Error : "+str(e)
                 }
 
+    """
+    Share a financial report with another user
+    
+    Args:
+        userID (int): ID of the sender
+        receiverID (int): ID of the recipient
+        
+    Returns:
+        dict: Status indicating success/failure of report sharing
+    """
     def sendReport(self, userID, receiverID):
         try:
             # Validate sender and receiver
@@ -374,6 +480,15 @@ class serviceHandler():
                 "message": "Error : " + str(e)
             }
         
+    """
+    Retrieve details of users who have shared reports with current user
+    
+    Args:
+        userID (int): ID of the current user
+        
+    Returns:
+        dict: Status with sender details if successful
+    """
     def getSenderDetails(self,userID):
         try:
             status = self.DBClient.getSenderDetails(userID)
@@ -385,6 +500,17 @@ class serviceHandler():
                 "message": "Error : " + str(e)
             }
         
+    """
+    Retrieve a specific shared report's data
+    
+    Args:
+        userID (int): ID of the recipient
+        sendersID (int): ID of the sender
+        sharedDate (str): Date when report was shared
+        
+    Returns:
+        dict: Status with report data if successful
+    """
     def getReportData(self,userID,sendersID,sharedDate):
 
         try:
@@ -406,6 +532,15 @@ class serviceHandler():
                 "message": "Error : " + str(e)
             }
         
+    """
+    Get IDs of unread reports for a user
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Status with list of unread report IDs if successful
+    """  
     def getUnreadReportIds(self,userID):
         try:
             status = self.DBClient.getUnreadReportIds(userID)
@@ -417,6 +552,15 @@ class serviceHandler():
                 "message": "Error : " + str(e)
             }
         
+    """
+    Get count of unread reports for a user
+    
+    Args:
+        userID (int): ID of the user
+        
+    Returns:
+        dict: Status with unread count if successful
+    """
     def getUnreadReportCount(self,userID):
         try:
             status = self.DBClient.getUnreadReportCount(userID)
@@ -428,6 +572,16 @@ class serviceHandler():
                 "message": "Error : " + str(e)
             }
         
+    """
+    Mark a report as read for a user
+    
+    Args:
+        userID (int): ID of the user
+        reportID (int): ID of the report to mark as read
+        
+    Returns:
+        dict: Status indicating success/failure
+    """
     def markReportAsRead(self,userID,reportID):
         try:
             status = self.DBClient.markReportAsRead(userID,reportID)
