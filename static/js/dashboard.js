@@ -892,6 +892,13 @@ function initMonthlySpendingChart() {
     const ctx = chartCanvas.getContext('2d');
 
     try {
+        // Check if there's an existing chart instance and destroy it
+        const existingChart = Chart.getChart(chartCanvas);
+        if (existingChart) {
+            console.log('Destroying existing chart instance');
+            existingChart.destroy();
+        }
+
         // Define modern color scheme
         const computedStyle = getComputedStyle(document.documentElement);
         const chartColors = [
@@ -1887,8 +1894,27 @@ function updateGoalsUI(goals) {
     }
 }
 
-// Initialize CountUp animations
+/**
+ * Check if CountUp.js is available
+ * @returns {boolean} True if CountUp is defined, false otherwise
+ */
+function isCountUpAvailable() {
+    if (typeof CountUp === 'undefined') {
+        console.error('CountUp.js is not loaded. Please include the CountUp.js library.');
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Initialize CountUp animations for dynamic number displays
+ */
 function initCountUp() {
+    // Check if CountUp is available
+    if (!isCountUpAvailable()) {
+        return;
+    }
+
     // Balance animation
     if (document.getElementById('balanceAmount')) {
         const balanceAmount = document.getElementById('balanceAmount');
@@ -1997,12 +2023,15 @@ function updateGoalContent() {
 
     // Update progress
     const progressPercentage = document.querySelector('.progress-percentage');
-    if (progressPercentage) {
+    if (progressPercentage && isCountUpAvailable()) {
         new CountUp('goalProgress', currentGoal.progressPercentage, {
             suffix: '%',
             duration: 1,
             decimalPlaces: 1
         }).start();
+    } else if (progressPercentage) {
+        // Fallback if CountUp is not available
+        progressPercentage.textContent = `${currentGoal.progressPercentage}%`;
     }
 
     // Update goal details
