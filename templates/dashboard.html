@@ -2,7 +2,6 @@
 
 {% block head %}
 <!-- Add countUp.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -370,7 +369,9 @@
     window.accountData = JSON.parse('{{ data.accountData | default({}) | tojson | safe }}');
     window.budgetSuggestionData = JSON.parse('{{ data.budgetSuggestionData | default({}) | tojson | safe }}');
     window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
-    window.currentUserID = 1; // Set current user ID, should be fetched from backend in a real application
+
+    window.currentUserID = {{ current_user.id | tojson | safe }};
+
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

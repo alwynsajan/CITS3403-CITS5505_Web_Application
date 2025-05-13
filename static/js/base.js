@@ -85,14 +85,16 @@ $(document).ready(function() {
                     data.data.forEach(report => {
                         const reportDate = new Date(report.sharedDate);
                         const formattedDate = reportDate.toLocaleDateString() + ' ' + reportDate.toLocaleTimeString();
-                        
-                        // Check if this report is unread
-                        const isUnread = unreadReportIds.includes(report.senderID);
+
+                        // Check if this report is unread - Use the unique reportId instead of senderID
+                        const isUnread = unreadReportIds.includes(report.reportId);
                         const unreadDot = isUnread ? 
                             '<span class="unread-dot position-absolute top-0 start-0 translate-middle p-1 bg-danger rounded-circle"></span>' : '';
                         
                         const listItem = `
-                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}" data-sender-id="${report.senderID}">
+                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}" 
+                                data-sender-id="${report.senderID}" 
+                                data-report-id="${report.reportId}">
                                 ${unreadDot}
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
@@ -109,8 +111,10 @@ $(document).ready(function() {
                     });
                     // Bind click events
                     $('.view-report-btn, .shared-report-item').off('click').on('click', function(e) {
-                        const senderID = $(this).closest('.shared-report-item').data('sender-id');
-                        viewSharedReport(senderID);
+                        const reportItem = $(this).closest('.shared-report-item');
+                        const senderID = reportItem.data('sender-id');
+                        const reportId = reportItem.data('report-id');
+                        viewSharedReport(senderID, reportId);
                     });
                 } else {
                     $('#noSharedReports').show();
@@ -126,9 +130,9 @@ $(document).ready(function() {
     }
 
     // Function to view a shared report
-    function viewSharedReport(senderID) {
+    function viewSharedReport(senderID, reportId) {
         // Remove from unread list
-        const index = unreadReportIds.indexOf(senderID);
+        const index = unreadReportIds.indexOf(reportId);
         if (index > -1) {
             unreadReportIds.splice(index, 1);
         }
@@ -137,13 +141,13 @@ $(document).ready(function() {
         fetch('/dashboard/markReportAsRead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reportId: senderID })
+            body: JSON.stringify({ reportId: reportId })
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'Success') {
                 fetchUnreadBadgeCount();
-                $(`.shared-report-item[data-sender-id="${senderID}"]`)
+                $(`.shared-report-item[data-report-id="${reportId}"]`)
                     .removeClass('unread-report')
                     .find('.unread-dot')
                     .remove();
@@ -155,7 +159,11 @@ $(document).ready(function() {
         fetch('/dashboard/getSharedReport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ senderID: senderID, recipientID: window.currentUserID || null })
+            body: JSON.stringify({ 
+                senderID: senderID, 
+                recipientID: window.currentUserID || null,
+                reportId: reportId  // Include the report ID in the request
+            })
         })
         .then(response => response.json())
         .then(data => {
