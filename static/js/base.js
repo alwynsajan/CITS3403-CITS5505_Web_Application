@@ -111,6 +111,8 @@ $(document).ready(function() {
                     });
                     // Bind click events
                     $('.view-report-btn, .shared-report-item').off('click').on('click', function(e) {
+                        e.preventDefault(); // Prevent any default button behavior
+                        e.stopPropagation(); // Stop the event from bubbling up
                         const reportItem = $(this).closest('.shared-report-item');
                         const senderID = reportItem.data('sender-id');
                         const reportId = reportItem.data('report-id');
@@ -167,10 +169,8 @@ $(document).ready(function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'Success') {
-                // Store report data and redirect to view page
-                sessionStorage.setItem('sharedReportData', JSON.stringify(data));
-                window.location.href = '/shared-report-view';
+            if (data.status === 'Success' && data.redirect) {
+                window.open(data.redirect, '_blank');
             } else {
                 showAlert('Failed to load report: ' + (data.message || 'Unknown error'), 'danger');
             }
