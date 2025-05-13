@@ -301,6 +301,7 @@ function displaySharedReports(senders) {
         const sharedDate = new Date(sender.sharedDate);
         const formattedDate = sharedDate.toLocaleDateString() + ' ' + sharedDate.toLocaleTimeString();
 
+
         // Check if this report has a reportId
         const reportId = sender.reportId || `report_${sender.senderID}`;
 
@@ -308,6 +309,7 @@ function displaySharedReports(senders) {
             <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                data-sender-id="${sender.senderID}"
                data-report-id="${reportId}"
+
                onclick="viewSharedReport(${sender.senderID}, '${reportId}'); return false;">
                 <div>
                     <div class="d-flex align-items-center">
@@ -329,7 +331,6 @@ function displaySharedReports(senders) {
 }
 
 /**
-
  * View shared report details
  * @param {number} senderID - ID of the sender
  * @param {string} reportId - Unique ID of the report to view
@@ -1602,8 +1603,8 @@ document.addEventListener('DOMContentLoaded', function() {
             saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                console.log('Sending salary data:', { amount, date });
 
+                console.log('Sending salary data:', { amount, date });
                 const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
@@ -2492,6 +2493,7 @@ function setupExportReportFeature() {
         .then(data => {
             if (data.status === "Success") {
                 // Check if the response contains a reportId
+
                 const reportIdMsg = data.reportId ?
                     `Report ID: ${data.reportId}` : '';
 
