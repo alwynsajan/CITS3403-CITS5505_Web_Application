@@ -261,9 +261,14 @@ function displaySharedReports(senders) {
         const sharedDate = new Date(sender.sharedDate);
         const formattedDate = sharedDate.toLocaleDateString() + ' ' + sharedDate.toLocaleTimeString();
         
+        // Check if this report has a reportId
+        const reportId = sender.reportId || `report_${sender.senderID}`;
+        
         html += `
             <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-               data-sender-id="${sender.senderID}" onclick="viewSharedReport(${sender.senderID}); return false;">
+               data-sender-id="${sender.senderID}" 
+               data-report-id="${reportId}" 
+               onclick="viewSharedReport(${sender.senderID}, '${reportId}'); return false;">
                 <div>
                     <div class="d-flex align-items-center">
                         <strong>${sender.senderFirstName} ${sender.senderLastName}</strong>
@@ -284,15 +289,40 @@ function displaySharedReports(senders) {
 }
 
 /**
- * View shared report
- * @param {number} senderID - Sender ID
- * Enhanced with better error handling
+ * View shared report details
+ * @param {number} senderID - ID of the sender
+ * @param {string} reportId - Unique ID of the report to view
  */
-function viewSharedReport(senderID) {
+function viewSharedReport(senderID, reportId) {
     // Wrap in try-catch to prevent any errors from breaking the UI
     try {
         // Check if a modal view exists, otherwise create a new page
         const hasModalView = document.getElementById('sharedReportViewModal');
+        
+        // If we have reportId, mark it as read
+        if (reportId) {
+            // Mark report as read on server (non-blocking)
+            fetch('/dashboard/markReportAsRead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportId: reportId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'Success') {
+                    // Update unread count
+                    fetchUnreadReportCount();
+                    // Update UI if needed (remove unread indicator)
+                    const reportItem = document.querySelector(`.shared-report-item[data-report-id="${reportId}"]`);
+                    if (reportItem) {
+                        reportItem.classList.remove('unread-report');
+                        const unreadDot = reportItem.querySelector('.unread-dot');
+                        if (unreadDot) unreadDot.remove();
+                    }
+                }
+            })
+            .catch(error => console.error('Error marking report as read:', error));
+        }
         
         if (hasModalView) {
             const modalBody = document.getElementById('sharedReportViewBody');
@@ -333,7 +363,8 @@ function viewSharedReport(senderID) {
             },
             body: JSON.stringify({
                 senderID: senderID,
-                recipientID: currentUserID
+                recipientID: currentUserID,
+                reportId: reportId // Include report ID if available
             })
         })
         .then(response => {
@@ -343,14 +374,6 @@ function viewSharedReport(senderID) {
             return response.json();
         })
         .then(data => {
-            // Update unread count (read)
-            try {
-                fetchUnreadReportCount();
-            } catch (e) {
-                console.error('Error updating unread count:', e);
-                // Continue execution despite error
-            }
-            
             // If using modal display
             if (hasModalView) {
                 const modalBody = document.getElementById('sharedReportViewBody');
@@ -413,7 +436,7 @@ function viewSharedReport(senderID) {
                     <div class="text-center py-4">
                         <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
                         <p class="text-danger">Could not load report details. Please try again later.</p>
-                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewSharedReport(${senderID})">
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewSharedReport(${senderID}, '${reportId}')">
                             <i class="fas fa-sync-alt"></i> Retry
                         </button>
                     </div>
@@ -767,33 +790,6 @@ function createExpenseReportHTML(expenseData) {
 
     html += `</div>`;
     return html;
-}
-
-/**
- * Mark report as read
- * @param {number} reportId - Report ID
- */
-function markReportAsRead(reportId) {
-    fetch(`/api/reports/${reportId}/read`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Report marked as read:', data);
-        // Update unread count
-        fetchUnreadReportCount();
-    })
-    .catch(error => {
-        console.error('Error marking report as read:', error);
-    });
 }
 
 /**
@@ -1314,7 +1310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             saveSalaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                const response = await fetch('/add_salary', {
+                const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2072,7 +2068,6 @@ function setupExportReportFeature() {
 
         const reportData = {
             recipientID: selectedUserId,
-            reportType: 'dashboard',
             senderID: window.currentUserID
         };
 
@@ -2087,8 +2082,28 @@ function setupExportReportFeature() {
         .then(response => response.json())
         .then(data => {
             if (data.status === "Success") {
-                showAlert('Report sent successfully!', 'success');
+                // Check if the response contains a reportId
+                const reportIdMsg = data.reportId ? 
+                    `Report ID: ${data.reportId}` : '';
+                
+                showAlert(`Report sent successfully! ${reportIdMsg}`, 'success');
                 $('#exportReportModal').modal('hide');
+                
+                // Save reportId in localStorage for reference if needed
+                if (data.reportId) {
+                    // Store the last 5 sent report IDs
+                    const sentReports = JSON.parse(localStorage.getItem('sentReports') || '[]');
+                    sentReports.unshift({
+                        reportId: data.reportId,
+                        recipientName: document.getElementById('selectedUserName').textContent,
+                        timestamp: new Date().toISOString()
+                    });
+                    // Keep only the 5 most recent reports
+                    if (sentReports.length > 5) {
+                        sentReports.pop();
+                    }
+                    localStorage.setItem('sentReports', JSON.stringify(sentReports));
+                }
             } else {
                 throw new Error(data.message || 'Failed to send report');
             }
