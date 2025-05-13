@@ -302,7 +302,6 @@ def markReportAsRead():
     requestStatus = handler.markReportAsRead(current_user.id, reportID)
     return jsonify(requestStatus)
 
-<<<<<<< HEAD
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -333,8 +332,8 @@ def settings():
 
     return render_template('settings.html', user=current_user)
 
-=======
->>>>>>> e1a7f635fb0bc093318ddbe98e38eb044b79b992
+
+
 
 
 if __name__ == '__main__':

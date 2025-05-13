@@ -813,11 +813,7 @@ class dbClient:
                 }
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
-            }
+            return self.handleError(e, "getting user settings")
 
 
     def updateUserName(self, userId, firstName, lastName):
@@ -842,38 +838,30 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
+            return self.handleError(e, "updating user name")
+
+    def updateUserPassword(self, userId, newPassword):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            user.password = generate_password_hash(newPassword)
+            db.session.commit()
+
             return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "DB Error: " + str(e)
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Password updated successfully"
             }
 
-def updateUserPassword(self, userId, newPassword):
-    try:
-        user = User.query.get(userId)
-        if not user:
-            return {
-                "status": "Failed",
-                "statusCode": 404,
-                "message": "User not found"
-            }
-
-        user.password = generate_password_hash(newPassword)
-        db.session.commit()
-
-        return {
-            "status": "Success",
-            "statusCode": 200,
-            "message": "Password updated successfully"
-        }
-
-    except Exception as e:
-        db.session.rollback()
-        return {
-            "status": "Failed",
-            "statusCode": 400,
-            "message": "DB Error: " + str(e)
-        }
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating user password")
 
 
 

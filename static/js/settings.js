@@ -1,6 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const alertBox = document.getElementById("settingsAlert");
-
   // Handle Name Form
   const nameForm = document.getElementById("nameForm");
   if (nameForm) {
@@ -12,7 +10,9 @@ document.addEventListener("DOMContentLoaded", function () {
         lastName: document.getElementById("lastName").value,
       };
 
-      fetch("/settings/name", {
+      console.log("Submitting name form:", formData);
+
+      fetch("/settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -21,10 +21,16 @@ document.addEventListener("DOMContentLoaded", function () {
       })
         .then((res) => res.json())
         .then((data) => {
-          showAlert(data.status, data.message);
+          console.log("Name form response:", data);
+          showAlert("nameAlert", data.status, data.message);
         })
-        .catch(() => {
-          showAlert("Failed", "Unexpected error occurred while updating name.");
+        .catch((err) => {
+          console.error("Name form error:", err);
+          showAlert(
+            "nameAlert",
+            "Failed",
+            "Unexpected error occurred while updating name."
+          );
         });
     });
   }
@@ -41,19 +47,27 @@ document.addEventListener("DOMContentLoaded", function () {
         confirmPassword: document.getElementById("confirmPassword").value,
       };
 
-      fetch("/settings/password", {
+      console.log("Submitting password form:", formData);
+
+      fetch("/settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          showAlert(data.status, data.message);
+        .then((res) => {
+          console.log("Password form raw response:", res);
+          return res.json();
         })
-        .catch(() => {
+        .then((data) => {
+          console.log("Password form response:", data);
+          showAlert("passwordAlert", data.status, data.message);
+        })
+        .catch((err) => {
+          console.error("Password form error:", err);
           showAlert(
+            "passwordAlert",
             "Failed",
             "Unexpected error occurred while changing password."
           );
@@ -62,7 +76,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Helper: show alert
-  function showAlert(status, message) {
+  function showAlert(alertId, status, message) {
+    console.log(
+      `Showing alert: ${alertId}, Status: ${status}, Message: ${message}`
+    );
+    const alertBox = document.getElementById(alertId);
+    if (!alertBox) {
+      console.error(`Alert box with id "${alertId}" not found.`);
+      return;
+    }
     alertBox.classList.remove("d-none", "alert-success", "alert-danger");
     alertBox.classList.add(
       status === "Success" ? "alert-success" : "alert-danger"

@@ -625,11 +625,7 @@ class serviceHandler():
             return self.DBClient.updateUserPassword(userId, newPassword)
 
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "update user password")
 
 
         
