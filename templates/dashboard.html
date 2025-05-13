@@ -370,7 +370,9 @@
     window.accountData = JSON.parse('{{ data.accountData | default({}) | tojson | safe }}');
     window.budgetSuggestionData = JSON.parse('{{ data.budgetSuggestionData | default({}) | tojson | safe }}');
     window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
-    window.currentUserID = {{ current_user.id | tojson | safe }}; // 从Flask后端获取当前用户ID
+
+    window.currentUserID = {{ current_user.id | tojson | safe }};
+
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

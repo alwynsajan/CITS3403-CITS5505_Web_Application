@@ -85,7 +85,7 @@ $(document).ready(function() {
                     data.data.forEach(report => {
                         const reportDate = new Date(report.sharedDate);
                         const formattedDate = reportDate.toLocaleDateString() + ' ' + reportDate.toLocaleTimeString();
-                        
+
                         // Check if this report is unread - Use the unique reportId instead of senderID
                         const isUnread = unreadReportIds.includes(report.reportId);
                         const unreadDot = isUnread ? 
