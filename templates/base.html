@@ -12,8 +12,8 @@
     <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- CountUp.js for number animations -->
-    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.8/dist/countUp.min.js"></script>
+    <!-- CountUp.js for number animations (local version) -->
+    <script src="{{ url_for('static', filename='js/countUp.js') }}"></script>
     {% block head %}{% endblock %}
 </head>
 <body class="light-theme">

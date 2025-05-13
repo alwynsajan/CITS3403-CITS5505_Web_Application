@@ -1912,57 +1912,144 @@ function isCountUpAvailable() {
 function initCountUp() {
     // Check if CountUp is available
     if (!isCountUpAvailable()) {
+        // Fallback: manually update the elements without animation
+        updateElementsWithoutAnimation();
         return;
     }
 
-    // Balance animation
-    if (document.getElementById('balanceAmount')) {
-        const balanceAmount = document.getElementById('balanceAmount');
+    try {
+        // Balance animation
+        if (document.getElementById('balanceAmount')) {
+            const balanceAmount = document.getElementById('balanceAmount');
+            const balanceValue = window.accountData?.balance || 0;
+            try {
+                new CountUp('balanceAmount', balanceValue, {
+                    prefix: '$',
+                    duration: 2,
+                    decimalPlaces: 2
+                }).start();
+            } catch (error) {
+                console.error('Error initializing CountUp for balanceAmount:', error);
+                // Fallback: manually update the element
+                balanceAmount.textContent = '$' + balanceValue.toFixed(2);
+            }
+        }
+
+        // Goal progress animation
+        if (document.getElementById('goalProgress')) {
+            const goalProgress = document.getElementById('goalProgress');
+            const progressValue = window.goalData?.[0]?.progressPercentage || 0;
+            try {
+                new CountUp('goalProgress', progressValue, {
+                    suffix: '%',
+                    duration: 2,
+                    decimalPlaces: 1
+                }).start();
+            } catch (error) {
+                console.error('Error initializing CountUp for goalProgress:', error);
+                // Fallback: manually update the element
+                if (goalProgress) {
+                    goalProgress.textContent = progressValue.toFixed(1) + '%';
+                }
+            }
+        }
+
+        // Budget suggestion animation
+        if (window.budgetSuggestionData) {
+            const { needs, wants, savings } = window.budgetSuggestionData;
+
+            try {
+                if (document.getElementById('needsAmount')) {
+                    new CountUp('needsAmount', needs, {
+                        prefix: '$',
+                        duration: 2,
+                        decimalPlaces: 2
+                    }).start();
+                }
+            } catch (error) {
+                console.error('Error initializing CountUp for needsAmount:', error);
+                const needsAmount = document.getElementById('needsAmount');
+                if (needsAmount) {
+                    needsAmount.textContent = '$' + needs.toFixed(2);
+                }
+            }
+
+            try {
+                if (document.getElementById('wantsAmount')) {
+                    new CountUp('wantsAmount', wants, {
+                        prefix: '$',
+                        duration: 2,
+                        decimalPlaces: 2
+                    }).start();
+                }
+            } catch (error) {
+                console.error('Error initializing CountUp for wantsAmount:', error);
+                const wantsAmount = document.getElementById('wantsAmount');
+                if (wantsAmount) {
+                    wantsAmount.textContent = '$' + wants.toFixed(2);
+                }
+            }
+
+            try {
+                if (document.getElementById('savingsAmount')) {
+                    new CountUp('savingsAmount', savings, {
+                        prefix: '$',
+                        duration: 2,
+                        decimalPlaces: 2
+                    }).start();
+                }
+            } catch (error) {
+                console.error('Error initializing CountUp for savingsAmount:', error);
+                const savingsAmount = document.getElementById('savingsAmount');
+                if (savingsAmount) {
+                    savingsAmount.textContent = '$' + savings.toFixed(2);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error in initCountUp:', error);
+        // Fallback: manually update the elements without animation
+        updateElementsWithoutAnimation();
+    }
+}
+
+/**
+ * Fallback function to update elements without animation when CountUp is not available
+ */
+function updateElementsWithoutAnimation() {
+    console.log('Using fallback method to update elements without animation');
+
+    // Update balance amount
+    const balanceAmount = document.getElementById('balanceAmount');
+    if (balanceAmount) {
         const balanceValue = window.accountData?.balance || 0;
-        new CountUp('balanceAmount', balanceValue, {
-            prefix: '$',
-            duration: 2,
-            decimalPlaces: 2
-        }).start();
+        balanceAmount.textContent = '$' + balanceValue.toFixed(2);
     }
 
-    // Goal progress animation
-    if (document.getElementById('goalProgress')) {
-        const goalProgress = document.getElementById('goalProgress');
+    // Update goal progress
+    const goalProgress = document.getElementById('goalProgress');
+    if (goalProgress) {
         const progressValue = window.goalData?.[0]?.progressPercentage || 0;
-        new CountUp('goalProgress', progressValue, {
-            suffix: '%',
-            duration: 2,
-            decimalPlaces: 1
-        }).start();
+        goalProgress.textContent = progressValue.toFixed(1) + '%';
     }
 
-    // Budget suggestion animation
+    // Update budget suggestion amounts
     if (window.budgetSuggestionData) {
         const { needs, wants, savings } = window.budgetSuggestionData;
 
-        if (document.getElementById('needsAmount')) {
-            new CountUp('needsAmount', needs, {
-                prefix: '$',
-                duration: 2,
-                decimalPlaces: 2
-            }).start();
+        const needsAmount = document.getElementById('needsAmount');
+        if (needsAmount) {
+            needsAmount.textContent = '$' + needs.toFixed(2);
         }
 
-        if (document.getElementById('wantsAmount')) {
-            new CountUp('wantsAmount', wants, {
-                prefix: '$',
-                duration: 2,
-                decimalPlaces: 2
-            }).start();
+        const wantsAmount = document.getElementById('wantsAmount');
+        if (wantsAmount) {
+            wantsAmount.textContent = '$' + wants.toFixed(2);
         }
 
-        if (document.getElementById('savingsAmount')) {
-            new CountUp('savingsAmount', savings, {
-                prefix: '$',
-                duration: 2,
-                decimalPlaces: 2
-            }).start();
+        const savingsAmount = document.getElementById('savingsAmount');
+        if (savingsAmount) {
+            savingsAmount.textContent = '$' + savings.toFixed(2);
         }
     }
 }
@@ -2023,15 +2110,23 @@ function updateGoalContent() {
 
     // Update progress
     const progressPercentage = document.querySelector('.progress-percentage');
-    if (progressPercentage && isCountUpAvailable()) {
-        new CountUp('goalProgress', currentGoal.progressPercentage, {
-            suffix: '%',
-            duration: 1,
-            decimalPlaces: 1
-        }).start();
-    } else if (progressPercentage) {
-        // Fallback if CountUp is not available
-        progressPercentage.textContent = `${currentGoal.progressPercentage}%`;
+    if (progressPercentage) {
+        if (isCountUpAvailable()) {
+            try {
+                new CountUp('goalProgress', currentGoal.progressPercentage, {
+                    suffix: '%',
+                    duration: 1,
+                    decimalPlaces: 1
+                }).start();
+            } catch (error) {
+                console.error('Error updating goal progress with CountUp:', error);
+                // Fallback if CountUp fails
+                progressPercentage.textContent = `${currentGoal.progressPercentage.toFixed(1)}%`;
+            }
+        } else {
+            // Fallback if CountUp is not available
+            progressPercentage.textContent = `${currentGoal.progressPercentage.toFixed(1)}%`;
+        }
     }
 
     // Update goal details
