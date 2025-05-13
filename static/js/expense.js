@@ -7,6 +7,12 @@ let lineChartInstance = null;
 let monthKeys = [];
 let currentMonthIndex = 0;
 
+
+/**
+ * Draws the salary vs expenses bar chart
+ * Compares monthly salary and expenses data in a bar chart format
+ * Shows empty state if no data exists
+ */
 function drawExpenseAndSalaryGraph() {
   const hasExpenses = window.expenseData.hasExpenses;
   const hasSalary = window.expenseData.hasSalary;
@@ -81,7 +87,10 @@ function drawExpenseAndSalaryGraph() {
   }
 }
 
-
+/**
+ * Draws the category breakdown pie chart for a specific month
+ * @param {number} index - Index of the month in monthKeys array to display
+ */
 function drawCategoryPieChart(index) {
 
   const hasExpenses = window.expenseData.hasExpenses;
@@ -172,8 +181,9 @@ function drawCategoryPieChart(index) {
 
 
 /**
- * Initialize charts and table if we have expense data.
- */
+* Initializes all expense charts and handles empty states
+* Creates line chart (weekly spending), bar chart (salary vs expenses), and pie chart (category breakdown)
+*/
 function initExpenseCharts() {
   // Show/hide empty states and charts based on data
   const hasExpenses = window.expenseData.hasExpenses;
@@ -243,7 +253,10 @@ function initExpenseCharts() {
   drawCategoryPieChart(currentMonthIndex);
 }
 
-
+/**
+ * Handles navigation to the previous month in the category breakdown pie chart
+ * Wraps around to the end if at the first month
+ */
 function handlePrevMonth() {
   if (currentMonthIndex < monthKeys.length - 1) {
     currentMonthIndex = currentMonthIndex+1 ;
@@ -254,6 +267,10 @@ else{
 drawCategoryPieChart(currentMonthIndex);
 }
 
+/**
+ * Handles navigation to the next month in the category breakdown pie chart
+ * Wraps around to the beginning if at the last month
+ */
 function handleNextMonth() {
   if (currentMonthIndex > 0) {
     currentMonthIndex--;
@@ -265,8 +282,10 @@ drawCategoryPieChart(currentMonthIndex);
 }
 
 /**
- * Handle adding a new expense via AJAX
- */async function saveExpense(event) {
+ * Handles adding a new expense via AJAX
+ * @param {Event} event - Form submission event
+ */
+async function saveExpense(event) {
   event.preventDefault();
   const form = document.getElementById('expenseForm');
   const btn  = form.querySelector('button[type="submit"]');
@@ -310,7 +329,8 @@ drawCategoryPieChart(currentMonthIndex);
 }
 
 /**
- * Handle adding a new salary via AJAX
+ * Handles adding a new salary via AJAX
+ * @param {Event} event - Form submission event
  */
 async function saveSalary(event) {
   event.preventDefault();
@@ -356,7 +376,9 @@ async function saveSalary(event) {
 }
 
 /**
- * Utility: show a Bootstrap alert
+ * Utility function to show a Bootstrap alert message
+ * @param {string} message - The message to display
+ * @param {string} type - Alert type (success, danger, info, etc.)
  */
 function showAlert(message, type = 'info') {
   const container = document.querySelector('.main-content');
@@ -371,7 +393,7 @@ function showAlert(message, type = 'info') {
   setTimeout(() => alertDiv.remove(), 5000);
 }
 
-// wire everything up on page load
+// Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
   document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
