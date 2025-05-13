@@ -859,10 +859,9 @@ class dbClient:
             }
 
 
-    def updateUserSettings(self, userId, firstName, lastName, newPassword=None):
+    def updateUserName(self, userId, firstName, lastName):
         try:
             user = User.query.get(userId)
-
             if not user:
                 return {
                     "status": "Failed",
@@ -872,16 +871,12 @@ class dbClient:
 
             user.firstName = firstName
             user.lastName = lastName
-
-            if newPassword:
-                user.password = generate_password_hash(newPassword)
-
             db.session.commit()
 
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": "User settings updated successfully"
+                "message": "Name updated successfully"
             }
 
         except Exception as e:
@@ -891,6 +886,34 @@ class dbClient:
                 "statusCode": 400,
                 "message": "DB Error: " + str(e)
             }
+
+def updateUserPassword(self, userId, newPassword):
+    try:
+        user = User.query.get(userId)
+        if not user:
+            return {
+                "status": "Failed",
+                "statusCode": 404,
+                "message": "User not found"
+            }
+
+        user.password = generate_password_hash(newPassword)
+        db.session.commit()
+
+        return {
+            "status": "Success",
+            "statusCode": 200,
+            "message": "Password updated successfully"
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        return {
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "DB Error: " + str(e)
+        }
+
 
 
 

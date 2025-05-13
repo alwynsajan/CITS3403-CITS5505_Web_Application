@@ -1,6 +1,7 @@
 from dbClient import dbClient
 import calculations
 from datetime import datetime
+from models import User
 
 class serviceHandler():
 
@@ -450,11 +451,12 @@ class serviceHandler():
                 "message": "Error: " + str(e)
             }
 
+    def updateUserName(self, userId, firstName, lastName):
+        return self.DBClient.updateUserName(userId, firstName, lastName)
 
-    def updateUserSettings(self, userId, firstName, lastName, currentPassword=None, newPassword=None, confirmPassword=None):
+    def updateUserPassword(self, userId, currentPassword, newPassword, confirmPassword):
         try:
-            # Step 1: Get the current user object
-            user = self.DBClient.getUserSettings(userId)
+            user = User.query.get(userId)
             if not user:
                 return {
                     "status": "Failed",
@@ -462,32 +464,21 @@ class serviceHandler():
                     "message": "User not found"
                 }
 
-            # Step 2: Validate current password if any password update is requested
-            if newPassword or confirmPassword:
-                if not currentPassword:
-                    return {
-                        "status": "Failed",
-                        "statusCode": 400,
-                        "message": "Current password is required"
-                    }
-                if not user.checkPassword(currentPassword):
-                    return {
-                        "status": "Failed",
-                        "statusCode": 401,
-                        "message": "Current password is incorrect"
-                    }
-                if newPassword != confirmPassword:
-                    return {
-                        "status": "Failed",
-                        "statusCode": 400,
-                        "message": "New password and confirmation do not match"
-                    }
+            if not user.checkPassword(currentPassword):
+                return {
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "Incorrect current password"
+                }
 
-            # Step 3: Proceed with the update
-            status = self.DBClient.updateUserSettings(
-                userId, firstName, lastName, newPassword if newPassword else None
-            )
-            return status
+            if newPassword != confirmPassword:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": "New password and confirmation do not match"
+                }
+
+            return self.DBClient.updateUserPassword(userId, newPassword)
 
         except Exception as e:
             return {
@@ -495,6 +486,7 @@ class serviceHandler():
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+
 
 
 
