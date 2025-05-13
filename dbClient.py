@@ -675,6 +675,7 @@ class dbClient:
             senders = []
             for record in senderRecords:
                 senders.append({
+                    "reportId":record.id,
                     "senderID": record.senderID,
                     "senderFirstName": record.senderFirstName,
                     "senderLastName": record.senderLastName,
@@ -691,13 +692,13 @@ class dbClient:
             return self.handleError(e, "Fetching sender details")
         
     #Fetches the shared report based on receiver ID, sender ID, and shared date
-    def getReportData(self, userID, senderID, sharedDate):
+    def getReportData(self, userID, senderID, reportID):
        
         try:
             report = ShareReport.query.filter_by(
                 receiverID=userID,
                 senderID=senderID,
-                sharedDate=sharedDate
+                id=reportID
             ).first()
 
             if report:
@@ -753,9 +754,8 @@ class dbClient:
                 "status": "Success",
                 "statusCode": 200,
                 "message": f"Unread report count fetched successfully",
-                "data": {
-                    "reportCount": reportCount
-                }
+                "reportCount": reportCount
+                
             }
 
         except Exception as e:

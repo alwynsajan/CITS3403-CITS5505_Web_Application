@@ -406,14 +406,14 @@ class serviceHandler():
             expenseDataListStatus = self.DBClient.getMonthlyExpenses(userID)
             if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
                 monthlyExpenseList,weeklyExpense,categoryexpensePercentage = calculations.getExpensePageData(expenseDataListStatus["data"])
-                expenseData["hasExpenses"] = True
+                expenseData["hasExpense"] = True
                 expenseAndSalary["expenseData"] = monthlyExpenseList
                 expenseData["expenseAndSalary"] = expenseAndSalary
                 expenseData["weeklyExpense"] = weeklyExpense
                 expenseData["monthlyCategoryExpenses"] = categoryexpensePercentage
 
             else:
-                expenseData["hasExpenses"] = False
+                expenseData["hasExpense"] = False
 
             return expenseData
         
@@ -517,17 +517,15 @@ class serviceHandler():
     Returns:
         dict: Status with report data if successful
     """
-    def getReportData(self,userID,sendersID,sharedDate):
+    def getReportData(self,userID,sendersID,reportID):
 
         try:
             # Validate sender and receiver
             validationResult = self.DBClient.validateUsersExist(userID, sendersID)
             if validationResult["status"] != "Success":
                 return validationResult
-            
-            sharedDateObj = datetime.strptime(sharedDate, "%Y-%m-%d %H:%M:%S")
-            
-            reportStatus = self.DBClient.getReportData(userID,sendersID,sharedDateObj)
+                        
+            reportStatus = self.DBClient.getReportData(userID,sendersID,reportID)
 
             return reportStatus
             
