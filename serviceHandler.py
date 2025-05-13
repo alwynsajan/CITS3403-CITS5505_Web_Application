@@ -429,10 +429,10 @@ class serviceHandler():
     Returns:
         dict: Status with list of other users if successful
     """
-    def getUsernamesAndIDs(self,userID):
+    def getUsernamesAndIDs(self,userID,query):
 
         try:
-            status = self.DBClient.getUsernamesAndIDs(userID)
+            status = self.DBClient.getUsernamesAndIDs(userID,query)
             return status
         
         except Exception as e:

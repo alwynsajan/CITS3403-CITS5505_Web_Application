@@ -237,7 +237,10 @@ def expensePage():
 @app.route('/dashboard/getUsernamesAndIDs')
 @login_required
 def getUsernamesAndIDs():
-    requestStatus = handler.getUsernamesAndIDs(current_user.id)
+
+    # Get the 'query' parameter from URL
+    query = request.args.get('query', '')  
+    requestStatus = handler.getUsernamesAndIDs(current_user.id,query)
     return jsonify(requestStatus)
 
 # Route to send report to another user, report is saved in db.

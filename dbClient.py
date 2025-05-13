@@ -370,10 +370,20 @@ class dbClient:
             return self.handleError(e, "creating new goal")
         
     #Fetching usernames, first names, last names, and IDs of all users except the given userID    
-    def getUsernamesAndIDs(self, userID):
-        
+    def getUsernamesAndIDs(self, userID, query):
         try:
+            # Prepare lowercase query for case-insensitive search
+            query = (query or "").strip().lower()
+
+            # Filter users (excluding current user)
             users = User.query.filter(User.id != userID).all()
+
+            # Filter based on firstName + lastName containing the query
+            filteredUsers = [
+                user for user in users
+                if query in (user.firstName + user.lastName).lower()
+            ]
+
             userData = [
                 {
                     "userID": user.id,
@@ -381,16 +391,17 @@ class dbClient:
                     "firstName": user.firstName,
                     "lastName": user.lastName
                 }
-                for user in users
+                for user in filteredUsers
             ]
+
             return {
                 "status": "Success",
                 "statusCode": 200,
                 "data": userData
             }
+
         except Exception as e:
             return self.handleError(e, "Fetching username and id")
-
 
     # Update the previous account balance for a given user
     def updatePreviousBalance(self, userID, newBalance):
