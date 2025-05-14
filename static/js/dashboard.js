@@ -1454,6 +1454,99 @@ async function saveNewGoal(event) {
         // Update goal data
         window.goalData = result.data;
 
+        // Check if this is the first goal being added
+        console.log('Initial goal count:', initialGoalCount);
+        console.log('Current goal data:', window.goalData);
+        const isFirstGoal = (initialGoalCount === 0 || !initialGoalCount) && window.goalData && window.goalData.length > 0;
+        console.log('Is first goal:', isFirstGoal);
+
+        // If this is the first goal, create the goal card container if it doesn't exist
+        if (isFirstGoal) {
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                const row = mainContent.querySelector('.row');
+                if (row) {
+                    // Check if goal card already exists
+                    let goalCardExists = false;
+                    const cards = row.querySelectorAll('.card');
+                    cards.forEach(card => {
+                        if (card.querySelector('.goal-progress')) {
+                            goalCardExists = true;
+                        }
+                    });
+
+                    // If goal card doesn't exist, create it
+                    if (!goalCardExists) {
+                        const goalCol = document.createElement('div');
+                        goalCol.className = 'col-md-6 mb-4';
+                        goalCol.style.opacity = '0';
+                        goalCol.style.transform = 'translateY(20px)';
+                        goalCol.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                        const firstGoal = window.goalData[0];
+
+                        goalCol.innerHTML = `
+                            <div class="card border-0 shadow-sm goal-card">
+                                <div class="card-body">
+                                    <h2 class="card-title">Goal Progress</h2>
+                                    <hr>
+                                    <div class="goal-progress text-center">
+                                        <h3>${firstGoal.goalName}</h3>
+                                        <div class="progress-circle mx-auto mb-3">
+                                            <div class="progress-circle-inner">
+                                                <span class="progress-percentage">${firstGoal.progressPercentage}%</span>
+                                            </div>
+                                        </div>
+                                        <div id="goalDetails" class="goal-details">
+                                            <p><strong>Target:</strong> <span id="goalTarget">${firstGoal.target}</span></p>
+                                            <p><strong>Saved:</strong> <span id="goalSaved">${firstGoal.saved}</span></p>
+                                            <p><strong>Remaining:</strong> <span id="goalRemaining">${firstGoal.remaining}</span></p>
+                                            ${firstGoal.message ? `<p><small id="goalMessage">${firstGoal.message}</small></p>` : ''}
+                                            ${firstGoal.progressPercentage >= 100 ?
+                                              `<button class="btn btn-success btn-sm mt-2 redeem-goal-btn"
+                                               data-goal-name="${firstGoal.goalName}"
+                                               data-goal-amount="${firstGoal.target}">
+                                               <i class="fas fa-shopping-cart me-1"></i>Redeem as Shopping
+                                               </button>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        // Insert the goal card
+                        row.appendChild(goalCol);
+
+                        // Animate the card
+                        setTimeout(() => {
+                            goalCol.style.opacity = '1';
+                            goalCol.style.transform = 'translateY(0)';
+
+                            // Initialize the progress circle
+                            const circle = goalCol.querySelector('.progress-circle');
+                            if (circle) {
+                                updateGoalProgressCircle(circle, true);
+                            }
+
+                            // Add event listener to redeem button if it exists
+                            const redeemBtn = goalCol.querySelector('.redeem-goal-btn');
+                            if (redeemBtn) {
+                                redeemBtn.addEventListener('click', function() {
+                                    const goalName = this.getAttribute('data-goal-name');
+                                    const amount = this.getAttribute('data-goal-amount');
+                                    if (goalName && amount) {
+                                        redeemGoal(goalName, amount);
+                                    }
+                                });
+                            }
+                        }, 100);
+
+                        showAlert(`Goal "${firstGoal.goalName}" added successfully!`, 'success');
+                    }
+                }
+            }
+        }
+
         // Check if any goals have reached 100% and highlight them
         const completedGoals = window.goalData.filter(goal => goal.progressPercentage >= 100);
         if (completedGoals.length > 0) {
@@ -1466,38 +1559,8 @@ async function saveNewGoal(event) {
         // Update UI
         updateGoalsUI(window.goalData);
 
-        // Add visual highlight to completed goal cards
-        if (completedGoals.length > 0) {
-            setTimeout(() => {
-                // Highlight in single goal view
-                const goalCard = document.querySelector('.goal-card');
-                if (goalCard) {
-                    goalCard.classList.add('goal-completed');
-                    setTimeout(() => {
-                        goalCard.classList.remove('goal-completed');
-                    }, 3000);
-                }
-
-                // Highlight in multiple goals view
-                const goalsContainer = document.getElementById('goalsContainer');
-                if (goalsContainer) {
-                    completedGoals.forEach(goal => {
-                        const goalCards = goalsContainer.querySelectorAll('.goal-item');
-                        goalCards.forEach(card => {
-                            if (card.querySelector('.progress-label')?.textContent === goal.goalName) {
-                                card.classList.add('goal-completed');
-                                setTimeout(() => {
-                                    card.classList.remove('goal-completed');
-                                }, 3000);
-                            }
-                        });
-                    });
-                }
-            }, 500);
-        }
-
-        showAlert('Goal added successfully!', 'success');
-        return;
+        // Update all goal cards
+        updateAllGoalCards(window.goalData);
 
     } catch (error) {
         console.error('Error saving goal:', error);
@@ -1905,6 +1968,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show success message
                 showAlert('Salary added successfully! Updating goals...', 'success');
 
+                // Always update account balance if available
+                if (result.new_balance) {
+                    console.log('New balance received:', result.new_balance);
+
+                    // Update account balance
+                    if (window.accountData) {
+                        console.log('Updating existing accountData:', window.accountData);
+                        window.accountData.balance = result.new_balance;
+                        // Make sure we have trend data
+                        if (!window.accountData.trendType) {
+                            window.accountData.trendType = 'up';
+                        }
+                        if (!window.accountData.percentageChange) {
+                            window.accountData.percentageChange = 100;
+                        }
+                        updateAccountBalance(window.accountData);
+                    } else {
+                        console.log('Creating new accountData object');
+                        // If accountData doesn't exist yet, create it
+                        window.accountData = {
+                            balance: result.new_balance,
+                            trendType: 'up',
+                            percentageChange: 100 // First salary, so 100% increase
+                        };
+                        updateAccountBalance(window.accountData);
+
+                        // If the account balance card doesn't exist, create it
+                        let balanceCard = document.querySelector('.card:has(#balanceAmount)');
+                        if (!balanceCard) {
+                            // Find the appropriate row to insert the account balance card
+                            const mainContent = document.querySelector('.main-content');
+                            if (mainContent) {
+                                const row = mainContent.querySelector('.row');
+                                if (row) {
+                                    // Create a new column for the account balance card
+                                    const col = document.createElement('div');
+                                    col.className = 'col-md-6 mb-4';
+                                    col.style.opacity = '0';
+                                    col.style.transform = 'translateY(20px)';
+                                    col.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                                    col.innerHTML = `
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-body">
+                                                <h2 class="card-title">Account Balance</h2>
+                                                <hr>
+                                                <div class="text-center py-3">
+                                                    <div class="display-5 mb-2" style="color:var(--primary-color);font-weight:700;" id="balanceAmount">
+                                                        $${result.new_balance.toFixed(2)}
+                                                    </div>
+                                                    <div class="balance-trend">
+                                                        <span class="badge bg-success me-2">
+                                                            <i class="fas fa-arrow-up"></i>
+                                                            100%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+
+                                    // Insert the column at the beginning of the row
+                                    row.insertBefore(col, row.firstChild);
+
+                                    // Animate the card
+                                    setTimeout(() => {
+                                        col.style.opacity = '1';
+                                        col.style.transform = 'translateY(0)';
+                                    }, 100);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update budget suggestions if available
+                if (result.budgetSuggestions) {
+                    window.budgetSuggestionData = result.budgetSuggestions;
+                    updateBudgetSuggestions(result.budgetSuggestions);
+                }
+
+                // Update transactions if available
+                if (result.transaction && result.transaction.length > 0) {
+                    updateLatestTransactions(result.transaction);
+                }
+
                 // Check if we have updated goal data in the response
                 if (result.goalData && Array.isArray(result.goalData)) {
                     // Update the goals UI with the new data instead of reloading the page
@@ -1920,33 +2069,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         completedGoals.forEach(goal => {
                             showAlert(`Congratulations! Your goal "${goal.goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
                         });
-
-                        // Also fetch updated account data and transactions
-                        try {
-                            // Fetch updated account data
-                            fetch('/dashboard/getAccountData')
-                                .then(response => response.json())
-                                .then(accountResult => {
-                                    if (accountResult.status === "Success") {
-                                        // Update account data
-                                        window.accountData = accountResult.data;
-                                        // Update account balance display
-                                        updateAccountBalance(window.accountData);
-                                    }
-                                });
-
-                            // Fetch latest transactions
-                            fetch('/dashboard/getLatestTransactions')
-                                .then(response => response.json())
-                                .then(transactionsResult => {
-                                    if (transactionsResult.status === "Success") {
-                                        // Update latest transactions
-                                        updateLatestTransactions(transactionsResult.data);
-                                    }
-                                });
-                        } catch (error) {
-                            console.error('Error updating additional data:', error);
-                        }
                     }
                 } else if (result.data && Array.isArray(result.data)) {
                     // Backward compatibility with old API response format
@@ -1960,12 +2082,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             showAlert(`Congratulations! Your goal "${goal.goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
                         });
                     }
-                } else {
-                    // If we don't have the updated goal data, fall back to reloading the page
-                    console.warn('No goal data received in response, falling back to page reload');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
                 }
                 return;
 
@@ -2319,10 +2435,31 @@ function updateGoalsUI(goals) {
 function updateAllGoalCards(goals) {
     if (!goals || !goals.length) {
         console.log('No goals to update');
+
+        // If there are no goals, check if we need to remove any goal cards
+        const goalCards = document.querySelectorAll('.goal-card');
+        if (goalCards.length > 0) {
+            console.log('Removing all goal cards as there are no goals left');
+            goalCards.forEach(card => {
+                const parentCol = card.closest('.col-md-6');
+                if (parentCol) {
+                    // Animate removal
+                    parentCol.style.opacity = '0';
+                    parentCol.style.transform = 'translateY(-20px)';
+                    setTimeout(() => {
+                        parentCol.remove();
+                    }, 300);
+                }
+            });
+        }
+
         return;
     }
 
     console.log('Updating all goal cards with:', goals);
+
+    // Store the updated goal data globally
+    window.goalData = goals;
 
     // Update the main goal card in the dashboard
     updateGoalsUI(goals);
@@ -2350,9 +2487,17 @@ function updateAllGoalCards(goals) {
     // Update any other goal cards that might exist
     const goalCards = document.querySelectorAll('.goal-card');
     goalCards.forEach(card => {
-        const goalNameElement = card.querySelector('.goal-name');
+        const goalNameElement = card.querySelector('.goal-name, .progress-label, h3');
         if (goalNameElement) {
-            const goalName = goalNameElement.textContent.trim();
+            // Extract the goal name, removing any numbering like "1/2 "
+            let goalName = goalNameElement.textContent.trim();
+            // Remove numbering pattern like "1/2 " if present
+            const numberingMatch = goalName.match(/^\d+\/\d+\s+(.+)$/);
+            if (numberingMatch) {
+                goalName = numberingMatch[1];
+            }
+
+            // Find the matching goal
             const goal = goals.find(g => g.goalName === goalName);
             if (goal) {
                 // Update progress percentage
@@ -2368,20 +2513,26 @@ function updateAllGoalCards(goals) {
                 }
 
                 // Update saved amount
-                const savedElement = card.querySelector('.goal-saved');
+                const savedElement = card.querySelector('#goalSaved, .goal-saved');
                 if (savedElement) {
                     savedElement.textContent = goal.saved;
                 }
 
                 // Update remaining amount
-                const remainingElement = card.querySelector('.goal-remaining');
+                const remainingElement = card.querySelector('#goalRemaining, .goal-remaining');
                 if (remainingElement) {
                     remainingElement.textContent = goal.remaining;
                 }
 
+                // Update progress circle if it exists
+                const circle = card.querySelector('.progress-circle');
+                if (circle) {
+                    updateGoalProgressCircle(circle, true);
+                }
+
                 // Check if goal is 100% complete and add redeem button if needed
                 if (goal.progressPercentage >= 100) {
-                    const goalDetails = card.querySelector('.goal-details');
+                    const goalDetails = card.querySelector('#goalDetails, .goal-details');
                     if (goalDetails) {
                         // Remove existing redeem button if any
                         const existingRedeemBtn = goalDetails.querySelector('.redeem-goal-btn');
@@ -2420,40 +2571,30 @@ function updateAllGoalCards(goals) {
         }
     });
 
-    // Update the goal details section in the main dashboard
-    const goalDetails = document.getElementById('goalDetails');
-    if (goalDetails) {
-        // Find the currently displayed goal
-        const goalNameElement = document.querySelector('.goal-progress h3');
-        if (goalNameElement) {
-            let currentGoalName = goalNameElement.textContent.trim();
-            // Remove the numbering if present (e.g., "1/3 Goal Name" -> "Goal Name")
-            const match = currentGoalName.match(/\d+\/\d+\s+(.*)/);
-            if (match) {
-                currentGoalName = match[1];
-            }
+    // Check if any goals have reached 100%
+    const completedGoals = goals.filter(goal => goal.progressPercentage >= 100);
+    if (completedGoals.length > 0) {
+        // Add visual highlight to completed goal cards
+        goalCards.forEach(card => {
+            const goalNameElement = card.querySelector('.goal-name, .progress-label, h3');
+            if (goalNameElement) {
+                let goalName = goalNameElement.textContent.trim();
+                // Remove numbering pattern if present
+                const numberingMatch = goalName.match(/^\d+\/\d+\s+(.+)$/);
+                if (numberingMatch) {
+                    goalName = numberingMatch[1];
+                }
 
-            const goal = goals.find(g => g.goalName === currentGoalName);
-            if (goal && goal.progressPercentage >= 100) {
-                // Remove existing redeem button if any
-                const existingRedeemBtn = goalDetails.querySelector('.redeem-goal-btn');
-                if (!existingRedeemBtn) {
-                    // Add redeem button
-                    const redeemBtn = document.createElement('button');
-                    redeemBtn.className = 'btn btn-success btn-sm mt-2 redeem-goal-btn';
-                    redeemBtn.innerHTML = '<i class="fas fa-shopping-cart me-1"></i>Redeem as Shopping';
-                    redeemBtn.setAttribute('data-goal-name', goal.goalName);
-                    redeemBtn.setAttribute('data-goal-amount', goal.target);
-                    redeemBtn.addEventListener('click', function() {
-                        redeemGoal(goal.goalName, goal.target);
-                    });
-                    goalDetails.appendChild(redeemBtn);
-
-                    // Add animation to make the button noticeable
-                    redeemBtn.style.animation = 'pulse 1.5s infinite';
+                // Check if this card corresponds to a completed goal
+                const isCompleted = completedGoals.some(g => g.goalName === goalName);
+                if (isCompleted) {
+                    card.classList.add('goal-completed');
+                    setTimeout(() => {
+                        card.classList.remove('goal-completed');
+                    }, 3000);
                 }
             }
-        }
+        });
     }
 }
 
@@ -2876,7 +3017,7 @@ async function redeemGoal(goalName, amount) {
 
         // Find the goal card that's being redeemed
         let redeemedCard = null;
-        let redeemedCardType = null; // 'single' or 'multiple'
+        let parentCol = null;
 
         // Check if it's in the single goal view
         const singleGoalCard = document.querySelector('.goal-card');
@@ -2884,7 +3025,7 @@ async function redeemGoal(goalName, amount) {
             const goalLabel = singleGoalCard.querySelector('.progress-label');
             if (goalLabel && goalLabel.textContent.includes(goalName)) {
                 redeemedCard = singleGoalCard;
-                redeemedCardType = 'single';
+                parentCol = redeemedCard.closest('.col-md-6');
             }
         }
 
@@ -2895,19 +3036,49 @@ async function redeemGoal(goalName, amount) {
                 const label = card.querySelector('.card-title, .progress-label');
                 if (label && label.textContent.includes(goalName)) {
                     redeemedCard = card;
-                    redeemedCardType = 'multiple';
+                    parentCol = redeemedCard.closest('.col-md-6');
                 }
             });
         }
 
-        // Add loading state to the card
+        // Immediately start the removal animation for the card
         if (redeemedCard) {
+            // Add loading state first
             redeemedCard.classList.add('card-loading');
             const redeemBtn = redeemedCard.querySelector('.redeem-goal-btn');
             if (redeemBtn) {
                 redeemBtn.disabled = true;
                 redeemBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redeeming...';
             }
+
+            // Start the removal animation immediately
+            redeemedCard.style.opacity = '0';
+            redeemedCard.style.transform = 'translateY(-20px)';
+
+            // Remove the card after a short animation
+            setTimeout(() => {
+                if (parentCol) {
+                    console.log('Removing goal card immediately');
+                    parentCol.style.opacity = '0';
+                    parentCol.style.transform = 'translateY(-20px)';
+
+                    // Actually remove the element after animation completes
+                    setTimeout(() => {
+                        parentCol.remove();
+
+                        // If this was the last goal, show empty state
+                        if (document.querySelectorAll('.goal-card').length === 0) {
+                            const goalsContainer = document.getElementById('goalsContainer');
+                            if (goalsContainer) {
+                                goalsContainer.innerHTML = `
+                                    <h2 class="mb-4">Your Financial Goals</h2>
+                                    <p class="text-muted text-center py-4">No goals set yet. Create your first financial goal!</p>
+                                `;
+                            }
+                        }
+                    }, 300);
+                }
+            }, 100);
         }
 
         // Prepare data for the request
@@ -2937,82 +3108,70 @@ async function redeemGoal(goalName, amount) {
 
             // Update the UI without reloading the page
             try {
-                // Fetch updated goal data
-                const goalsResponse = await fetch('/dashboard/getGoals');
-                const goalsResult = await goalsResponse.json();
+                // Use goal data from the response if available
+                if (result.goalData !== undefined) {
+                    console.log('Using goal data from response:', result.goalData);
+                    window.goalData = result.goalData;
+                    window.hasGoal = result.hasGoal;
+                } else {
+                    // Fallback to fetching goal data
+                    console.log('Fetching goal data from server');
+                    const goalsResponse = await fetch('/dashboard/getGoals');
+                    const goalsResult = await goalsResponse.json();
 
-                if (goalsResponse.ok && goalsResult.status === "Success") {
-                    // Update global goal data
-                    window.goalData = goalsResult.data;
-
-                    // Fetch updated account data
-                    const accountResponse = await fetch('/dashboard/getAccountData');
-                    const accountResult = await accountResponse.json();
-
-                    if (accountResponse.ok && accountResult.status === "Success") {
-                        // Update account data
-                        window.accountData = accountResult.data;
-
-                        // Update account balance display
-                        updateAccountBalance(window.accountData);
-
-                        // Fetch latest transactions
-                        const transactionsResponse = await fetch('/dashboard/getLatestTransactions');
-                        const transactionsResult = await transactionsResponse.json();
-
-                        if (transactionsResponse.ok && transactionsResult.status === "Success") {
-                            // Update latest transactions
-                            updateLatestTransactions(transactionsResult.data);
-                        }
+                    if (goalsResponse.ok && goalsResult.status === "Success") {
+                        // Update global goal data
+                        window.goalData = goalsResult.data;
                     }
+                }
 
-                    // Update the redeemed goal card
-                    if (redeemedCard) {
-                        // Remove loading state
-                        redeemedCard.classList.remove('card-loading');
+                // Fetch updated account data
+                const accountResponse = await fetch('/dashboard/getAccountData');
+                const accountResult = await accountResponse.json();
 
-                        // Find the redeemed goal in the updated data
-                        const updatedGoal = window.goalData.find(g => g.goalName === goalName);
+                if (accountResponse.ok && accountResult.status === "Success") {
+                    // Update account data
+                    window.accountData = accountResult.data;
 
-                        if (updatedGoal) {
-                            if (redeemedCardType === 'single') {
-                                // Update single goal view
-                                updateSingleGoalUI(updatedGoal);
-                            } else {
-                                // For multiple goals view, we'll update all goals
-                                renderMultipleGoals(window.goalData);
-                            }
-                        } else {
-                            // Goal might have been removed after redemption
-                            // Remove the card with animation
-                            redeemedCard.style.opacity = '0';
-                            redeemedCard.style.transform = 'translateY(-20px)';
-                            setTimeout(() => {
-                                if (redeemedCardType === 'multiple') {
-                                    // If in multiple goals view, remove just this card
-                                    const parentCol = redeemedCard.closest('.col-md-6');
-                                    if (parentCol) {
-                                        parentCol.remove();
-                                    }
-                                } else {
-                                    // If in single goal view, refresh all goals
-                                    renderMultipleGoals(window.goalData);
-                                }
-                            }, 300);
-                        }
-                    } else {
-                        // If we couldn't find the specific card, update all goals
-                        if (window.goalData.length > 0) {
-                            renderMultipleGoals(window.goalData);
-                        } else {
-                            // No goals left, show empty state
-                            const goalsContainer = document.getElementById('goalsContainer');
-                            if (goalsContainer) {
-                                goalsContainer.innerHTML = `
-                                    <h2 class="mb-4">Your Financial Goals</h2>
-                                    <p class="text-muted text-center py-4">No goals set yet. Create your first financial goal!</p>
-                                `;
-                            }
+                    // Update account balance display
+                    updateAccountBalance(window.accountData);
+
+                    // Fetch latest transactions
+                    const transactionsResponse = await fetch('/dashboard/getLatestTransactions');
+                    const transactionsResult = await transactionsResponse.json();
+
+                    if (transactionsResponse.ok && transactionsResult.status === "Success") {
+                        // Update latest transactions
+                        updateLatestTransactions(transactionsResult.data);
+                    }
+                }
+
+                // The card has already been removed in the UI, so we don't need to update it
+                // Just update the global data to keep it in sync
+                console.log('Server responded successfully, goal data updated');
+
+                // Check if we need to update any remaining goals
+                if (window.goalData && window.goalData.length > 0) {
+                    console.log(`${window.goalData.length} goals remaining, updating UI if needed`);
+
+                    // Only update the UI if there are still goal cards in the DOM
+                    const remainingGoalCards = document.querySelectorAll('.goal-card');
+                    if (remainingGoalCards.length > 0) {
+                        console.log('Updating remaining goal cards');
+                        renderMultipleGoals(window.goalData);
+                    }
+                } else {
+                    console.log('No goals left in data');
+                    // Ensure the empty state is shown if needed
+                    const goalsContainer = document.getElementById('goalsContainer');
+                    if (goalsContainer) {
+                        const hasGoalCards = document.querySelectorAll('.goal-card').length > 0;
+                        if (!hasGoalCards) {
+                            console.log('Showing empty state for goals');
+                            goalsContainer.innerHTML = `
+                                <h2 class="mb-4">Your Financial Goals</h2>
+                                <p class="text-muted text-center py-4">No goals set yet. Create your first financial goal!</p>
+                            `;
                         }
                     }
                 }
@@ -3524,13 +3683,83 @@ function validateGoalData(data) {
  * @param {Object} accountData - Account data with balance and trend info
  */
 function updateAccountBalance(accountData) {
-    if (!accountData) return;
+    if (!accountData) {
+        console.error('updateAccountBalance called with no accountData');
+        return;
+    }
+
+    console.log('Updating account balance with:', accountData);
+
+    // Check if accountData has the correct structure
+    if (typeof accountData.balance === 'undefined') {
+        console.error('accountData is missing balance property:', accountData);
+        // Try to extract balance from nested structure if available
+        if (accountData.accountData && typeof accountData.accountData.balance !== 'undefined') {
+            console.log('Found balance in nested accountData structure, using that instead');
+            accountData = accountData.accountData;
+        } else {
+            console.error('Could not find balance property in accountData');
+            return;
+        }
+    }
 
     const balanceElement = document.getElementById('balanceAmount');
+    console.log('Balance element found:', balanceElement ? 'Yes' : 'No');
     const trendElement = document.querySelector('.balance-trend');
+    console.log('Trend element found:', trendElement ? 'Yes' : 'No');
 
+    // If balance element doesn't exist, create the account balance card
+    if (!balanceElement) {
+        console.log('Balance element not found, creating account balance card');
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            const row = mainContent.querySelector('.row');
+            if (row) {
+                // Create a new column for the account balance card
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-4';
+                col.style.opacity = '0';
+                col.style.transform = 'translateY(20px)';
+                col.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                col.innerHTML = `
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title">Account Balance</h2>
+                            <hr>
+                            <div class="text-center py-3">
+                                <div class="display-5 mb-2" style="color:var(--primary-color);font-weight:700;" id="balanceAmount">
+                                    $${accountData.balance.toFixed(2)}
+                                </div>
+                                <div class="balance-trend">
+                                    <span class="badge bg-${accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
+                                        <i class="fas fa-arrow-${accountData.trendType}"></i>
+                                        ${accountData.percentageChange}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Insert the column at the beginning of the row
+                row.insertBefore(col, row.firstChild);
+
+                // Animate the card
+                setTimeout(() => {
+                    col.style.opacity = '1';
+                    col.style.transform = 'translateY(0)';
+                }, 100);
+
+                return; // Exit function since we've created the card with the current balance
+            }
+        }
+    }
+
+    // Update existing balance element
     if (balanceElement) {
-        if (isCountUpAvailable()) {
+        console.log('Updating existing balance element');
+        if (typeof CountUp !== 'undefined') {
             try {
                 new CountUp('balanceAmount', accountData.balance, {
                     prefix: '$',
@@ -3553,6 +3782,135 @@ function updateAccountBalance(accountData) {
                 ${accountData.percentageChange}%
             </span>
         `;
+    }
+}
+
+/**
+ * Update budget suggestions with new data
+ * @param {Object} budgetData - Budget suggestion data
+ */
+function updateBudgetSuggestions(budgetData) {
+    if (!budgetData) return;
+
+    const needsAmount = document.getElementById('needsAmount');
+    const wantsAmount = document.getElementById('wantsAmount');
+    const savingsAmount = document.getElementById('savingsAmount');
+
+    // If any of the elements don't exist, create the budget card
+    if (!needsAmount || !wantsAmount || !savingsAmount) {
+        // Find the appropriate row to insert the budget card
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            const row = mainContent.querySelector('.row');
+            if (row) {
+                // Create a new column for the budget card
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-4';
+                col.innerHTML = `
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h2 class="card-title">Budget Suggestions</h2>
+                            <hr>
+                            <div class="budget-suggestions">
+                                <div class="row mb-3">
+                                    <div class="col-4 text-center">
+                                        <div class="budget-category">
+                                            <div class="budget-icon bg-primary-light text-primary mb-2">
+                                                <i class="fas fa-home"></i>
+                                            </div>
+                                            <h6>Needs</h6>
+                                            <div class="budget-amount" id="needsAmount">$${budgetData.needs.toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="budget-category">
+                                            <div class="budget-icon bg-success-light text-success mb-2">
+                                                <i class="fas fa-shopping-bag"></i>
+                                            </div>
+                                            <h6>Wants</h6>
+                                            <div class="budget-amount" id="wantsAmount">$${budgetData.wants.toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="budget-category">
+                                            <div class="budget-icon bg-info-light text-info mb-2">
+                                                <i class="fas fa-piggy-bank"></i>
+                                            </div>
+                                            <h6>Savings</h6>
+                                            <div class="budget-amount" id="savingsAmount">$${budgetData.savings.toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center text-muted small">
+                                    <p>Based on the 50/30/20 rule for your salary of $${budgetData.salary.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Insert the column after the account balance card
+                const accountBalanceCard = row.querySelector('.col-md-6');
+                if (accountBalanceCard) {
+                    row.insertBefore(col, accountBalanceCard.nextSibling);
+                } else {
+                    row.appendChild(col);
+                }
+
+                // Animate the card
+                setTimeout(() => {
+                    col.style.opacity = '1';
+                    col.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        }
+        return;
+    }
+
+    // Update existing elements with animation
+    if (needsAmount && isCountUpAvailable()) {
+        try {
+            new CountUp('needsAmount', budgetData.needs, {
+                prefix: '$',
+                duration: 2,
+                decimalPlaces: 2
+            }).start();
+        } catch (error) {
+            console.error('Error updating needs amount:', error);
+            needsAmount.textContent = '$' + budgetData.needs.toFixed(2);
+        }
+    } else if (needsAmount) {
+        needsAmount.textContent = '$' + budgetData.needs.toFixed(2);
+    }
+
+    if (wantsAmount && isCountUpAvailable()) {
+        try {
+            new CountUp('wantsAmount', budgetData.wants, {
+                prefix: '$',
+                duration: 2,
+                decimalPlaces: 2
+            }).start();
+        } catch (error) {
+            console.error('Error updating wants amount:', error);
+            wantsAmount.textContent = '$' + budgetData.wants.toFixed(2);
+        }
+    } else if (wantsAmount) {
+        wantsAmount.textContent = '$' + budgetData.wants.toFixed(2);
+    }
+
+    if (savingsAmount && isCountUpAvailable()) {
+        try {
+            new CountUp('savingsAmount', budgetData.savings, {
+                prefix: '$',
+                duration: 2,
+                decimalPlaces: 2
+            }).start();
+        } catch (error) {
+            console.error('Error updating savings amount:', error);
+            savingsAmount.textContent = '$' + budgetData.savings.toFixed(2);
+        }
+    } else if (savingsAmount) {
+        savingsAmount.textContent = '$' + budgetData.savings.toFixed(2);
     }
 }
 
