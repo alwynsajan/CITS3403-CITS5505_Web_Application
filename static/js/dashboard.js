@@ -2224,9 +2224,9 @@ function setupActiveNavigation() {
     if (currentPath.includes('/dashboard')) {
         // Dashboard is active
         document.querySelector('.sidebar .nav-item a[href="/dashboard"]')?.parentElement.classList.add('active');
-    } else if (currentPath.includes('/expenses')) {
+    } else if (currentPath.includes('/expense')) {
         // Expenses is active
-        document.querySelector('.sidebar .nav-item a[href="/expenses"]')?.parentElement.classList.add('active');
+        document.querySelector('.sidebar .nav-item a[href="/expense"]')?.parentElement.classList.add('active');
     } else if (currentPath.includes('/settings')) {
         // Settings is active
         document.querySelector('.sidebar .nav-item a[href="/settings"]')?.parentElement.classList.add('active');
