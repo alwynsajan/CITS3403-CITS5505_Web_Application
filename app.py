@@ -106,7 +106,7 @@ def dashboard():
     status = handler.getUserFirstName(current_user.id)
     if status["status"] == "Success":
         data = handler.getDashboardData(current_user.id)
-        return render_template('dashboard.html', username=status["data"]["firstName"], data=data)
+        return render_template('dashboard.html', username=current_user.firstName, data=data)
     return redirect(url_for('loginPage'))
 
 # Route to create a new user account
@@ -230,7 +230,7 @@ def expensePage():
     status = handler.getUserFirstName(current_user.id)
     if status["status"] == "Success":
         data = handler.getExpensePageData(current_user.id)
-        return render_template('expense.html', username=status["data"]["firstName"], data=data)
+        return render_template('expense.html', username=current_user.firstName, data=data)
     return redirect(url_for('loginPage'))
     
 # Route to fetch usernames and their IDs for sharing reports
@@ -361,7 +361,7 @@ def settings():
         result = handler.updateUserPassword(current_user.id, current_password, new_password, confirm_password)
         return jsonify(result)
 
-    return render_template('settings.html', user=current_user)
+    return render_template('settings.html', username =current_user.firstName, user=current_user)
 
 
 
