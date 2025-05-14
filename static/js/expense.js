@@ -7,7 +7,6 @@ let lineChartInstance = null;
 let monthKeys = [];
 let currentMonthIndex = 0;
 
-
 /**
  * Draws the salary vs expenses bar chart
  * Compares monthly salary and expenses data in a bar chart format
@@ -318,6 +317,7 @@ async function saveExpense(event) {
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
+    setDate('dateInput1');
 
   } catch (err) {
     console.error(err);
@@ -365,6 +365,7 @@ async function saveSalary(event) {
     drawExpenseAndSalaryGraph();
     showAlert('Salary added successfully!', 'success');
     form.reset();
+    setDate('dateInput2');
 
   } catch (err) {
     console.error(err);
@@ -373,6 +374,14 @@ async function saveSalary(event) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-dollar-sign me-1"></i> Add Salary';
   }
+}
+
+function setDate(dateID){
+  const dateInput = document.getElementById(dateID);
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.value = today;
+  dateInput.max = today; // Prevent future dates
+
 }
 
 /**
@@ -396,8 +405,11 @@ function showAlert(message, type = 'info') {
 // Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
+  setDate('dateInput1');
+  setDate('dateInput2');
   document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
   document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
+  
 });
