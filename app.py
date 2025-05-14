@@ -263,40 +263,18 @@ def getSenderDetails():
     return jsonify(requestStatus)
 
 # Route to view a specific shared report
-@app.route('/dashboard/getSharedReport',methods=['POST'])
+@app.route('/dashboard/getSharedReport', methods=['POST'])
 @login_required
 def getReport():
     data = request.get_json()
     if data is None:
         return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
 
-    sendersID = data.get('senderID')
+    senderID = data.get('senderID')
     reportID = data.get('reportId')
 
-    print(sendersID, reportID)
-
-    redirectUrl = url_for('renderSharedReportView', senderId=sendersID, reportID=reportID)
-
-    return jsonify({
-        "status": "Success",
-        "statusCode": 200,
-        "redirect": redirectUrl
-    })
-
-@app.route('/renderSharedReportView')
-@login_required
-def renderSharedReportView():
-    senderId = request.args.get('senderId')
-    reportID = request.args.get('reportID')
-
-    if not senderId or not reportID:
-        return jsonify({
-            "status": "Failed",
-            "statusCode": 400,
-            "message": "Invalid request parameters"
-        }), 400
-
-    requestStatus = handler.getReportData(current_user.id, senderId, reportID)
+    # Fetch the report data
+    requestStatus = handler.getReportData(current_user.id, senderID, reportID)
 
     if requestStatus["status"] != "Success":
         return jsonify({
@@ -305,7 +283,39 @@ def renderSharedReportView():
             "message": "Report not found"
         }), 404
 
-    return render_template("report.html", data=requestStatus["data"])
+    # Render the report HTML using Jinja2 template and send it in the response
+    report_html = render_template("report.html", data=requestStatus["data"])
+
+    return jsonify({
+        "status": "Success",
+        "statusCode": 200,
+        "reportHtml": report_html
+    })
+
+
+# @app.route('/renderSharedReportView', methods=['POST'])
+# @login_required
+# def renderSharedReportView():
+#     senderId = request.args.get('senderId')
+#     reportID = request.args.get('reportID')
+
+#     if not senderId or not reportID:
+#         return jsonify({
+#             "status": "Failed",
+#             "statusCode": 400,
+#             "message": "Invalid request parameters"
+#         }), 400
+
+#     requestStatus = handler.getReportData(current_user.id, senderId, reportID)
+
+#     if requestStatus["status"] != "Success":
+#         return jsonify({
+#             "status": "Failed",
+#             "statusCode": 404,
+#             "message": "Report not found"
+#         }), 404
+
+#     return render_template("report.html", data=requestStatus["data"])
 
 # Route to get IDs of unread reports
 @app.route('/dashboard/getUnreadReportIds')

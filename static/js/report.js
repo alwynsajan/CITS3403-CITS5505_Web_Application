@@ -11,49 +11,58 @@ function drawExpenseAndSalaryGraph(){
     const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
 
     barChartInstance = new Chart(barChartEl, {
-    type: 'bar',
-    data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        datasets: [
-        {
-            label: 'Salary',
-            data: salaryData,
-            backgroundColor: '#6c5ce7',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
+        type: 'bar',
+        data: {
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            datasets: [
+                {
+                    label: 'Salary',
+                    data: salaryData,
+                    backgroundColor: '#6c5ce7',
+                    borderRadius: { topLeft: 10, topRight: 10 },
+                    barThickness: 20
+                },
+                {
+                    label: 'Expenses',
+                    data: expenseData,
+                    backgroundColor: '#00cec9',
+                    borderRadius: { topLeft: 10, topRight: 10 },
+                    barThickness: 20
+                }
+            ]
         },
-        {
-            label: 'Expenses',
-            data: expenseData,
-            backgroundColor: '#00cec9',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
+        options: {
+            responsive: true,
+            aspectRatio: 4, 
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: {
+                    stacked: false,
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    stacked: false,
+                    grid: { color: '#f1f1f1' }
+                }
+            }
         }
-        ]
-    },
-    options: {
-        responsive: true,
-        aspectRatio: 4, 
-        maintainAspectRatio: false,
-        plugins: {
-        legend: { position: 'top' },
-        tooltip: { mode: 'index', intersect: false }
-        },
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-        x: {
-            stacked: false,
-            grid: { display: false }
-        },
-        y: {
-            beginAtZero: true,
-            stacked: false,
-            grid: { color: '#f1f1f1' }
-        }
-        }
-      }
     });
-  }
+}
+
 
   function drawMonthlySpendingChart() {
     const ctx = document.getElementById('monthlySpendingChart');
@@ -126,50 +135,54 @@ function drawExpenseAndSalaryGraph(){
     });
 }
 
-function drawWeeklyExpenseGraph(){
-
+function drawWeeklyExpenseGraph() {
     const lineChartEl = document.getElementById('lineChart');
     lineChartInstance = new Chart(lineChartEl, {
         type: "line",
         data: {
-        labels: Object.keys(window.expenseData.weeklyExpense),  
-        datasets: [{
-            label: "Weekly Spending",
-            data: Object.values(window.expenseData.weeklyExpense),  
-            borderColor: "#6932dd",
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: "#fff",
-            pointBorderColor: "#6932dd",
-            pointRadius: 5
-        }]
+            labels: Object.keys(window.expenseData.weeklyExpense),
+            datasets: [{
+                label: "Weekly Spending",
+                data: Object.values(window.expenseData.weeklyExpense),
+                borderColor: "#6932dd",
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: "#fff",
+                pointBorderColor: "#6932dd",
+                pointRadius: 5
+            }]
         },
         options: {
-        responsive: true,
-        aspectRatio: 3, 
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { display: false },
-            x: { display: false }
-        }
+            responsive: true,
+            aspectRatio: 3,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Spending: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { display: false },
+                x: { display: false }
+            }
         }
     });
 }
 
-function drawCategoryPieChart(index) {
 
+function drawCategoryPieChart(index) {
     const prevBtn = document.getElementById('prevMonth');
     const nextBtn = document.getElementById('nextMonth');
     console.log("In drawCategoryPieChart");
 
-    // Extract and order the months from the data
     const monthlyExpenses = window.expenseData.monthlyCategoryExpenses;
-    monthKeys = Object.keys(monthlyExpenses); // ['April', 'March', 'February', 'May']
-    monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`)); // Sort by month
+    monthKeys = Object.keys(monthlyExpenses);
+    monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`));
 
-    // Show/hide buttons only if there are multiple months
     if (monthKeys.length > 1) {
         prevBtn.style.display = 'inline-block';
         nextBtn.style.display = 'inline-block';
@@ -177,13 +190,11 @@ function drawCategoryPieChart(index) {
     } else {
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-        }
-
+    }
 
     const month = monthKeys[index];
     const data = monthlyExpenses[month];
 
-    // Remove the 'total' key to only include category breakdown
     const categories = Object.keys(data).filter(k => k !== 'total');
     const values = categories.map(cat => data[cat]);
 
@@ -210,12 +221,22 @@ function drawCategoryPieChart(index) {
                     text: `Category Breakdown - ${month}`
                 },
                 legend: {
-                    position: 'bottom'
+                    display: false 
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw;
+                            return `${label}: $${value.toFixed(2)}`;
+                        }
+                    }
                 }
             }
         }
     });
 }
+
 
 function handlePrevMonth() {
     if (currentMonthIndex < monthKeys.length - 1) {

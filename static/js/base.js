@@ -169,8 +169,11 @@ $(document).ready(function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'Success' && data.redirect) {
-                window.open(data.redirect, '_blank');
+            if (data.status === 'Success' && data.reportHtml) {
+                // Open the report HTML in a new tab
+                const newTab = window.open('', '_blank');
+                newTab.document.write(data.reportHtml);
+                newTab.document.close();
             } else {
                 showAlert('Failed to load report: ' + (data.message || 'Unknown error'), 'danger');
             }
