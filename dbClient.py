@@ -733,9 +733,7 @@ class dbClient:
                 "status": "Success",
                 "statusCode": 200,
                 "message": f"Found {len(reportIds)} unread report(s)",
-                "data": {
-                    "unreadReportIds": reportIds
-                }
+                "unreadReportIds": reportIds
             }
 
         except Exception as e:
