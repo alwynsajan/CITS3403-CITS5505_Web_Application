@@ -2143,13 +2143,15 @@ function updateSingleGoalUI(goalData) {
                 <div style="margin-bottom: 1.2rem;"></div>
                 <div class="goal-progress text-center">
                     <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${goalData.goalName}</h3>
-                    <div class="progress-circle mx-auto mb-3">
-                        <svg class="goal-progress-svg" width="150" height="150">
-                            <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
-                            <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
-                        </svg>
-                        <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-                            <span class="progress-percentage">${goalData.progressPercentage || 0}%</span>
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <div class="progress-circle mx-auto mb-3">
+                            <svg class="goal-progress-svg" width="150" height="150">
+                                <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                            </svg>
+                            <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                                <span class="progress-percentage">${goalData.progressPercentage || 0}%</span>
+                            </div>
                         </div>
                     </div>
                     <div class="goal-details" id="goalDetails">
@@ -2295,7 +2297,7 @@ function renderMultipleGoals(goals) {
                 goalCol.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">${reversedGoals.length > 1 ? `${index + 1}/${reversedGoals.length} ` : ''}${goal.goalName}</h5>
+                            <h5 class="card-title">${goal.goalName}</h5>
                             <div class="d-flex align-items-center mb-2">
                                 <div class="progress flex-grow-1 me-2" style="height: 10px;">
                                     <div class="progress-bar" role="progressbar"
@@ -2821,12 +2823,23 @@ function updateGoalsUI(goals) {
     const goalRemaining = document.getElementById('goalRemaining');
     const goalMessage = document.getElementById('goalMessage');
 
-    // Don't show numbering if there's only one goal
+    // Don't add numbering to the goal name, let the template handle it
     if (goalName) {
-        goalName.textContent = reversedGoals.length > 1 ?
-            `1/${reversedGoals.length} ${firstGoal.goalName}` :
-            firstGoal.goalName;
+        // Just set the goal name without any numbering
+        goalName.textContent = firstGoal.goalName;
     }
+
+    // Always show navigation buttons, even for a single goal
+    // We're keeping this code commented out to ensure navigation arrows are always visible
+    /*
+    if (reversedGoals.length <= 1) {
+        const existingPrevBtn = document.getElementById('prevGoalBtn');
+        const existingNextBtn = document.getElementById('nextGoalBtn');
+
+        if (existingPrevBtn) existingPrevBtn.style.display = 'none';
+        if (existingNextBtn) existingNextBtn.style.display = 'none';
+    }
+    */
     if (progressPercentage) progressPercentage.textContent = `${firstGoal.progressPercentage || 0}%`;
     if (goalTarget) goalTarget.textContent = firstGoal.target;
     if (goalSaved) goalSaved.textContent = firstGoal.saved;
@@ -2840,57 +2853,14 @@ function updateGoalsUI(goals) {
     if (reversedGoals.length > 1) {
         console.log('Multiple goals detected:', reversedGoals.length);
 
-        // If selector container doesn't exist, create it
-        if (!goalSelectorContainer) {
-            console.log('Creating goal selector container');
-
-            // First, check if we need to rebuild the entire card structure
-            // This is needed when transitioning from 1 to 2 goals
-            if (goalCard) {
-                console.log('Rebuilding goal card structure for navigation');
-
-                // Get the current card body content
-                const cardBody = goalCard.querySelector('.card-body');
-                if (cardBody) {
-                    // Create the selector container
-                    const newSelectorContainer = document.createElement('div');
-                    newSelectorContainer.className = 'goal-selector mb-2';
-                    newSelectorContainer.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <span class="goal-counter">1/${reversedGoals.length}</span>
-                            <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    `;
-
-                    // Insert selector after the card title
-                    const cardTitle = cardBody.querySelector('.card-title');
-                    if (cardTitle) {
-                        cardTitle.insertAdjacentElement('afterend', newSelectorContainer);
-                    } else {
-                        // If no card title found, try to insert at the beginning of the card body
-                        cardBody.insertBefore(newSelectorContainer, cardBody.firstChild);
-                    }
-
-                    // Update the goal name to include numbering
-                    const goalNameElement = cardBody.querySelector('.goal-progress h3');
-                    if (goalNameElement) {
-                        goalNameElement.textContent = `1/${reversedGoals.length} ${firstGoal.goalName}`;
-                    }
-                }
-            } else {
-                console.log('No goal card found, cannot create selector container');
-            }
+        // Don't create a new selector container, use the one from the template
+        // Just update the counter if it exists
+        const selectorCounter = goalSelectorContainer ? goalSelectorContainer.querySelector('.goal-counter') : null;
+        if (selectorCounter) {
+            console.log('Updating goal counter to:', `1/${reversedGoals.length}`);
+            selectorCounter.textContent = `1/${reversedGoals.length}`;
         } else {
-            console.log('Goal selector container already exists, updating counter');
-            const counter = goalSelectorContainer.querySelector('.goal-counter');
-            if (counter) {
-                counter.textContent = `1/${reversedGoals.length}`;
-            }
+            console.log('Goal counter not found in existing selector container');
         }
 
         // Setup goal navigation
@@ -2922,11 +2892,10 @@ function updateGoalsUI(goals) {
             };
 
             // Update each element if it exists
-            // Don't show numbering if there's only one goal
+            // Use the original goal name without adding numbering
+            // The template already has the numbering in the counter element
             if (elements.goalName) {
-                elements.goalName.textContent = reversedGoals.length > 1 ?
-                    `${index + 1}/${reversedGoals.length} ${goal.goalName}` :
-                    goal.goalName;
+                elements.goalName.textContent = goal.goalName;
             }
             if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progressPercentage || 0}%`;
             if (elements.goalTarget) elements.goalTarget.textContent = goal.target;
@@ -3073,9 +3042,34 @@ function updateGoalsUI(goals) {
         updateGoalDisplay(currentIndex);
     } else {
         console.log('Single goal or no goals');
-        // If only one goal, remove selector if it exists
+        // For single goal, we should follow the template's behavior
+        // The template only shows navigation arrows when there are multiple goals
+
+        // If there's a selector container, remove it
         if (goalSelectorContainer) {
+            console.log('Removing goal selector container for single goal');
             goalSelectorContainer.remove();
+        }
+
+        // Find the existing navigation buttons in the DOM and hide them
+        // This matches the template's behavior which only shows buttons when data.goalData|length > 1
+        const prevBtn = document.getElementById('prevGoalBtn');
+        const nextBtn = document.getElementById('nextGoalBtn');
+
+        if (prevBtn) {
+            prevBtn.style.display = 'none';
+            console.log('Hiding previous button for single goal');
+        }
+
+        if (nextBtn) {
+            nextBtn.style.display = 'none';
+            console.log('Hiding next button for single goal');
+        }
+
+        // Don't modify the goal name, the template already has the correct format
+        const goalNameElement = document.querySelector('.goal-progress h3');
+        if (goalNameElement && reversedGoals.length === 1) {
+            goalNameElement.textContent = reversedGoals[0].goalName;
         }
     }
 
@@ -3886,11 +3880,9 @@ function updateGoalContent() {
 
     // Update goal name
     const goalName = document.querySelector('.goal-progress h3');
-    // Don't show numbering if there's only one goal
+    // Don't add numbering to the goal name, let the template handle it
     if (goalName) {
-        goalName.textContent = reversedGoalData.length > 1 ?
-            `${currentGoalIndex + 1}/${reversedGoalData.length} ${currentGoal.goalName}` :
-            currentGoal.goalName;
+        goalName.textContent = currentGoal.goalName;
     }
 
     // Update progress
@@ -4052,6 +4044,9 @@ async function redeemGoal(goalName, amount) {
         if (!confirm(`Are you sure you want to redeem your "${goalName}" goal for $${amount}? This will be recorded as a Shopping expense.`)) {
             return;
         }
+
+        // Set a flag to always force page refresh after redemption
+        const forcePageRefresh = true;
 
         // Check if this is a "Redeem as Saving" action (for future use)
         // We'll use this flag to determine if we should refresh the page
@@ -4281,45 +4276,14 @@ async function redeemGoal(goalName, amount) {
 
         if (response.ok && result.status === "Success") {
             // Show success message
-            showAlert(`Goal "${goalName}" redeemed successfully! A Shopping expense of $${amount} has been added.`, 'success');
+            showAlert(`Goal "${goalName}" redeemed successfully! Page will refresh...`, 'success');
 
-            // Instead of refreshing the entire page, update the UI components
-            console.log('Goal redeemed successfully, updating UI components...');
-
-            try {
-                // 1. Update the transactions list with the new expense
-                await updateTransactionsList();
-
-                // 2. Update the account balance if needed
-                await updateAccountData();
-
-                // 3. Remove the redeemed goal from the UI
-                if (window.goalData) {
-                    // Find and remove the goal from the global data
-                    const goalIndex = window.goalData.findIndex(g => g.goalName === goalName);
-                    if (goalIndex !== -1) {
-                        window.goalData.splice(goalIndex, 1);
-
-                        // Update the UI based on the current view
-                        if (document.getElementById('goalsContainer')) {
-                            // Multiple goals view
-                            renderMultipleGoals(window.goalData);
-                        } else {
-                            // Single goal view
-                            updateGoalsUI(window.goalData);
-                        }
-                    }
-                }
-
-                return;
-            } catch (error) {
-                console.error('Error updating UI after goal redemption:', error);
-                // If updating the UI fails, fall back to page reload
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-                return;
-            }
+            // Always force page refresh after successful redemption
+            console.log('Goal redeemed successfully, forcing page refresh');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            return;
 
             // The code below will not execute due to the return statement above
             // Keeping it for reference in case we need to revert to manual UI updates
@@ -4749,7 +4713,7 @@ async function redeemGoal(goalName, amount) {
             }
         } else {
             // Show error message
-            showAlert(`Error: ${result.message || 'Failed to redeem goal'}`, 'danger');
+            showAlert(`Error: ${result.message || 'Failed to redeem goal'}. Page will refresh...`, 'danger');
 
             // Refresh the page after a short delay
             console.log('Error occurred during goal redemption, refreshing page in 2 seconds...');
@@ -4759,7 +4723,7 @@ async function redeemGoal(goalName, amount) {
         }
     } catch (error) {
         console.error('Error redeeming goal:', error);
-        showAlert(`Error: ${error.message || 'Failed to redeem goal'}`, 'danger');
+        showAlert(`Error: ${error.message || 'Failed to redeem goal'}. Page will refresh...`, 'danger');
 
         // Refresh the page after a short delay
         console.log('Error caught during goal redemption, refreshing page in 2 seconds...');
