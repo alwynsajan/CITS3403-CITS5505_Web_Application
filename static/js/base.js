@@ -85,15 +85,15 @@ $(document).ready(function() {
                     data.data.forEach(report => {
                         const reportDate = new Date(report.sharedDate);
                         const formattedDate = reportDate.toLocaleDateString() + ' ' + reportDate.toLocaleTimeString();
-                        
+
                         // Check if this report is unread - Use the unique reportId instead of senderID
                         const isUnread = unreadReportIds.includes(report.reportId);
-                        const unreadDot = isUnread ? 
+                        const unreadDot = isUnread ?
                             '<span class="unread-dot position-absolute top-0 start-0 translate-middle p-1 bg-danger rounded-circle"></span>' : '';
-                        
+
                         const listItem = `
-                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}" 
-                                data-sender-id="${report.senderID}" 
+                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}"
+                                data-sender-id="${report.senderID}"
                                 data-report-id="${report.reportId}">
                                 ${unreadDot}
                                 <div class="d-flex justify-content-between align-items-center">
@@ -156,13 +156,12 @@ $(document).ready(function() {
         .catch(error => console.error('Error marking report as read:', error));
 
         // Fetch the full shared report data
-        fetch('/dashboard/getSharedReport', {
+        fetch('/dashboard/getReport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                senderID: senderID, 
-                recipientID: window.currentUserID || null,
-                reportId: reportId  // Include the report ID in the request
+            body: JSON.stringify({
+                userID: senderID,  // Changed from senderID to userID to match app.py
+                date: reportId     // Changed from reportId to date to match app.py
             })
         })
         .then(response => response.json())
