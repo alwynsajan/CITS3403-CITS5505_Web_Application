@@ -1512,6 +1512,16 @@ async function saveNewGoal(event) {
     const timeDurationInput = form.querySelector('[name="timeDuration"]');
     const allocationInput = form.querySelector('[name="allocation"]');
 
+    // Clear previous validation states
+    const formInputs = form.querySelectorAll('.form-control');
+    formInputs.forEach(input => {
+        input.classList.remove('is-invalid', 'is-valid');
+        const feedback = input.parentElement.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.remove();
+        }
+    });
+
     // Enhanced validation
     let isValid = true;
     let errorMessage = '';
@@ -1522,13 +1532,40 @@ async function saveNewGoal(event) {
         isValid = false;
         errorMessage = 'Goal name is required';
         goalNameInput.classList.add('is-invalid');
+        addInvalidFeedback(goalNameInput, errorMessage);
     } else if (goalName.length > 50) {
         isValid = false;
         errorMessage = 'Goal name must be less than 50 characters';
         goalNameInput.classList.add('is-invalid');
+        addInvalidFeedback(goalNameInput, errorMessage);
     } else {
-        goalNameInput.classList.remove('is-invalid');
-        goalNameInput.classList.add('is-valid');
+        // Check for duplicate goal names
+        const isDuplicate = checkDuplicateGoalName(goalName);
+        if (isDuplicate) {
+            isValid = false;
+            errorMessage = 'A goal with this name already exists';
+            goalNameInput.classList.add('is-invalid');
+            addInvalidFeedback(goalNameInput, errorMessage);
+
+            // Show alert for duplicate goal name
+            showAlert('A goal with this name already exists. Please use a different name.', 'warning');
+        } else {
+            goalNameInput.classList.remove('is-invalid');
+            goalNameInput.classList.add('is-valid');
+        }
+    }
+
+    // Helper function to add invalid feedback
+    function addInvalidFeedback(input, message) {
+        const invalidFeedback = input.parentElement.querySelector('.invalid-feedback');
+        if (!invalidFeedback) {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'invalid-feedback';
+            feedbackDiv.textContent = message;
+            input.parentElement.appendChild(feedbackDiv);
+        } else {
+            invalidFeedback.textContent = message;
+        }
     }
 
     // Validate target amount
@@ -1537,10 +1574,12 @@ async function saveNewGoal(event) {
         isValid = false;
         errorMessage = 'Target amount must be a positive number';
         targetAmountInput.classList.add('is-invalid');
+        addInvalidFeedback(targetAmountInput, errorMessage);
     } else if (targetAmount > 1000000) {
         isValid = false;
         errorMessage = 'Target amount must be less than 1,000,000';
         targetAmountInput.classList.add('is-invalid');
+        addInvalidFeedback(targetAmountInput, errorMessage);
     } else {
         targetAmountInput.classList.remove('is-invalid');
         targetAmountInput.classList.add('is-valid');
@@ -1552,10 +1591,12 @@ async function saveNewGoal(event) {
         isValid = false;
         errorMessage = 'Time duration must be a positive number';
         timeDurationInput.classList.add('is-invalid');
+        addInvalidFeedback(timeDurationInput, errorMessage);
     } else if (timeDuration > 120) {
         isValid = false;
         errorMessage = 'Time duration must be less than 120 months (10 years)';
         timeDurationInput.classList.add('is-invalid');
+        addInvalidFeedback(timeDurationInput, errorMessage);
     } else {
         timeDurationInput.classList.remove('is-invalid');
         timeDurationInput.classList.add('is-valid');
@@ -1567,10 +1608,12 @@ async function saveNewGoal(event) {
         isValid = false;
         errorMessage = 'Allocation percentage must be a positive number';
         allocationInput.classList.add('is-invalid');
+        addInvalidFeedback(allocationInput, errorMessage);
     } else if (allocation > 100) {
         isValid = false;
         errorMessage = 'Allocation percentage cannot exceed 100%';
         allocationInput.classList.add('is-invalid');
+        addInvalidFeedback(allocationInput, errorMessage);
     } else {
         // Check if the total allocation (including this new goal) exceeds 100%
         const currentTotalAllocation = calculateTotalAllocation();
@@ -1580,6 +1623,10 @@ async function saveNewGoal(event) {
             isValid = false;
             errorMessage = `Allocation exceeds limit. Current total: ${currentTotalAllocation.toFixed(1)}%. Maximum available: ${(100 - currentTotalAllocation).toFixed(1)}%`;
             allocationInput.classList.add('is-invalid');
+            addInvalidFeedback(allocationInput, errorMessage);
+
+            // Show alert for allocation exceeding 100%
+            showAlert(`Total allocation would exceed 100%. Current total: ${currentTotalAllocation.toFixed(1)}%, Maximum available: ${(100 - currentTotalAllocation).toFixed(1)}%`, 'warning');
         } else {
             allocationInput.classList.remove('is-invalid');
             allocationInput.classList.add('is-valid');
@@ -1588,7 +1635,11 @@ async function saveNewGoal(event) {
 
     // Show error message if validation fails
     if (!isValid) {
-        showAlert(errorMessage, 'danger');
+        // Only show general alert for errors that don't already have specific alerts
+        // (duplicate goal name and allocation exceeding 100% already show specific alerts)
+        if (errorMessage && !errorMessage.includes('already exists') && !errorMessage.includes('Allocation exceeds limit')) {
+            showAlert(errorMessage, 'danger');
+        }
         return;
     }
 
@@ -5603,6 +5654,37 @@ function hideLoading(element) {
 }
 
 /**
+ * Check if a goal name already exists in the current goals
+ * @param {string} goalName - The goal name to check
+ * @returns {boolean} True if the goal name already exists, false otherwise
+ */
+function checkDuplicateGoalName(goalName) {
+    console.log('Checking if goal name already exists:', goalName);
+
+    // Normalize the goal name for case-insensitive comparison
+    const normalizedName = goalName.trim().toLowerCase();
+
+    // Check if window.goalData exists and is an array
+    if (!window.goalData || !Array.isArray(window.goalData)) {
+        console.log('No existing goals found');
+        return false;
+    }
+
+    // Check if any existing goal has the same name (case-insensitive)
+    const isDuplicate = window.goalData.some(goal => {
+        const existingName = goal.goalName.trim().toLowerCase();
+        const isMatch = existingName === normalizedName;
+        if (isMatch) {
+            console.log('Found duplicate goal name:', goal.goalName);
+        }
+        return isMatch;
+    });
+
+    console.log('Is duplicate goal name:', isDuplicate);
+    return isDuplicate;
+}
+
+/**
  * Validate goal data for required fields and valid values
  * @param {Object} data - Goal data to validate
  * @returns {Object} Validation result with isValid flag and message
@@ -5610,6 +5692,9 @@ function hideLoading(element) {
 function validateGoalData(data) {
     if (!data.goalName?.trim()) {
         return { isValid: false, message: 'Goal name is required' };
+    }
+    if (checkDuplicateGoalName(data.goalName)) {
+        return { isValid: false, message: 'A goal with this name already exists' };
     }
     if (!data.targetAmount || data.targetAmount <= 0) {
         return { isValid: false, message: 'Invalid target amount' };
