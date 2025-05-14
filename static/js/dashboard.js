@@ -1176,18 +1176,104 @@ function updateGoalProgressCircle(circleElement, animate = false) {
         return;
     }
 
-    // SVG version
-    const svg = circleElement.querySelector('svg.goal-progress-svg');
-    const bar = svg ? svg.querySelector('.progress-bar') : null;
+    // Check if this is an SVG version or needs to be converted
+    let svg = circleElement.querySelector('svg.goal-progress-svg');
+    let bar = svg ? svg.querySelector('.progress-bar') : null;
     const percentageElem = circleElement.querySelector('.progress-percentage');
 
-    if (!svg || !bar || !percentageElem) {
-        console.error('Missing required elements for progress circle:', { svg, bar, percentageElem });
+    // If SVG elements don't exist, create them
+    if (!svg || !bar) {
+        console.log('SVG elements not found, creating them');
+
+        // Create SVG structure
+        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "goal-progress-svg");
+        svg.setAttribute("width", "150");
+        svg.setAttribute("height", "150");
+
+        // Create background circle
+        const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        bgCircle.setAttribute("class", "progress-bg");
+        bgCircle.setAttribute("cx", "75");
+        bgCircle.setAttribute("cy", "75");
+        bgCircle.setAttribute("r", "65");
+        bgCircle.setAttribute("stroke", "#eee");
+        bgCircle.setAttribute("stroke-width", "14");
+        bgCircle.setAttribute("fill", "none");
+
+        // Create progress bar circle
+        bar = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        bar.setAttribute("class", "progress-bar");
+        bar.setAttribute("cx", "75");
+        bar.setAttribute("cy", "75");
+        bar.setAttribute("r", "65");
+        bar.setAttribute("stroke", "var(--primary-color)");
+        bar.setAttribute("stroke-width", "14");
+        bar.setAttribute("fill", "none");
+        bar.setAttribute("stroke-linecap", "round");
+
+        // Add circles to SVG
+        svg.appendChild(bgCircle);
+        svg.appendChild(bar);
+
+        // Clear the progress circle element and add the SVG
+        // Keep the inner content for percentage display
+        const innerContent = circleElement.innerHTML;
+        circleElement.innerHTML = '';
+        circleElement.appendChild(svg);
+
+        // Create or restore the inner content container
+        const innerContainer = document.createElement('div');
+        innerContainer.className = 'progress-circle-inner';
+        innerContainer.style.position = 'absolute';
+        innerContainer.style.top = '0';
+        innerContainer.style.left = '0';
+        innerContainer.style.width = '100%';
+        innerContainer.style.height = '100%';
+        innerContainer.style.display = 'flex';
+        innerContainer.style.flexDirection = 'column';
+        innerContainer.style.alignItems = 'center';
+        innerContainer.style.justifyContent = 'center';
+        innerContainer.style.pointerEvents = 'none';
+
+        // If we had inner content, restore it, otherwise create new percentage element
+        if (innerContent && innerContent.trim()) {
+            innerContainer.innerHTML = innerContent;
+        } else if (!percentageElem) {
+            const percentSpan = document.createElement('span');
+            percentSpan.className = 'progress-percentage';
+            percentSpan.textContent = '0%';
+            innerContainer.appendChild(percentSpan);
+        }
+
+        circleElement.appendChild(innerContainer);
+    }
+
+    // Get the percentage element again in case it was just created
+    const updatedPercentageElem = percentageElem || circleElement.querySelector('.progress-percentage');
+
+    if (!updatedPercentageElem) {
+        console.error('Could not find or create percentage element');
         return;
     }
 
-    let percentage = parseFloat(percentageElem.textContent);
-    if (isNaN(percentage)) percentage = 0;
+    // Get percentage from the element text
+    let percentage = parseFloat(updatedPercentageElem.textContent);
+
+    // If percentage is NaN, try to get it from the goal data
+    if (isNaN(percentage) && window.goalData && window.goalData.length > 0) {
+        // For single goal view, use the first goal's progress
+        const firstGoal = window.goalData[0];
+        if (firstGoal && typeof firstGoal.progressPercentage !== 'undefined') {
+            percentage = firstGoal.progressPercentage;
+            percentageElem.textContent = `${percentage}%`;
+            console.log('Setting progress percentage from goalData:', percentage);
+        } else {
+            percentage = 0;
+        }
+    } else if (isNaN(percentage)) {
+        percentage = 0;
+    }
 
     console.log('Updating progress circle with percentage:', percentage);
 
@@ -1197,10 +1283,17 @@ function updateGoalProgressCircle(circleElement, animate = false) {
     // Progress
     const progress = Math.max(0, Math.min(percentage, 100));
     const offset = c * (1 - progress / 100);
+
+    // Apply the stroke properties with animation
     bar.setAttribute('stroke-dasharray', c);
     bar.setAttribute('stroke-dashoffset', offset);
     bar.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim());
     bar.setAttribute('style', 'transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: 75px 75px;');
+
+    // Update the percentage text
+    if (updatedPercentageElem) {
+        updatedPercentageElem.textContent = `${Math.round(progress)}%`;
+    }
 
     // Check if goal is 100% complete and add redeem button if needed
     if (percentage >= 100) {
@@ -1591,7 +1684,8 @@ async function saveNewGoal(event) {
                                     <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
                                 </svg>
                                 <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-                                    <span class="progress-percentage">${firstGoal.progressPercentage}%</span>
+                                    <span class="progress-percentage">${firstGoal.progressPercentage || 0}%</span>
+                                    <span class="progress-label">${firstGoal.goalName}</span>
                                 </div>
                             </div>
                             <div id="goalDetails" class="goal-details">
@@ -1721,8 +1815,13 @@ async function saveNewGoal(event) {
                                     <div class="goal-progress text-center">
                                         <h3>${firstGoal.goalName}</h3>
                                         <div class="progress-circle mx-auto mb-3">
-                                            <div class="progress-circle-inner">
-                                                <span class="progress-percentage">${firstGoal.progressPercentage}%</span>
+                                            <svg class="goal-progress-svg" width="150" height="150">
+                                                <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                                                <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                                            </svg>
+                                            <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                                                <span class="progress-percentage">${firstGoal.progressPercentage || 0}%</span>
+                                                <span class="progress-label">${firstGoal.goalName}</span>
                                             </div>
                                         </div>
                                         <div id="goalDetails" class="goal-details">
@@ -1788,7 +1887,7 @@ async function saveNewGoal(event) {
                                             <h3>${firstGoal.goalName}</h3>
                                             <div class="progress-circle mx-auto mb-3">
                                                 <div class="progress-circle-inner">
-                                                    <span class="progress-percentage">${firstGoal.progressPercentage}%</span>
+                                                    <span class="progress-percentage">${firstGoal.progressPercentage || 0}%</span>
                                                 </div>
                                             </div>
                                             <div id="goalDetails" class="goal-details">
@@ -1870,7 +1969,40 @@ async function saveNewGoal(event) {
         }
 
         // Update all goal cards to ensure everything is in sync
-        updateAllGoalCards(window.goalData);
+        // Force a complete UI refresh to handle the transition from 1 to 2 goals correctly
+        if (window.goalData && window.goalData.length === 2) {
+            console.log('Detected transition from 1 to 2 goals, forcing complete UI refresh');
+
+            // First, check if we're in single goal view
+            const singleGoalCard = document.querySelector('.goal-card');
+            if (singleGoalCard) {
+                // We need to force a complete refresh of the goal card to add navigation arrows
+                const cardBody = singleGoalCard.querySelector('.card-body');
+                if (cardBody) {
+                    // Fade out the card
+                    cardBody.style.opacity = '0';
+                    cardBody.style.transform = 'translateY(10px)';
+
+                    // After fade out, completely rebuild the UI
+                    setTimeout(() => {
+                        // Force a complete rebuild of the goal UI
+                        updateGoalsUI(window.goalData);
+
+                        // Fade the card back in
+                        setTimeout(() => {
+                            const newCardBody = singleGoalCard.querySelector('.card-body');
+                            if (newCardBody) {
+                                newCardBody.style.opacity = '1';
+                                newCardBody.style.transform = 'translateY(0)';
+                            }
+                        }, 50);
+                    }, 300);
+                }
+            }
+        } else {
+            // Normal update for other cases
+            updateAllGoalCards(window.goalData);
+        }
 
     } catch (error) {
         console.error('Error saving goal:', error);
@@ -1948,20 +2080,32 @@ function updateSingleGoalUI(goalData) {
         // Create new content
         const newContent = `
             <div class="card-body" style="opacity: 0; transform: translateY(10px);">
-                <h2 class="card-title">Goal Progress</h2>
-                <hr>
+                <div style="position: absolute; top: 18px; right: 24px; z-index: 2;">
+                    <button id="newGoalBtn" class="btn btn-primary btn-circle" title="Set a New Goal" style="width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-bullseye fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
+                    <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
+                </div>
+                <div style="margin-bottom: 1.2rem;"></div>
                 <div class="goal-progress text-center">
+                    <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${goalData.goalName}</h3>
                     <div class="progress-circle mx-auto mb-3">
-                        <div class="progress-circle-inner">
-                            <span class="progress-percentage">${goalData.progressPercentage}%</span>
-                            <span class="progress-label">${goalData.goalName}</span>
+                        <svg class="goal-progress-svg" width="150" height="150">
+                            <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
+                            <circle class="progress-bar" cx="75" cy="75" r="65" stroke="var(--primary-color)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                        </svg>
+                        <div class="progress-circle-inner" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                            <span class="progress-percentage">${goalData.progressPercentage || 0}%</span>
                         </div>
                     </div>
-                    <div class="goal-details">
-                        <p><strong>Target:</strong> ${goalData.target}</p>
-                        <p><strong>Saved:</strong> ${goalData.saved}</p>
-                        <p><strong>Remaining:</strong> ${goalData.remaining}</p>
-                        ${goalData.message ? `<p><small>${goalData.message}</small></p>` : ''}
+                    <div class="goal-details" id="goalDetails">
+                        <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">${goalData.target}</span></p>
+                        <p class="mb-1"><strong>Saved:</strong> $<span id="goalSaved">${goalData.saved}</span></p>
+                        <p class="mb-1"><strong>Remaining:</strong> $<span id="goalRemaining">${goalData.remaining}</span></p>
+                        ${goalData.message ? `<p class="mb-0"><small id="goalMessage">${goalData.message}</small></p>` : ''}
                         ${goalData.progressPercentage >= 100 ?
                           `<button class="btn btn-success btn-sm mt-2 redeem-goal-btn"
                            data-goal-name="${goalData.goalName}"
@@ -1994,6 +2138,25 @@ function updateSingleGoalUI(goalData) {
                     const amount = this.getAttribute('data-goal-amount');
                     if (goalName && amount) {
                         redeemGoal(goalName, amount);
+                    }
+                });
+            }
+
+            // Add event listener to the new goal button
+            const newGoalBtn = goalCard.querySelector('#newGoalBtn');
+            if (newGoalBtn) {
+                newGoalBtn.addEventListener('click', function(event) {
+                    console.log('New goal button clicked in updateSingleGoalUI');
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    const goalModal = document.getElementById('goalModal');
+                    if (goalModal) {
+                        console.log('Opening goal modal from updateSingleGoalUI');
+                        const goalModalInstance = new bootstrap.Modal(goalModal);
+                        goalModalInstance.show();
+                    } else {
+                        console.error('Goal modal not found from updateSingleGoalUI');
                     }
                 });
             }
@@ -2086,10 +2249,10 @@ function renderMultipleGoals(goals) {
                                 <div class="progress flex-grow-1 me-2" style="height: 10px;">
                                     <div class="progress-bar" role="progressbar"
                                          style="width: 0%;"
-                                         aria-valuenow="${goal.progressPercentage}"
+                                         aria-valuenow="${goal.progressPercentage || 0}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="text-muted small">${goal.progressPercentage}%</span>
+                                <span class="text-muted small">${goal.progressPercentage || 0}%</span>
                             </div>
                             <div class="goal-details small">
                                 <div class="row">
@@ -2178,19 +2341,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveSalaryBtn = document.getElementById('saveSalaryBtn');
     const salaryForm = document.getElementById('salaryForm');
 
+    // Initialize date inputs if they exist
+    if (document.getElementById('salaryDate')) {
+        setDate('salaryDate');
+    }
+
     // Handle opening the modal from potentially multiple buttons
     addSalaryButtons.forEach(button => {
         button.addEventListener('click', function() {
             if (salaryModalInstance) {
                 // Set default date to today when opening the modal
-                const salaryDateInput = document.getElementById('salaryDate');
-                if (salaryDateInput && !salaryDateInput.value) {
-                    const today = new Date();
-                    const year = today.getFullYear();
-                    const month = String(today.getMonth() + 1).padStart(2, '0');
-                    const day = String(today.getDate()).padStart(2, '0');
-                    salaryDateInput.value = `${year}-${month}-${day}`;
-                }
+                setDate('salaryDate');
                 salaryModalInstance.show();
             }
         });
@@ -2306,6 +2467,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.classList.remove('modal-open');
                     document.body.style.overflow = '';
                     document.body.style.paddingRight = '';
+                }
+
+                // Reset the form
+                if (salaryForm) {
+                    salaryForm.reset();
+                    // Reset date input after form reset
+                    setDate('salaryDate');
                 }
 
                 // Show success message
@@ -2561,6 +2729,23 @@ function validateSalaryDate(input) {
     return isValid;
 }
 
+/**
+ * Set date input to today's date and prevent future dates
+ * @param {string} dateID - The ID of the date input element
+ */
+function setDate(dateID) {
+    const dateInput = document.getElementById(dateID);
+    if (!dateInput) {
+        console.warn(`Date input with ID '${dateID}' not found`);
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+    dateInput.max = today; // Prevent future dates
+    console.log(`Date input '${dateID}' set to today (${today}) with max date restriction`);
+}
+
 // Ensure global currentGoalIndex is consistent with updateGoalsUI's currentIndex
 let currentGoalIndex = 0; // Defined as global variable
 
@@ -2591,7 +2776,7 @@ function updateGoalsUI(goals) {
             `1/${reversedGoals.length} ${firstGoal.goalName}` :
             firstGoal.goalName;
     }
-    if (progressPercentage) progressPercentage.textContent = `${firstGoal.progressPercentage}%`;
+    if (progressPercentage) progressPercentage.textContent = `${firstGoal.progressPercentage || 0}%`;
     if (goalTarget) goalTarget.textContent = firstGoal.target;
     if (goalSaved) goalSaved.textContent = firstGoal.saved;
     if (goalRemaining) goalRemaining.textContent = firstGoal.remaining;
@@ -2603,27 +2788,57 @@ function updateGoalsUI(goals) {
 
     if (reversedGoals.length > 1) {
         console.log('Multiple goals detected:', reversedGoals.length);
+
         // If selector container doesn't exist, create it
         if (!goalSelectorContainer) {
             console.log('Creating goal selector container');
-            const newSelectorContainer = document.createElement('div');
-            newSelectorContainer.className = 'goal-selector mb-2';
-            newSelectorContainer.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="goal-counter">1/${reversedGoals.length}</span>
-                    <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            `;
 
-            // Insert selector after the card title
-            const cardTitle = goalCard.querySelector('.card-title');
-            if (cardTitle) {
-                cardTitle.insertAdjacentElement('afterend', newSelectorContainer);
+            // First, check if we need to rebuild the entire card structure
+            // This is needed when transitioning from 1 to 2 goals
+            if (goalCard) {
+                console.log('Rebuilding goal card structure for navigation');
+
+                // Get the current card body content
+                const cardBody = goalCard.querySelector('.card-body');
+                if (cardBody) {
+                    // Create the selector container
+                    const newSelectorContainer = document.createElement('div');
+                    newSelectorContainer.className = 'goal-selector mb-2';
+                    newSelectorContainer.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="goal-counter">1/${reversedGoals.length}</span>
+                            <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    // Insert selector after the card title
+                    const cardTitle = cardBody.querySelector('.card-title');
+                    if (cardTitle) {
+                        cardTitle.insertAdjacentElement('afterend', newSelectorContainer);
+                    } else {
+                        // If no card title found, try to insert at the beginning of the card body
+                        cardBody.insertBefore(newSelectorContainer, cardBody.firstChild);
+                    }
+
+                    // Update the goal name to include numbering
+                    const goalNameElement = cardBody.querySelector('.goal-progress h3');
+                    if (goalNameElement) {
+                        goalNameElement.textContent = `1/${reversedGoals.length} ${firstGoal.goalName}`;
+                    }
+                }
+            } else {
+                console.log('No goal card found, cannot create selector container');
+            }
+        } else {
+            console.log('Goal selector container already exists, updating counter');
+            const counter = goalSelectorContainer.querySelector('.goal-counter');
+            if (counter) {
+                counter.textContent = `1/${reversedGoals.length}`;
             }
         }
 
@@ -2662,7 +2877,7 @@ function updateGoalsUI(goals) {
                     `${index + 1}/${reversedGoals.length} ${goal.goalName}` :
                     goal.goalName;
             }
-            if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progressPercentage}%`;
+            if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progressPercentage || 0}%`;
             if (elements.goalTarget) elements.goalTarget.textContent = goal.target;
             if (elements.goalSaved) elements.goalSaved.textContent = goal.saved;
             if (elements.goalRemaining) elements.goalRemaining.textContent = goal.remaining;
@@ -2816,6 +3031,18 @@ function updateGoalsUI(goals) {
     // Update progress circle
     const circle = document.querySelector('.progress-circle');
     if (circle) {
+        // Ensure the progress percentage is correctly set before updating the circle
+        const percentageElem = circle.querySelector('.progress-percentage');
+        if (percentageElem && goals.length > 0) {
+            // For single goal view, use the first goal's progress
+            const firstGoal = goals[0];
+            if (firstGoal && typeof firstGoal.progressPercentage !== 'undefined') {
+                percentageElem.textContent = `${firstGoal.progressPercentage}%`;
+                console.log('Setting progress percentage to:', firstGoal.progressPercentage);
+            }
+        }
+
+        // Now update the progress circle
         updateGoalProgressCircle(circle, true);
     }
 }
@@ -2848,6 +3075,11 @@ function updateAllGoalCards(goals) {
 
                 // Show empty state in the goal card
                 cardBody.innerHTML = `
+                    <div style="position: absolute; top: 18px; right: 24px; z-index: 2;">
+                        <button id="newGoalBtn" class="btn btn-primary btn-circle" title="Set a New Goal" style="width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-bullseye fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
                         <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
@@ -2858,9 +3090,6 @@ function updateAllGoalCards(goals) {
                             <i class="fas fa-bullseye fa-2x text-muted"></i>
                         </div>
                         <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
-                        <button type="button" id="newGoalBtn" class="btn btn-primary btn-sm" style="cursor:pointer;z-index:1000;position:relative;">
-                            <i class="fas fa-plus-circle me-2"></i>Set a Goal
-                        </button>
                     </div>
                 `;
 
@@ -2907,10 +3136,15 @@ function updateAllGoalCards(goals) {
                     goalCol.style.transform = 'translateY(20px)';
                     goalCol.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
 
-                    // Create the empty goal card
+                    // Create the empty goal card with circular button in top right
                     goalCol.innerHTML = `
                         <div class="card border-0 shadow-sm goal-card">
                             <div class="card-body">
+                                <div style="position: absolute; top: 18px; right: 24px; z-index: 2;">
+                                    <button id="newGoalBtn" class="btn btn-primary btn-circle" title="Set a New Goal" style="width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-bullseye fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
                                     <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
@@ -2921,9 +3155,6 @@ function updateAllGoalCards(goals) {
                                         <i class="fas fa-bullseye fa-2x text-muted"></i>
                                     </div>
                                     <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
-                                    <button id="newGoalBtn" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-plus-circle me-2"></i>Set a Goal
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -3771,6 +4002,11 @@ async function redeemGoal(goalName, amount) {
             return;
         }
 
+        // Check if this is a "Redeem as Saving" action (for future use)
+        // We'll use this flag to determine if we should refresh the page
+        const isSavingRedemption = true; // Always refresh the page after redemption
+        console.log('Will refresh page after redemption');
+
         // Find the goal card that's being redeemed
         let redeemedCard = null;
         let parentCol = null;
@@ -3884,7 +4120,7 @@ async function redeemGoal(goalName, amount) {
                                     <div class="empty-state-icon mb-2">
                                         <i class="fas fa-bullseye fa-2x text-muted"></i>
                                     </div>
-                                    <p class="text-muted mb-2">Set a goal to track your progress</p>
+                                    <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
                                     <button id="newGoalBtn" class="btn btn-primary btn-sm">
                                         <i class="fas fa-plus-circle me-2"></i>Set a Goal
                                     </button>
@@ -3932,8 +4168,7 @@ async function redeemGoal(goalName, amount) {
                                     <div class="empty-state-icon mb-2">
                                         <i class="fas fa-bullseye fa-2x text-muted"></i>
                                     </div>
-                                    <p class="text-muted mb-2">Create financial goals to save for what matters</p>
-                                    <small class="d-block text-muted mb-3">Goals help you allocate your income and track savings progress</small>
+                                    <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
                                     <button class="btn btn-primary btn-sm add-goal-btn">
                                         <i class="fas fa-plus-circle me-2"></i>Add Goal
                                     </button>
@@ -3979,6 +4214,9 @@ async function redeemGoal(goalName, amount) {
 
         console.log('Redeeming goal with data:', data);
 
+        // Show loading indicator in the UI
+        showAlert(`Redeeming goal "${goalName}"...`, 'info', 2000);
+
         // Send request to add expense
         const response = await fetch('/dashboard/addExpense', {
             method: 'POST',
@@ -3994,7 +4232,46 @@ async function redeemGoal(goalName, amount) {
             // Show success message
             showAlert(`Goal "${goalName}" redeemed successfully! A Shopping expense of $${amount} has been added.`, 'success');
 
-            // Update the UI without reloading the page
+            // Instead of refreshing the entire page, update the UI components
+            console.log('Goal redeemed successfully, updating UI components...');
+
+            try {
+                // 1. Update the transactions list with the new expense
+                await updateTransactionsList();
+
+                // 2. Update the account balance if needed
+                await updateAccountData();
+
+                // 3. Remove the redeemed goal from the UI
+                if (window.goalData) {
+                    // Find and remove the goal from the global data
+                    const goalIndex = window.goalData.findIndex(g => g.goalName === goalName);
+                    if (goalIndex !== -1) {
+                        window.goalData.splice(goalIndex, 1);
+
+                        // Update the UI based on the current view
+                        if (document.getElementById('goalsContainer')) {
+                            // Multiple goals view
+                            renderMultipleGoals(window.goalData);
+                        } else {
+                            // Single goal view
+                            updateGoalsUI(window.goalData);
+                        }
+                    }
+                }
+
+                return;
+            } catch (error) {
+                console.error('Error updating UI after goal redemption:', error);
+                // If updating the UI fails, fall back to page reload
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                return;
+            }
+
+            // The code below will not execute due to the return statement above
+            // Keeping it for reference in case we need to revert to manual UI updates
             try {
                 // Use goal data from the response if available
                 if (result.goalData !== undefined) {
@@ -4258,8 +4535,13 @@ async function redeemGoal(goalName, amount) {
                                 cardBody.style.opacity = '0';
 
                                 setTimeout(() => {
-                                    // Use the original empty state from the template
+                                    // Use the original empty state from the template with the circular button in the top right
                                     cardBody.innerHTML = `
+                                        <div style="position: absolute; top: 18px; right: 24px; z-index: 2;">
+                                            <button id="newGoalBtn" class="btn btn-primary btn-circle" title="Set a New Goal" style="width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
                                         <div class="d-flex align-items-center mb-2">
                                             <i class="fas fa-bullseye fa-2x me-2" style="color: var(--primary-color); filter: drop-shadow(0 2px 6px rgba(108,92,231,0.08));"></i>
                                             <h5 class="fw-bold mb-0" style="font-size:1.35rem;color:var(--primary-color);font-weight:700;">Goal</h5>
@@ -4269,10 +4551,7 @@ async function redeemGoal(goalName, amount) {
                                             <div class="empty-state-icon mb-2">
                                                 <i class="fas fa-bullseye fa-2x text-muted"></i>
                                             </div>
-                                            <p class="text-muted mb-2">Set a goal to track your progress</p>
-                                            <button type="button" id="newGoalBtn" class="btn btn-primary btn-sm" style="cursor:pointer;z-index:1000;">
-                                                <i class="fas fa-plus-circle me-2"></i>Set a Goal
-                                            </button>
+                                            <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
                                         </div>
                                     `;
 
@@ -4354,7 +4633,7 @@ async function redeemGoal(goalName, amount) {
                                                     <div class="empty-state-icon mb-2">
                                                         <i class="fas fa-bullseye fa-2x text-muted"></i>
                                                     </div>
-                                                    <p class="text-muted mb-2">Set a goal to track your progress</p>
+                                                    <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
                                                     <button type="button" class="btn btn-primary btn-sm add-goal-btn" style="cursor:pointer;z-index:1000;">
                                                         <i class="fas fa-plus-circle me-2"></i>Add Goal
                                                     </button>
@@ -4418,82 +4697,310 @@ async function redeemGoal(goalName, amount) {
                 }, 1500);
             }
         } else {
-            // Remove loading state and restore the card if there was an error
-            if (redeemedCard) {
-                // Restore the goal in the global data if we removed it
-                const goalIndex = window.goalData ? window.goalData.findIndex(g => g.goalName === goalName) : -1;
-                if (goalIndex === -1 && result.goalData && Array.isArray(result.goalData)) {
-                    // Try to find the goal in the server response
-                    const goalFromServer = result.goalData.find(g => g.goalName === goalName);
-                    if (goalFromServer) {
-                        console.log(`Restoring goal "${goalName}" to global data`);
-                        window.goalData = result.goalData;
-                    }
-                }
+            // Show error message
+            showAlert(`Error: ${result.message || 'Failed to redeem goal'}`, 'danger');
 
-                // Restore the card content
-                const cardBody = redeemedCard.querySelector('.card-body');
-                if (cardBody) {
-                    cardBody.style.opacity = '1';
-                }
-
-                // Restore the redeem button
-                const redeemBtn = redeemedCard.querySelector('.redeem-goal-btn');
-                if (redeemBtn) {
-                    redeemBtn.disabled = false;
-                    redeemBtn.innerHTML = '<i class="fas fa-shopping-cart me-1"></i>Redeem as Shopping';
-                }
-            }
-
-            throw new Error(result.message || 'Failed to redeem goal');
+            // Refresh the page after a short delay
+            console.log('Error occurred during goal redemption, refreshing page in 2 seconds...');
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     } catch (error) {
         console.error('Error redeeming goal:', error);
         showAlert(`Error: ${error.message || 'Failed to redeem goal'}`, 'danger');
 
-        // Restore the goal in the global data if we removed it
-        if (goalName) {
-            // Try to fetch the latest goal data from the server
-            try {
-                fetch('/dashboard/getGoals')
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.status === "Success" && Array.isArray(result.data)) {
-                            console.log('Restoring goals data from server');
-                            window.goalData = result.data;
+        // Refresh the page after a short delay
+        console.log('Error caught during goal redemption, refreshing page in 2 seconds...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
+}
 
-                            // Update the UI
-                            const isMultipleGoalsView = document.getElementById('goalsContainer') !== null;
-                            const hasSingleGoalView = document.querySelector('.goal-card') !== null;
+/**
+ * Update the transactions list with the latest data
+ * @returns {Promise<void>}
+ */
+async function updateTransactionsList() {
+    try {
+        // Fetch latest transactions
+        const response = await fetch('/dashboard/getLatestTransactions');
+        const result = await response.json();
 
-                            if (isMultipleGoalsView) {
-                                renderMultipleGoals(window.goalData);
-                            } else if (hasSingleGoalView) {
-                                updateGoalsUI(window.goalData);
+        if (response.ok && result.status === "Success") {
+            console.log('Updating latest transactions:', result.data);
+
+            // Try different selectors to find the transactions list
+            let transactionsList = document.querySelector('.transaction-list');
+
+            // If not found, try other common class names
+            if (!transactionsList) {
+                transactionsList = document.querySelector('.transactions-list, .latest-transactions, .transactions');
+            }
+
+            // If not found, try to find it by ID
+            if (!transactionsList) {
+                transactionsList = document.getElementById('transactionsList');
+            }
+
+            if (transactionsList) {
+                // Clear existing transactions
+                transactionsList.innerHTML = '';
+
+                // Add new transactions
+                result.data.forEach((tx, index) => {
+                    const transactionItem = document.createElement('div');
+                    transactionItem.className = index === 0 ?
+                        'd-flex justify-content-between align-items-center mb-2 border-bottom pb-2 highlight-new-transaction' :
+                        'd-flex justify-content-between align-items-center mb-2 border-bottom pb-2';
+
+                    // Determine icon based on category
+                    let iconClass = 'shopping-cart';
+                    if (tx.category.toLowerCase().includes('grocery')) {
+                        iconClass = 'shopping-basket';
+                    } else if (tx.category.toLowerCase().includes('bill')) {
+                        iconClass = 'file-invoice-dollar';
+                    } else if (tx.category.toLowerCase().includes('fuel') || tx.category.toLowerCase().includes('transport')) {
+                        iconClass = 'gas-pump';
+                    } else if (tx.category.toLowerCase().includes('food')) {
+                        iconClass = 'utensils';
+                    } else if (tx.category.toLowerCase().includes('goal')) {
+                        iconClass = 'bullseye';
+                    }
+
+                    transactionItem.innerHTML = `
+                        <div class="me-2">
+                            <i class="fas fa-${iconClass} me-2 text-secondary"></i>
+                            <span style="font-weight: 500;">${tx.category}</span>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold text-danger">-$${tx.amount}</span>
+                        </div>
+                    `;
+
+                    transactionsList.appendChild(transactionItem);
+                });
+
+                // Add highlight effect to the first item
+                const firstItem = transactionsList.querySelector('.highlight-new-transaction');
+                if (firstItem) {
+                    // Add CSS for highlight class if it doesn't exist
+                    if (!document.getElementById('transaction-highlight-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'transaction-highlight-style';
+                        style.textContent = `
+                            @keyframes highlight-transaction {
+                                0% { background-color: rgba(40, 167, 69, 0.2); }
+                                100% { background-color: transparent; }
                             }
+
+                            .highlight-new-transaction {
+                                animation: highlight-transaction 2s ease-in-out;
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+
+                    // Remove the class after animation completes
+                    setTimeout(() => {
+                        firstItem.classList.remove('highlight-new-transaction');
+                    }, 2000);
+                }
+
+                console.log('Transaction list updated successfully');
+                return;
+            }
+
+            // If we couldn't find the transaction list, try to find the transactions card
+            const allCards = document.querySelectorAll('.card');
+            let transactionsCard = null;
+
+            allCards.forEach(card => {
+                const title = card.querySelector('h5, .card-title');
+                if (title && (
+                    title.textContent.includes('Transaction') ||
+                    title.textContent.includes('transaction') ||
+                    title.textContent.includes('Latest')
+                )) {
+                    transactionsCard = card;
+                }
+            });
+
+            if (transactionsCard) {
+                console.log('Found transactions card, refreshing its content');
+
+                // Check if there's an empty state
+                const emptyState = transactionsCard.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+
+                // Get the card body
+                const cardBody = transactionsCard.querySelector('.card-body');
+                if (cardBody) {
+                    // Create a transaction list if it doesn't exist
+                    let transactionList = cardBody.querySelector('.transaction-list');
+                    if (!transactionList) {
+                        transactionList = document.createElement('div');
+                        transactionList.className = 'transaction-list';
+
+                        // Add styles for scrolling
+                        transactionList.style.maxHeight = '250px';
+                        transactionList.style.overflowY = 'auto';
+                        transactionList.style.overflowX = 'hidden';
+                        transactionList.style.scrollbarWidth = 'thin';
+                        transactionList.style.scrollbarColor = 'rgba(0,0,0,0.2) transparent';
+                        transactionList.style.paddingRight = '5px';
+
+                        // Add custom scrollbar styles if not already added
+                        if (!document.getElementById('custom-scrollbar-style')) {
+                            const scrollbarStyle = document.createElement('style');
+                            scrollbarStyle.id = 'custom-scrollbar-style';
+                            scrollbarStyle.textContent = `
+                                .transaction-list::-webkit-scrollbar {
+                                    width: 6px;
+                                }
+                                .transaction-list::-webkit-scrollbar-track {
+                                    background: transparent;
+                                }
+                                .transaction-list::-webkit-scrollbar-thumb {
+                                    background-color: rgba(0,0,0,0.2);
+                                    border-radius: 3px;
+                                }
+                                .transaction-list::-webkit-scrollbar-thumb:hover {
+                                    background-color: rgba(0,0,0,0.3);
+                                }
+                            `;
+                            document.head.appendChild(scrollbarStyle);
                         }
-                    })
-                    .catch(fetchError => {
-                        console.error('Error fetching goals data:', fetchError);
+
+                        cardBody.appendChild(transactionList);
+                    }
+
+                    // Clear existing transactions
+                    transactionList.innerHTML = '';
+
+                    // Add new transactions
+                    result.data.forEach((tx, index) => {
+                        const transactionItem = document.createElement('div');
+                        transactionItem.className = index === 0 ?
+                            'd-flex justify-content-between align-items-center mb-2 border-bottom pb-2 highlight-new-transaction' :
+                            'd-flex justify-content-between align-items-center mb-2 border-bottom pb-2';
+
+                        // Determine icon based on category
+                        let iconClass = 'shopping-cart';
+                        if (tx.category.toLowerCase().includes('grocery')) {
+                            iconClass = 'shopping-basket';
+                        } else if (tx.category.toLowerCase().includes('bill')) {
+                            iconClass = 'file-invoice-dollar';
+                        } else if (tx.category.toLowerCase().includes('fuel') || tx.category.toLowerCase().includes('transport')) {
+                            iconClass = 'gas-pump';
+                        } else if (tx.category.toLowerCase().includes('food')) {
+                            iconClass = 'utensils';
+                        } else if (tx.category.toLowerCase().includes('goal')) {
+                            iconClass = 'bullseye';
+                        }
+
+                        transactionItem.innerHTML = `
+                            <div class="me-2">
+                                <i class="fas fa-${iconClass} me-2 text-secondary"></i>
+                                <span style="font-weight: 500;">${tx.category}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-danger">-$${tx.amount}</span>
+                            </div>
+                        `;
+
+                        transactionList.appendChild(transactionItem);
                     });
-            } catch (fetchError) {
-                console.error('Error fetching goals data:', fetchError);
-            }
-        }
 
-        // Restore any card that was being modified
-        if (redeemedCard) {
-            const cardBody = redeemedCard.querySelector('.card-body');
-            if (cardBody) {
-                cardBody.style.opacity = '1';
+                    // Add highlight effect to the first item
+                    const firstItem = transactionList.querySelector('.highlight-new-transaction');
+                    if (firstItem) {
+                        // Add CSS for highlight class if it doesn't exist
+                        if (!document.getElementById('transaction-highlight-style')) {
+                            const style = document.createElement('style');
+                            style.id = 'transaction-highlight-style';
+                            style.textContent = `
+                                @keyframes highlight-transaction {
+                                    0% { background-color: rgba(40, 167, 69, 0.2); }
+                                    100% { background-color: transparent; }
+                                }
+
+                                .highlight-new-transaction {
+                                    animation: highlight-transaction 2s ease-in-out;
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+
+                        // Remove the class after animation completes
+                        setTimeout(() => {
+                            firstItem.classList.remove('highlight-new-transaction');
+                        }, 2000);
+                    }
+
+                    console.log('Transaction list updated successfully');
+                }
+            } else {
+                console.error('Could not find transactions list or card');
+                throw new Error('Could not find transactions list or card');
             }
 
-            const redeemBtn = redeemedCard.querySelector('.redeem-goal-btn');
-            if (redeemBtn) {
-                redeemBtn.disabled = false;
-                redeemBtn.innerHTML = '<i class="fas fa-shopping-cart me-1"></i>Redeem as Shopping';
+            // Update the monthly expenses data if it's included in the response
+            if (result.monthlyExpenses && Array.isArray(result.monthlyExpenses)) {
+                window.monthlyExpenses = result.monthlyExpenses;
+                console.log('Updated monthly expenses data:', window.monthlyExpenses);
             }
+
+            // Update the share button state based on the new expense data
+            setupShareSummaryButton();
+        } else {
+            throw new Error(result.message || 'Failed to fetch latest transactions');
         }
+    } catch (error) {
+        console.error('Error updating transactions list:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update the account data and balance display
+ * @returns {Promise<void>}
+ */
+async function updateAccountData() {
+    try {
+        // Fetch updated account data
+        const response = await fetch('/dashboard/getAccountData');
+        const result = await response.json();
+
+        if (response.ok && result.status === "Success") {
+            // Update account data
+            window.accountData = result.data;
+
+            // Update account balance display
+            const balanceElement = document.getElementById('accountBalance');
+            if (balanceElement && window.accountData) {
+                balanceElement.textContent = window.accountData.balance;
+
+                // Add a subtle animation to highlight the updated balance
+                balanceElement.style.transition = 'color 0.5s ease';
+                balanceElement.style.color = '#28a745'; // Green color
+
+                // Reset color after animation
+                setTimeout(() => {
+                    balanceElement.style.color = '';
+                }, 1500);
+            }
+
+            console.log('Account data updated successfully');
+        } else {
+            throw new Error(result.message || 'Failed to fetch account data');
+        }
+    } catch (error) {
+        console.error('Error updating account data:', error);
+        throw error;
     }
 }
 
@@ -4562,16 +5069,155 @@ function setupActiveNavigation() {
 
 /**
  * Setup share summary button functionality
+ * Disables the button if there are no expenses to share
  */
 function setupShareSummaryButton() {
     const shareBtn = document.getElementById('shareSummaryBtn');
 
     if (shareBtn) {
+        console.log('Setting up share summary button');
+
         // Remove any existing event listeners to prevent duplicates
         shareBtn.removeEventListener('click', handleShareButtonClick);
-        // Add click event listener
-        shareBtn.addEventListener('click', handleShareButtonClick);
+        shareBtn.removeEventListener('click', handleDisabledShareButtonClick);
+
+        // Create a wrapper div if it doesn't exist
+        let wrapper = shareBtn.parentElement;
+        if (!wrapper.classList.contains('share-btn-wrapper')) {
+            // Create a wrapper to handle clicks even when button is disabled
+            wrapper = document.createElement('div');
+            wrapper.className = 'share-btn-wrapper';
+            wrapper.style.position = 'relative';
+            wrapper.style.display = 'inline-block';
+
+            // Replace the button with the wrapper containing the button
+            shareBtn.parentNode.insertBefore(wrapper, shareBtn);
+            wrapper.appendChild(shareBtn);
+
+            console.log('Created wrapper for share button');
+        }
+
+        // Check if there are expenses to share
+        const hasExpense = window.hasOwnProperty('monthlyExpenses') &&
+                          Array.isArray(window.monthlyExpenses) &&
+                          window.monthlyExpenses.some(expense => expense > 0);
+
+        console.log('Has expense data:', hasExpense);
+        console.log('Monthly expenses:', window.monthlyExpenses);
+
+        if (!hasExpense) {
+            // Disable the button if there are no expenses
+            shareBtn.disabled = true;
+            shareBtn.title = "No expense data to share";
+            console.log('Share button disabled: No expense data to share');
+
+            // Apply light gray style to disabled button
+            shareBtn.style.backgroundColor = '#f0f0f0';
+            shareBtn.style.borderColor = '#e0e0e0';
+            shareBtn.style.color = '#a0a0a0';
+            shareBtn.style.cursor = 'not-allowed';
+
+            // Remove click handler from button and add it to wrapper
+            shareBtn.removeEventListener('click', handleDisabledShareButtonClick);
+            wrapper.removeEventListener('click', handleDisabledShareButtonClick);
+            wrapper.addEventListener('click', handleDisabledShareButtonClick);
+        } else {
+            // Enable the button if there are expenses
+            shareBtn.disabled = false;
+            shareBtn.title = "Share Dashboard Summary";
+
+            // Reset button style
+            shareBtn.style.backgroundColor = '';
+            shareBtn.style.borderColor = '';
+            shareBtn.style.color = '';
+            shareBtn.style.cursor = '';
+
+            // Remove click handler from wrapper and add it to button
+            wrapper.removeEventListener('click', handleDisabledShareButtonClick);
+            shareBtn.addEventListener('click', handleShareButtonClick);
+        }
     }
+}
+
+/**
+ * Handle disabled share button click event
+ * Shows a tooltip when the disabled share button is clicked
+ */
+function handleDisabledShareButtonClick(event) {
+    event.preventDefault();
+    console.log('Disabled share button clicked, showing tooltip');
+
+    // Remove any existing tooltips
+    const existingTooltips = document.querySelectorAll('.custom-tooltip');
+    existingTooltips.forEach(tooltip => tooltip.remove());
+
+    // Create and show tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'custom-tooltip';
+    tooltip.style.position = 'fixed'; // Use fixed positioning to ensure it's visible
+    tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    tooltip.style.color = 'white';
+    tooltip.style.padding = '8px 12px';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.fontSize = '14px';
+    tooltip.style.zIndex = '9999'; // Ensure it's above other elements
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.opacity = '0';
+    tooltip.style.transition = 'opacity 0.3s ease';
+    tooltip.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    // Get the button's position
+    let rect;
+    if (event.target.tagName === 'I') {
+        // If the icon was clicked, use the parent button's position
+        rect = event.target.parentElement.getBoundingClientRect();
+    } else {
+        rect = event.target.getBoundingClientRect();
+    }
+
+    // Position the tooltip below the button
+    tooltip.style.top = `${rect.bottom + 10}px`;
+    tooltip.style.left = `${rect.left + (rect.width / 2) - 100}px`;
+    tooltip.style.width = '200px';
+    tooltip.style.textAlign = 'center';
+
+    // Add content with arrow
+    tooltip.innerHTML = `
+        <div style="
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid rgba(0, 0, 0, 0.8);
+        "></div>
+        <span>No expense data to share</span>
+    `;
+
+    // Add to document
+    document.body.appendChild(tooltip);
+
+    // Show tooltip with animation
+    setTimeout(() => {
+        tooltip.style.opacity = '1';
+        console.log('Tooltip should be visible now');
+    }, 10);
+
+    // Remove tooltip after delay
+    setTimeout(() => {
+        tooltip.style.opacity = '0';
+        setTimeout(() => {
+            if (document.body.contains(tooltip)) {
+                document.body.removeChild(tooltip);
+            }
+        }, 300);
+    }, 3000);
+
+    // Also show a fallback alert for mobile devices or if tooltip doesn't work
+    showAlert('No expense data to share', 'warning');
 }
 
 /**
