@@ -37,7 +37,7 @@
                         <div class="empty-state-icon mb-2">
                             <i class="fas fa-wallet fa-2x text-muted"></i>
                         </div>
-                        <p class="text-muted mb-2">Add your salary to track your balance</p>
+                        <p class="text-muted mb-2">Add your salary to track your financial balance and growth</p>
                         <button class="btn btn-primary btn-sm add-salary-btn">
                             <i class="fas fa-plus-circle me-2"></i>Add Salary
                         </button>
@@ -100,7 +100,7 @@
                         <div class="empty-state-icon mb-2">
                             <i class="fas fa-bullseye fa-2x text-muted"></i>
                         </div>
-                        <p class="text-muted mb-2">Set a goal to track your progress</p>
+                        <p class="text-muted mb-2">Set financial goals to track your savings progress and stay motivated</p>
                     </div>
                 {% endif %}
             </div>
@@ -162,7 +162,7 @@
                         <div class="empty-state-icon mb-2">
                             <i class="fas fa-chart-pie fa-2x text-muted"></i>
                         </div>
-                        <p class="text-muted mb-2">Add your salary to get budget suggestions</p>
+                        <p class="text-muted mb-2">Add your salary to receive personalized budget recommendations based on the 50/30/20 rule</p>
                     </div>
                 {% endif %}
             </div>
@@ -190,7 +190,7 @@
                         <div class="empty-state-icon mb-2">
                             <i class="fas fa-chart-line fa-2x text-muted"></i>
                         </div>
-                        <p class="text-muted mb-0">No expense data available yet</p>
+                        <p class="text-muted mb-0">Add expenses to analyze your monthly spending patterns and trends</p>
                     </div>
                 {% endif %}
             </div>
@@ -230,7 +230,7 @@
                         <div class="empty-state-icon mb-2">
                             <i class="fas fa-exchange-alt fa-2x text-muted"></i>
                         </div>
-                        <p class="text-muted mb-0">No transactions recorded yet</p>
+                        <p class="text-muted mb-0">Record your expenses to track recent transactions and spending history</p>
                         {# Optionally add a button to add expense #}
                     </div>
                 {% endif %}
@@ -369,7 +369,9 @@
     window.accountData = JSON.parse('{{ data.accountData | default({}) | tojson | safe }}');
     window.budgetSuggestionData = JSON.parse('{{ data.budgetSuggestionData | default({}) | tojson | safe }}');
     window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
-    window.currentUserID = {{ current_user.id | tojson | safe }}; // 从Flask后端获取当前用户ID
+
+    window.currentUserID = {{ current_user.id | tojson | safe }};
+
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
