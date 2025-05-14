@@ -302,6 +302,38 @@ def markReportAsRead():
     requestStatus = handler.markReportAsRead(current_user.id, reportID)
     return jsonify(requestStatus)
 
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        formData = request.get_json()
+
+        if formData is None:
+            return jsonify({
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "No data received"
+            })
+
+        first_name = formData.get('firstName')
+        last_name = formData.get('lastName')
+        current_password = formData.get('currentPassword')
+        new_password = formData.get('newPassword')
+        confirm_password = formData.get('confirmPassword')
+
+        # Decide if it's just name update
+        if first_name and last_name and not (current_password or new_password or confirm_password):
+            result = handler.updateUserName(current_user.id, first_name, last_name)
+            return jsonify(result)
+
+        # Password change flow
+        result = handler.updateUserPassword(current_user.id, current_password, new_password, confirm_password)
+        return jsonify(result)
+
+    return render_template('settings.html', user=current_user)
+
+
+
 
 
 if __name__ == '__main__':

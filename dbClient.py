@@ -790,6 +790,79 @@ class dbClient:
             return self.handleError(e, "marking report as read")
 
 
+    def getUserSettings(self, userId):
+        try:
+            user = User.query.get(userId)
+
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "User settings fetched successfully",
+                    "data": {
+                        "firstName": user.firstName,
+                        "lastName": user.lastName,
+                        "username": user.username
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+        except Exception as e:
+            return self.handleError(e, "getting user settings")
+
+
+    def updateUserName(self, userId, firstName, lastName):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            user.firstName = firstName
+            user.lastName = lastName
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Name updated successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating user name")
+
+    def updateUserPassword(self, userId, newPassword):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            user.password = generate_password_hash(newPassword)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Password updated successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating user password")
+
 
 
 

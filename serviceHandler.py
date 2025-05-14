@@ -1,6 +1,7 @@
 from dbClient import dbClient
 import calculations
 from datetime import datetime
+from models import User
 
 class serviceHandler():
     """
@@ -582,7 +583,50 @@ class serviceHandler():
             return status
         except Exception as e:
             return self.handleError(e, "marking report as read")
-    
+
+    def getUserSettings(self, userId):
+        try:
+            status = self.DBClient.getUserSettings(userId)
+            return status
+        except Exception as e:
+            return {
+                "status": "Failed",
+                "statusCode": 400,
+                "message": "Error: " + str(e)
+            }
+
+    def updateUserName(self, userId, firstName, lastName):
+        return self.DBClient.updateUserName(userId, firstName, lastName)
+
+    def updateUserPassword(self, userId, currentPassword, newPassword, confirmPassword):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            if not user.checkPassword(currentPassword):
+                return {
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "Incorrect current password"
+                }
+
+            if newPassword != confirmPassword:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": "New password and confirmation do not match"
+                }
+
+            return self.DBClient.updateUserPassword(userId, newPassword)
+
+        except Exception as e:
+            return self.handleError(e, "update user password")
+
 
         
 
