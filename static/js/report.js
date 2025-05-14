@@ -237,6 +237,85 @@ function drawCategoryPieChart(index) {
     });
 }
 
+function drawMonthlyBalanceTrend() {
+    const salaryData = window.expenseData.expenseAndSalary.salaryData;
+    const expenseData = window.expenseData.expenseAndSalary.expenseData;
+
+    const monthLabels = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    // Monthly balance: salary - expense (only if salary exists)
+    const monthlyBalance = salaryData.map((salary, index) => {
+        const expense = expenseData[index] || 0;
+        return salary === 0 ? 0 : (salary - expense);
+    });
+
+    // Cumulative net savings: sum of (salary - expense) if salary > 0
+    const cumulativeNet = [];
+    let total = 0;
+    for (let i = 0; i < salaryData.length; i++) {
+        let net = 0;
+        if (salaryData[i] > 0) {
+            net = salaryData[i] - (expenseData[i] || 0);
+        }
+        total += net;
+        cumulativeNet.push(total);
+    }
+
+    const balanceChartEl = document.getElementById('monthlyBalanceChart');
+    new Chart(balanceChartEl, {
+        type: 'line',
+        data: {
+            labels: monthLabels,
+            datasets: [
+                {
+                    label: 'Monthly Balance',
+                    data: monthlyBalance,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#28a745',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Cumulative Net Balance',
+                    data: cumulativeNet,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#007bff',
+                    pointRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            aspectRatio: 3,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { display: false },
+                x: { display: true }
+            }
+        }
+    });
+}
+
+
 
 function handlePrevMonth() {
     if (currentMonthIndex < monthKeys.length - 1) {
@@ -265,4 +344,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
     document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
     drawMonthlySpendingChart();
+    drawMonthlyBalanceTrend();
   });
