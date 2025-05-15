@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from config import Config
 from models import db,User
 from flask_wtf import CSRFProtect
+import re
 
 app = Flask(__name__)
 
@@ -43,6 +44,11 @@ handler = serviceHandler()
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Helper function to validate email
+def is_valid_email(email):
+    email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    return re.match(email_regex, email)
+
 # Home route
 # This ensures both `/` and `/login` go to the login page
 # Login page route (GET)
@@ -69,21 +75,28 @@ def login():
     password = formData.get('password')
 
     user = User.query.filter_by(username=username).first()
-    if user and user.checkPassword(password):
-        login_user(user, remember=True, duration=timedelta(days=7))
+    if user:
+        if user.checkPassword(password):
+            login_user(user, remember=True, duration=timedelta(days=3))
 
+            return jsonify({
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Login successfully",
+                "redirect": url_for('dashboard')
+            })
+        
         return jsonify({
-            "status": "Success",
-            "statusCode": 200,
-            "message": "Login successfully",
-            "redirect": url_for('dashboard')
-        })
-
-    return jsonify({
-        "status": "Failed",
-        "statusCode": 401,
-        "message": "Invalid username or password"
-    })
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "Invalid Username or Password."
+                }), 401
+    else:
+        return jsonify({
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "User Not Found."
+                }), 401
        
 # Logout route
 @app.route('/logout')
@@ -129,6 +142,14 @@ def addUser():
         "firstName": formData.get('firstName'),
         "lastName": formData.get('lastName')
     }
+
+    # Validate email format
+    if not is_valid_email(data["username"]):
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid email address"
+        })
 
     if data["password"] != data["confirmPassword"]:
         return jsonify({"status" : "Failed",
