@@ -444,14 +444,14 @@ function viewSharedReport(senderID, reportId) {
         const currentUserID = window.currentUserID || 1; // Default value is 1, should be replaced with actual value
 
         // Send request to fetch report details
-        fetch('/dashboard/getSharedReport', {
+        fetch('/dashboard/getReport', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                senderID: senderID,
-                recipientID: currentUserID,
+                userID: senderID,
+                date: new Date().toISOString().split('T')[0],
                 reportId: reportId // Include report ID if available
             })
         })
@@ -1702,8 +1702,11 @@ async function saveNewGoal(event) {
         console.log('Current window.goalData:', window.goalData);
         console.log('Current window.hasGoal:', window.hasGoal);
 
-        // Force a complete refresh of the UI
-        console.log('Forcing complete refresh of UI after adding goal');
+        // Force a page refresh after a short delay to ensure correct goal card display
+        console.log('Forcing page refresh after adding goal');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000); // 1 second delay to allow the success message to be seen
 
         // First, check if we're in single goal view or multiple goals view
         const singleGoalCard = document.querySelector('.goal-card');
@@ -2502,7 +2505,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         amount: amount,
-                        date: date
+                        salaryDate: date  // Using correct parameter name as in app.py
                     })
                 });
 
@@ -5251,28 +5254,8 @@ function handleShareButtonClick() {
         // Show modal
         modal.show();
     } else {
-        // If modal doesn't exist, fallback to direct API call
-        fetch('/share_summary')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "Success") {
-                    // Create temporary textarea to copy to clipboard
-                    const textarea = document.createElement('textarea');
-                    textarea.value = data.summary;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-
-                    showAlert('Summary copied to clipboard!', 'success');
-                } else {
-                    throw new Error(data.message || 'Failed to generate summary');
-                }
-            })
-            .catch(error => {
-                console.error('Error sharing summary:', error);
-                showAlert(error.message || 'Failed to share summary', 'danger');
-            });
+        // If modal doesn't exist, show an alert that the feature is not available
+        showAlert('Share feature is not available. Please try again later.', 'warning');
     }
 }
 
@@ -5544,8 +5527,7 @@ function setupExportReportFeature() {
         shareReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
         const reportData = {
-            recipientID: selectedUserId,
-            senderID: window.currentUserID
+            receiversID: selectedUserId  // Using receiversID as in app.py
         };
 
         // Use the correct endpoint for sending report
