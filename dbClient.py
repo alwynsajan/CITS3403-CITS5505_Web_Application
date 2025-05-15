@@ -346,6 +346,15 @@ class dbClient:
                     "statusCode": 404,
                     "message": f"User with username '{username}' does not exist"
                 }
+            
+            # Check if goal with the same name already exists for the user
+            existing_goal = Goal.query.filter_by(userId=user.id, goalName=data["goalName"]).first()
+            if existing_goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Goal with name '{data['goalName']}' already exists for user {username}"
+                }
 
             newGoalId = self.getLastId(Goal) + 1
             newGoal = Goal(
