@@ -1,0 +1,331 @@
+/* 
+ * Smart Budget Dashboard Styles - Modernized Version
+ * This CSS file contains all styles for the dashboard application
+ * with support for light and dark themes
+ */
+
+/* ===== Import Modern Font ===== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ===== Variables ===== */
+:root {
+    /* Light Theme - Bright Modern Colors */
+    --primary-color: #6c5ce7;         /* Bright Purple */
+    --secondary-color: #5649c0;       /* Darker Purple */
+    --text-color: #2d3436;            /* Deep Dark Gray */
+    --bg-color: #f5f6fa;              /* Light Blue-White */
+    --card-bg: #FFFFFF;               /* Pure White */
+    --card-shadow: 0 10px 25px rgba(108, 92, 231, 0.1);
+    --border-color: #dfe6e9;
+    
+    /* Category Colors - Bright Modern Palette */
+    --needs-color: #6c5ce7;           /* Bright Purple */
+    --wants-color: #00cec9;           /* Bright Teal */
+    --savings-color: #0984e3;         /* Bright Blue */
+    --positive-color: #00b894;        /* Bright Green */
+    --negative-color: #ff7675;        /* Bright Red */
+    
+    /* Chart Colors */
+    --chart-color-1: #6c5ce7;         /* Bright Purple */
+    --chart-color-2: #00cec9;         /* Bright Teal */
+    --chart-color-3: #0984e3;         /* Bright Blue */
+    --chart-color-4: #00b894;         /* Bright Green */
+    --chart-color-5: #74b9ff;         /* Bright Light Blue */
+    
+    /* Animation Speed */
+    --transition-speed: 0.3s;
+}
+
+/* Dark Theme - Enhanced with Bright Accents */
+.dark-theme {
+    --primary-color: #6c5ce7;         /* Keeping primary color consistent */
+    --secondary-color: #a29bfe;       /* Lighter Purple */
+    --text-color: #f5f6fa;            /* Light Blue-White */
+    --bg-color: #2d3436;              /* Deep Dark Gray */
+    --card-bg: #353b48;               /* Lighter Dark Gray */
+    --card-shadow: 0 10px 25px rgba(108, 92, 231, 0.2);
+    --border-color: #636e72;
+    --input-bg: #353b48;              /* Dark input background */
+    --input-text: #f5f6fa;            /* Light input text */
+    --input-border: #636e72;          /* Dark input border */
+    --placeholder-color: #a0a0a0;     /* Darker placeholder text */
+}
+
+/* Base Text Colors for Dark Theme */
+.dark-theme body,
+.dark-theme p,
+.dark-theme span,
+.dark-theme div,
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme h4,
+.dark-theme h5,
+.dark-theme h6,
+.dark-theme label,
+.dark-theme small,
+.dark-theme .text-muted,
+.dark-theme .text-secondary {
+    color: var(--text-color) !important;
+}
+
+/* ===== Base Styles ===== */
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.container-fluid {
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+    color: var(--text-color);
+}
+
+/* ===== Card Styles ===== */
+.card {
+    background-color: var(--card-bg);
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    transition: all var(--transition-speed);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(58, 56, 69, 0.1);
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+}
+
+.card hr {
+    border-color: var(--border-color);
+    opacity: 0.5;
+    margin: 0.5rem 0 1.25rem 0;
+}
+
+/* ===== Button Styles ===== */
+.btn {
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: all var(--transition-speed);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 6px rgba(108, 92, 231, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(108, 92, 231, 0.25);
+}
+
+.btn-clicked {
+    transform: scale(0.95) !important;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15) !important;
+    transition: all 0.1s ease-in-out !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+/* ===== Progress Bars ===== */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(148, 180, 159, 0.2);
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+    transition: width 1s ease;
+}
+
+/* ===== Alerts ===== */
+.alert-info {
+    background-color: rgba(148, 180, 159, 0.1);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+    border-radius: 12px;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+    background-color: var(--card-bg);
+    min-height: 100vh;
+    padding: 20px;
+    box-shadow: var(--card-shadow);
+    position: fixed;
+    z-index: 1030;
+    transition: background-color var(--transition-speed);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .logo h2 {
+    color: var(--primary-color);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.sidebar .nav-item {
+    margin-bottom: 10px;
+    border-radius: 12px;
+    transition: all var(--transition-speed);
+}
+
+.sidebar .nav-item.active {
+    background-color: var(--primary-color);
+}
+
+.sidebar .nav-item.active a {
+    color: white !important;
+}
+
+.sidebar .nav-link {
+    color: var(--text-color);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    transition: all var(--transition-speed);
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(148, 180, 159, 0.1);
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    transition: transform var(--transition-speed);
+}
+
+.sidebar .nav-link:hover i {
+    transform: scale(1.2);
+}
+
+/* ===== Empty-State ===== */
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.empty-state:hover {
+    background-color: #f0f2f5;
+    transform: translateY(-2px);
+}
+
+.empty-state-icon {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+/* ===== Chart Container ===== */
+.chart-container {
+    width: 100%;
+    height: 250px;
+    position: relative;
+    transition: all var(--transition-speed);
+}
+
+/* ===== Form Controls ===== */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    transition: all var(--transition-speed);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+    border-radius: 10px;
+    padding: 10px 15px;
+    transition: all var(--transition-speed);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(148, 180, 159, 0.25);
+}
+
+/* ===== Media Queries ===== */
+@media (max-width: 992px) {
+    .main-content { padding: 15px; }
+}
+
+/* Positioning for month navigation buttons */
+.month-nav-btn {
+    display:  none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    background: none;
+    border: none;
+    outline: none;
+    padding: 20px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease;
+    z-index: 2;
+}
+
+.left-btn {
+    left: 0;
+}
+
+.right-btn {
+    right: 0;
+}
+
+.month-nav-btn:hover {
+    transform: translateY(-50%) scale(1.2);
+
+    border-radius: 50%;
+}
