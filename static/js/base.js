@@ -285,14 +285,14 @@ $(document).ready(function() {
         .catch(error => console.error('Error marking report as read:', error));
 
         // Fetch the full shared report data
-        console.log(`Fetching report with senderID: ${senderID}, reportId: ${reportId}`);
+        // console.log(`Fetching report with senderID: ${senderID}, reportId: ${reportId}`);
 
-        fetch('/dashboard/getReport', {
+        fetch('/dashboard/getSharedReport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userID: senderID || 1,  // Changed to userID to match backend
-                date: reportId || new Date().toISOString().split('T')[0]  // Changed to date to match backend
+                senderID: senderID|| 1,  // Changed to userID to match backend
+                reportId: reportId || new Date().toISOString().split('T')[0]  // Changed to date to match backend
             })
         })
         .then(response => {
