@@ -1260,14 +1260,40 @@ function updateGoalProgressCircle(circleElement, animate = false) {
     // Get percentage from the element text
     let percentage = parseFloat(updatedPercentageElem.textContent);
 
-    // If percentage is NaN, try to get it from the goal data
-    if (isNaN(percentage) && window.goalData && window.goalData.length > 0) {
+    // Try to get the goal name from the circle's parent elements
+    let goalName = null;
+    const goalNameElement = circleElement.closest('.goal-card, .card')?.querySelector('.goal-progress h3, h3, .card-title');
+    if (goalNameElement) {
+        let fullName = goalNameElement.textContent.trim();
+        // Remove numbering pattern like "1/2 " if present
+        const numberingMatch = fullName.match(/^\d+\/\d+\s+(.+)$/);
+        if (numberingMatch) {
+            goalName = numberingMatch[1];
+        } else {
+            goalName = fullName;
+        }
+        console.log('Found goal name for progress circle:', goalName);
+    }
+
+    // If we have a goal name and goal data, find the matching goal
+    if (goalName && window.goalData && window.goalData.length > 0) {
+        const matchingGoal = window.goalData.find(g => g.goalName === goalName);
+        if (matchingGoal && typeof matchingGoal.progressPercentage !== 'undefined') {
+            percentage = matchingGoal.progressPercentage;
+            console.log('Using progress percentage from matching goal data:', percentage);
+        }
+    }
+
+    // If percentage is still NaN or undefined, try to get it from the goal data
+    if ((isNaN(percentage) || percentage === undefined) && window.goalData && window.goalData.length > 0) {
         // For single goal view, use the first goal's progress
         const firstGoal = window.goalData[0];
         if (firstGoal && typeof firstGoal.progressPercentage !== 'undefined') {
             percentage = firstGoal.progressPercentage;
-            percentageElem.textContent = `${percentage}%`;
-            console.log('Setting progress percentage from goalData:', percentage);
+            if (percentageElem) {
+                percentageElem.textContent = `${percentage}%`;
+            }
+            console.log('Setting progress percentage from first goal in goalData:', percentage);
         } else {
             percentage = 0;
         }
@@ -2145,8 +2171,23 @@ function updateSingleGoalUI(goalData) {
                 </div>
                 <div style="margin-bottom: 1.2rem;"></div>
                 <div class="goal-progress text-center">
-                    <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${goalData.goalName}</h3>
-                    <div class="d-flex justify-content-center align-items-center mb-2">
+                    <h3 class="h5 mb-3" style="color:var(--primary-color);font-weight:700;">${
+                        window.goalData && window.goalData.length > 1 ?
+                        (() => {
+                            // Create a reversed copy of the goals array to handle the order correctly
+                            // Since backend adds newest goals at the front, we need to reverse the array
+                            // to make the earliest added goal show as 1/n
+                            const reversedGoals = [...window.goalData].reverse();
+                            const index = reversedGoals.findIndex(g => g.goalName === goalData.goalName);
+                            return `${index + 1}/${window.goalData.length}`;
+                        })() :
+                        '1/1'
+                    } ${goalData.goalName}</h3>
+                    <div class="d-flex justify-content-center align-items-center mb-2" style="gap: 16px;">
+                        ${window.goalData && window.goalData.length > 1 ?
+                        `<button class="btn btn-link goal-nav-btn" id="prevGoalBtn" style="font-size:1.5rem;">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>` : ''}
                         <div class="progress-circle mx-auto mb-3">
                             <svg class="goal-progress-svg" width="150" height="150">
                                 <circle class="progress-bg" cx="75" cy="75" r="65" stroke="#eee" stroke-width="14" fill="none"/>
@@ -2156,6 +2197,10 @@ function updateSingleGoalUI(goalData) {
                                 <span class="progress-percentage">${goalData.progressPercentage || 0}%</span>
                             </div>
                         </div>
+                        ${window.goalData && window.goalData.length > 1 ?
+                        `<button class="btn btn-link goal-nav-btn" id="nextGoalBtn" style="font-size:1.5rem;">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>` : ''}
                     </div>
                     <div class="goal-details" id="goalDetails">
                         <p class="mb-1"><strong>Target:</strong> $<span id="goalTarget">${goalData.target}</span></p>
@@ -2216,6 +2261,36 @@ function updateSingleGoalUI(goalData) {
                     }
                 });
             }
+
+            // Add event listeners to navigation buttons if they exist
+            if (window.goalData && window.goalData.length > 1) {
+                const prevBtn = goalCard.querySelector('#prevGoalBtn');
+                const nextBtn = goalCard.querySelector('#nextGoalBtn');
+
+                if (prevBtn && nextBtn) {
+                    console.log('Adding event listeners to navigation buttons in updateSingleGoalUI');
+
+                    // Create a reversed copy of the goals array
+                    const reversedGoals = [...window.goalData].reverse();
+
+                    // Find the current index
+                    const currentIndex = reversedGoals.findIndex(g => g.goalName === goalData.goalName);
+
+                    prevBtn.addEventListener('click', function() {
+                        console.log('Previous button clicked in updateSingleGoalUI');
+                        const newIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
+                        const newGoal = reversedGoals[newIndex];
+                        updateSingleGoalUI(newGoal);
+                    });
+
+                    nextBtn.addEventListener('click', function() {
+                        console.log('Next button clicked in updateSingleGoalUI');
+                        const newIndex = (currentIndex + 1) % reversedGoals.length;
+                        const newGoal = reversedGoals[newIndex];
+                        updateSingleGoalUI(newGoal);
+                    });
+                }
+            }
         }, 50);
     }, 300);
 }
@@ -2229,6 +2304,20 @@ function renderMultipleGoals(goals) {
     if (!goalsContainer) return;
 
     console.log('Rendering multiple goals:', goals.length);
+
+    // Ensure navigation arrows are visible when there are multiple goals
+    const prevBtn = document.getElementById('prevGoalBtn');
+    const nextBtn = document.getElementById('nextGoalBtn');
+
+    if (goals && goals.length > 1) {
+        if (prevBtn) prevBtn.style.display = '';
+        if (nextBtn) nextBtn.style.display = '';
+        console.log('Showing navigation arrows for multiple goals in renderMultipleGoals');
+    } else {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        console.log('Hiding navigation arrows for single goal in renderMultipleGoals');
+    }
 
     // Fade out existing content
     goalsContainer.style.opacity = '0';
@@ -2300,7 +2389,7 @@ function renderMultipleGoals(goals) {
                 goalCol.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">${goal.goalName}</h5>
+                            <h5 class="card-title">${index + 1}/${reversedGoals.length} ${goal.goalName}</h5>
                             <div class="d-flex align-items-center mb-2">
                                 <div class="progress flex-grow-1 me-2" style="height: 10px;">
                                     <div class="progress-bar" role="progressbar"
@@ -2826,23 +2915,26 @@ function updateGoalsUI(goals) {
     const goalRemaining = document.getElementById('goalRemaining');
     const goalMessage = document.getElementById('goalMessage');
 
-    // Don't add numbering to the goal name, let the template handle it
+    // Add numbering to the goal name (1/n format)
     if (goalName) {
-        // Just set the goal name without any numbering
-        goalName.textContent = firstGoal.goalName;
+        // Add numbering to the goal name (1/n format)
+        // The earliest goal (index 0 in reversedGoals) should be 1/n
+        goalName.textContent = `1/${reversedGoals.length} ${firstGoal.goalName}`;
     }
 
-    // Always show navigation buttons, even for a single goal
-    // We're keeping this code commented out to ensure navigation arrows are always visible
-    /*
-    if (reversedGoals.length <= 1) {
-        const existingPrevBtn = document.getElementById('prevGoalBtn');
-        const existingNextBtn = document.getElementById('nextGoalBtn');
+    // Handle navigation buttons visibility
+    const existingPrevBtn = document.getElementById('prevGoalBtn');
+    const existingNextBtn = document.getElementById('nextGoalBtn');
 
+    // Always show navigation buttons if there are multiple goals
+    if (reversedGoals.length > 1) {
+        if (existingPrevBtn) existingPrevBtn.style.display = '';
+        if (existingNextBtn) existingNextBtn.style.display = '';
+    } else {
+        // Hide navigation buttons if there's only one goal
         if (existingPrevBtn) existingPrevBtn.style.display = 'none';
         if (existingNextBtn) existingNextBtn.style.display = 'none';
     }
-    */
     if (progressPercentage) progressPercentage.textContent = `${firstGoal.progressPercentage || 0}%`;
     if (goalTarget) goalTarget.textContent = firstGoal.target;
     if (goalSaved) goalSaved.textContent = firstGoal.saved;
@@ -2874,6 +2966,17 @@ function updateGoalsUI(goals) {
 
         console.log('Navigation elements:', { prevBtn, nextBtn, counter });
 
+        // Ensure navigation arrows are visible when there are multiple goals
+        if (reversedGoals.length > 1) {
+            if (prevBtn) prevBtn.style.display = '';
+            if (nextBtn) nextBtn.style.display = '';
+            console.log('Showing navigation arrows for multiple goals in setup');
+        } else {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            console.log('Hiding navigation arrows for single goal in setup');
+        }
+
         function updateGoalDisplay(index) {
             if (index < 0 || index >= reversedGoals.length) {
                 console.error('Invalid goal index:', index);
@@ -2883,6 +2986,17 @@ function updateGoalsUI(goals) {
             console.log('Updating goal display for index:', index);
             const goal = reversedGoals[index];
             console.log('Current goal:', goal);
+
+            // Ensure navigation arrows are visible when there are multiple goals
+            if (reversedGoals.length > 1) {
+                if (prevBtn) prevBtn.style.display = '';
+                if (nextBtn) nextBtn.style.display = '';
+                console.log('Showing navigation arrows for multiple goals');
+            } else {
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                console.log('Hiding navigation arrows for single goal');
+            }
 
             // Update all goal display elements
             const elements = {
@@ -2895,12 +3009,16 @@ function updateGoalsUI(goals) {
             };
 
             // Update each element if it exists
-            // Use the original goal name without adding numbering
-            // The template already has the numbering in the counter element
+            // Add numbering to the goal name (index+1/total format)
+            // The earliest goal (index 0 in reversedGoals) should be 1/n
             if (elements.goalName) {
-                elements.goalName.textContent = goal.goalName;
+                elements.goalName.textContent = `${index + 1}/${reversedGoals.length} ${goal.goalName}`;
             }
-            if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progressPercentage || 0}%`;
+            if (elements.progressPercentage) {
+                const percentage = goal.progressPercentage !== undefined ? goal.progressPercentage : 0;
+                elements.progressPercentage.textContent = `${percentage}%`;
+                console.log(`Setting progress percentage for ${goal.goalName} to ${percentage}%`);
+            }
             if (elements.goalTarget) elements.goalTarget.textContent = goal.target;
             if (elements.goalSaved) elements.goalSaved.textContent = goal.saved;
             if (elements.goalRemaining) elements.goalRemaining.textContent = goal.remaining;
@@ -2953,6 +3071,16 @@ function updateGoalsUI(goals) {
             // Update progress circle
             const circle = document.querySelector('.progress-circle');
             if (circle) {
+                // Pass the current goal's progress percentage to ensure it's correctly updated
+                const percentage = goal.progressPercentage !== undefined ? goal.progressPercentage : 0;
+                console.log(`Updating progress circle for ${goal.goalName} with percentage: ${percentage}`);
+
+                // Set the percentage text first to ensure it's used by updateGoalProgressCircle
+                const percentageElem = circle.querySelector('.progress-percentage');
+                if (percentageElem) {
+                    percentageElem.textContent = `${percentage}%`;
+                }
+
                 updateGoalProgressCircle(circle, true);
             }
 
@@ -3003,21 +3131,37 @@ function updateGoalsUI(goals) {
         } else {
             console.warn('Navigation buttons not found, creating new ones');
 
-            // If buttons don't exist, find the container and create new ones
-            const container = document.querySelector('.goal-selector');
-            if (container) {
-                // Clear container and recreate buttons
-                container.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <button class="btn btn-link goal-nav-btn" id="prevGoalBtn">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span class="goal-counter">1/${reversedGoals.length}</span>
-                        <button class="btn btn-link goal-nav-btn" id="nextGoalBtn">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                `;
+            // If buttons don't exist, we need to create them in the progress circle container
+            const progressCircleContainer = document.querySelector('.d-flex.justify-content-center.align-items-center.mb-2');
+            if (progressCircleContainer) {
+                console.log('Found progress circle container, adding navigation buttons');
+
+                // Add previous button before the progress circle
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn btn-link goal-nav-btn';
+                prevBtn.id = 'prevGoalBtn';
+                prevBtn.style.fontSize = '1.5rem';
+                prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                progressCircleContainer.insertBefore(prevBtn, progressCircleContainer.firstChild);
+
+                // Add next button after the progress circle
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn btn-link goal-nav-btn';
+                nextBtn.id = 'nextGoalBtn';
+                nextBtn.style.fontSize = '1.5rem';
+                nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                progressCircleContainer.appendChild(nextBtn);
+
+                // Add counter to the progress circle inner
+                const progressCircleInner = document.querySelector('.progress-circle-inner');
+                if (progressCircleInner) {
+                    const counter = document.createElement('span');
+                    counter.className = 'goal-counter';
+                    counter.textContent = `1/${reversedGoals.length}`;
+                    counter.style.fontSize = '0.8rem';
+                    counter.style.marginTop = '5px';
+                    progressCircleInner.appendChild(counter);
+                }
 
                 // Add event listeners to new buttons
                 const newPrevBtn = document.getElementById('prevGoalBtn');
@@ -3992,7 +4136,7 @@ function addGoalCardStyles() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Add goal card styles
     addGoalCardStyles();
 
@@ -4000,9 +4144,43 @@ document.addEventListener('DOMContentLoaded', function() {
     animateCards();
     initMonthlySpendingChart();
 
-    // Initialize progress circle
+    // Always fetch fresh goal data on page load to ensure correct progress percentages
+    console.log('Fetching fresh goal data from server on page load...');
+    try {
+        const response = await fetch('/dashboard/getGoals');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.status === "Success" && result.data) {
+                console.log('Successfully fetched goal data from server:', result.data);
+                window.goalData = result.data;
+                window.hasGoal = result.data.length > 0;
+
+                // Log progress percentages for debugging
+                if (window.goalData && window.goalData.length > 0) {
+                    window.goalData.forEach(goal => {
+                        console.log(`Goal: ${goal.goalName}, Progress: ${goal.progressPercentage}%`);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching goal data:', error);
+    }
+
+    // Initialize progress circle with fresh data
     if (window.goalData && window.goalData.length > 0) {
-        updateProgressCircle(window.goalData[0].progressPercentage);
+        console.log('Initializing progress circle with data:', window.goalData[0]);
+        const percentage = window.goalData[0].progressPercentage !== undefined ? window.goalData[0].progressPercentage : 0;
+        updateProgressCircle(percentage);
+
+        // Also update any progress circles in the DOM
+        const progressCircles = document.querySelectorAll('.progress-circle');
+        if (progressCircles.length > 0) {
+            console.log(`Found ${progressCircles.length} progress circles to update`);
+            progressCircles.forEach(circle => {
+                updateGoalProgressCircle(circle, true);
+            });
+        }
     }
 
     // Setup goal navigation
@@ -5088,6 +5266,7 @@ function setupActiveNavigation() {
 /**
  * Setup share summary button functionality
  * Disables the button if there are no expenses to share
+ * but does not show any message when clicked
  */
 function setupShareSummaryButton() {
     const shareBtn = document.getElementById('shareSummaryBtn');
@@ -5096,23 +5275,8 @@ function setupShareSummaryButton() {
         console.log('Setting up share summary button');
 
         // Remove any existing event listeners to prevent duplicates
-        shareBtn.removeEventListener('click', handleShareButtonClick);
-        shareBtn.removeEventListener('click', handleDisabledShareButtonClick);
-
-        // Create a wrapper div if it doesn't exist
-        let wrapper = shareBtn.parentElement;
-        if (!wrapper.classList.contains('share-btn-wrapper')) {
-            // Create a wrapper to handle clicks even when button is disabled
-            wrapper = document.createElement('div');
-            wrapper.className = 'share-btn-wrapper';
-            wrapper.style.position = 'relative';
-            wrapper.style.display = 'inline-block';
-
-            // Replace the button with the wrapper containing the button
-            shareBtn.parentNode.insertBefore(wrapper, shareBtn);
-            wrapper.appendChild(shareBtn);
-
-            console.log('Created wrapper for share button');
+        if (shareBtn.clickHandlerAttached) {
+            shareBtn.removeEventListener('click', handleShareButtonClick);
         }
 
         // Check if there are expenses to share
@@ -5126,117 +5290,37 @@ function setupShareSummaryButton() {
         if (!hasExpense) {
             // Disable the button if there are no expenses
             shareBtn.disabled = true;
-            shareBtn.title = "No expense data to share";
+            shareBtn.title = ""; // No tooltip text
             console.log('Share button disabled: No expense data to share');
 
-            // Apply light gray style to disabled button
+            // Make the button gray to indicate it's disabled
             shareBtn.style.backgroundColor = '#f0f0f0';
             shareBtn.style.borderColor = '#e0e0e0';
             shareBtn.style.color = '#a0a0a0';
             shareBtn.style.cursor = 'not-allowed';
 
-            // Remove click handler from button and add it to wrapper
-            shareBtn.removeEventListener('click', handleDisabledShareButtonClick);
-            wrapper.removeEventListener('click', handleDisabledShareButtonClick);
-            wrapper.addEventListener('click', handleDisabledShareButtonClick);
+            // We don't add any click handler to disabled button
+            shareBtn.clickHandlerAttached = false;
         } else {
             // Enable the button if there are expenses
             shareBtn.disabled = false;
             shareBtn.title = "Share Dashboard Summary";
 
-            // Reset button style
+            // Reset button style to default blue
             shareBtn.style.backgroundColor = '';
             shareBtn.style.borderColor = '';
             shareBtn.style.color = '';
             shareBtn.style.cursor = '';
 
-            // Remove click handler from wrapper and add it to button
-            wrapper.removeEventListener('click', handleDisabledShareButtonClick);
+            // Add click handler to button
             shareBtn.addEventListener('click', handleShareButtonClick);
+            shareBtn.clickHandlerAttached = true;
         }
     }
 }
 
-/**
- * Handle disabled share button click event
- * Shows a tooltip when the disabled share button is clicked
- */
-function handleDisabledShareButtonClick(event) {
-    event.preventDefault();
-    console.log('Disabled share button clicked, showing tooltip');
-
-    // Remove any existing tooltips
-    const existingTooltips = document.querySelectorAll('.custom-tooltip');
-    existingTooltips.forEach(tooltip => tooltip.remove());
-
-    // Create and show tooltip
-    const tooltip = document.createElement('div');
-    tooltip.className = 'custom-tooltip';
-    tooltip.style.position = 'fixed'; // Use fixed positioning to ensure it's visible
-    tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    tooltip.style.color = 'white';
-    tooltip.style.padding = '8px 12px';
-    tooltip.style.borderRadius = '4px';
-    tooltip.style.fontSize = '14px';
-    tooltip.style.zIndex = '9999'; // Ensure it's above other elements
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.opacity = '0';
-    tooltip.style.transition = 'opacity 0.3s ease';
-    tooltip.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-
-    // Get the button's position
-    let rect;
-    if (event.target.tagName === 'I') {
-        // If the icon was clicked, use the parent button's position
-        rect = event.target.parentElement.getBoundingClientRect();
-    } else {
-        rect = event.target.getBoundingClientRect();
-    }
-
-    // Position the tooltip below the button
-    tooltip.style.top = `${rect.bottom + 10}px`;
-    tooltip.style.left = `${rect.left + (rect.width / 2) - 100}px`;
-    tooltip.style.width = '200px';
-    tooltip.style.textAlign = 'center';
-
-    // Add content with arrow
-    tooltip.innerHTML = `
-        <div style="
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-bottom: 6px solid rgba(0, 0, 0, 0.8);
-        "></div>
-        <span>No expense data to share</span>
-    `;
-
-    // Add to document
-    document.body.appendChild(tooltip);
-
-    // Show tooltip with animation
-    setTimeout(() => {
-        tooltip.style.opacity = '1';
-        console.log('Tooltip should be visible now');
-    }, 10);
-
-    // Remove tooltip after delay
-    setTimeout(() => {
-        tooltip.style.opacity = '0';
-        setTimeout(() => {
-            if (document.body.contains(tooltip)) {
-                document.body.removeChild(tooltip);
-            }
-        }, 300);
-    }, 3000);
-
-    // Also show a fallback alert for mobile devices or if tooltip doesn't work
-    showAlert('No expense data to share', 'warning');
-}
+// We no longer need the handleDisabledShareButtonClick function
+// since we're not attaching any click handlers to disabled buttons
 
 /**
  * Handle share button click event
@@ -5269,8 +5353,7 @@ function initSalaryVsExpensesChart() {
         return;
     }
 
-    // Get the empty state and chart container elements
-    const emptyState = document.getElementById('salaryVsExpensesEmpty');
+    // Get the chart container element
     const chartContainer = chartCanvas.parentElement;
 
     // Always initialize the chart even if there's no data
@@ -5368,11 +5451,8 @@ function updateSalaryVsExpensesChart(salary, expenses) {
     chart.data.datasets[0].data = [salary, expenses];
     chart.update();
 
-    // Show the chart container and hide the empty state
-    const emptyState = document.getElementById('salaryVsExpensesEmpty');
+    // Show the chart container
     const chartContainer = chartCanvas.parentElement;
-
-    if (emptyState) emptyState.style.display = 'none';
     if (chartContainer) chartContainer.style.display = 'flex';
 }
 
