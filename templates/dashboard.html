@@ -371,7 +371,6 @@
     window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
 
     window.currentUserID = {{ current_user.id | tojson | safe }};
-
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
