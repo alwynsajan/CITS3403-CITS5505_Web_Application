@@ -2498,17 +2498,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveSalaryBtn = document.getElementById('saveSalaryBtn');
     const salaryForm = document.getElementById('salaryForm');
 
-    // Initialize date inputs if they exist
-    if (document.getElementById('salaryDate')) {
-        setDate('salaryDate');
-    }
-
     // Handle opening the modal from potentially multiple buttons
     addSalaryButtons.forEach(button => {
         button.addEventListener('click', function() {
             if (salaryModalInstance) {
                 // Set default date to today when opening the modal
-                setDate('salaryDate');
+                const salaryDateInput = document.getElementById('salaryDate');
+                if (salaryDateInput && !salaryDateInput.value) {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    salaryDateInput.value = `${year}-${month}-${day}`;
+                }
                 salaryModalInstance.show();
             }
         });
@@ -2563,29 +2565,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Validate salary date
             const date = salaryDateInput.value;
-            console.log('Salary date value:', date);
-            console.log('Salary date input element:', salaryDateInput);
-
             if (!date) {
                 isValid = false;
                 errorMessage = 'Please select a date';
                 salaryDateInput.classList.add('is-invalid');
-                console.error('Date is empty or undefined');
             } else {
                 const selectedDate = new Date(date);
                 const today = new Date();
-                console.log('Selected date:', selectedDate);
-                console.log('Today:', today);
-
                 if (selectedDate > today) {
                     isValid = false;
                     errorMessage = 'Date cannot be in the future';
                     salaryDateInput.classList.add('is-invalid');
-                    console.error('Date is in the future');
                 } else {
                     salaryDateInput.classList.remove('is-invalid');
                     salaryDateInput.classList.add('is-valid');
-                    console.log('Date is valid');
                 }
             }
 
@@ -2608,33 +2601,24 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
 
                 console.log('Sending salary data:', { amount, date });
-
-                // Create the request payload
-                const payload = {
-                    amount: amount,
-                    date: date  // Using 'date' as expected by app.py
-                };
-
-                console.log('Request payload:', payload);
-                console.log('Request payload JSON:', JSON.stringify(payload));
-
                 const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        amount: amount,
+                        date: date
+                    })
                 });
 
                 const result = await response.json();
-                console.log('Response from server:', result);
 
                 if (!response.ok || result.status !== "Success") {
-                    console.error('Error response from server:', result);
                     throw new Error(result.message || `HTTP error! status: ${response.status}`);
                 }
 
-                // On success, show a message and reload the page
+                // On success, close modal and reload to update balance card
                 if (salaryModalInstance) {
                     salaryModalInstance.hide();
                     const backdrop = document.querySelector('.modal-backdrop');
@@ -2643,160 +2627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.overflow = '';
                     document.body.style.paddingRight = '';
                 }
-
-                // Reset the form
-                if (salaryForm) {
-                    salaryForm.reset();
-                    // Reset date input after form reset
-                    setDate('salaryDate');
-                }
-
-                // Show success message
-                showAlert('Salary added successfully! Updating goals...', 'success');
-
-                // Always update account balance if available
-                if (result.new_balance) {
-                    console.log('New balance received:', result.new_balance);
-
-                    // Calculate percentage change if we have previous balance
-                    let percentageChange = 100; // Default for first salary
-                    let trendType = 'up';
-
-                    if (window.accountData && window.accountData.balance) {
-                        const oldBalance = window.accountData.balance;
-                        const newBalance = result.new_balance;
-                        const difference = newBalance - oldBalance;
-
-                        // Calculate percentage change
-                        if (oldBalance > 0) {
-                            percentageChange = Math.round((difference / oldBalance) * 100);
-                        }
-
-                        // Determine trend direction
-                        trendType = difference >= 0 ? 'up' : 'down';
-
-                        console.log(`Balance change: ${oldBalance} -> ${newBalance} (${percentageChange}% ${trendType})`);
-                    }
-
-                    // Update account balance
-                    if (window.accountData) {
-                        console.log('Updating existing accountData:', window.accountData);
-                        window.accountData.balance = result.new_balance;
-                        window.accountData.trendType = trendType;
-                        window.accountData.percentageChange = Math.abs(percentageChange);
-
-                        // Immediately update the UI
-                        console.log('Immediately updating account balance UI');
-                        updateAccountBalance(window.accountData);
-                    } else {
-                        console.log('Creating new accountData object');
-                        // If accountData doesn't exist yet, create it
-                        window.accountData = {
-                            balance: result.new_balance,
-                            trendType: 'up',
-                            percentageChange: 100 // First salary, so 100% increase
-                        };
-
-                        // Immediately update the UI
-                        console.log('Immediately creating and updating account balance UI');
-                        updateAccountBalance(window.accountData);
-                    }
-
-                    // Add visual feedback that salary was added
-                    const balanceCard = document.querySelector('.card:has(#balanceAmount)');
-                    if (balanceCard) {
-                        console.log('Adding visual feedback to balance card');
-
-                        // Remove any existing animation classes
-                        balanceCard.classList.remove('salary-added');
-
-                        // Force a reflow to restart the animation
-                        void balanceCard.offsetWidth;
-
-                        // Add the animation class
-                        balanceCard.classList.add('salary-added');
-
-                        // Also highlight the balance amount specifically
-                        const balanceElement = document.getElementById('balanceAmount');
-                        if (balanceElement) {
-                            balanceElement.classList.remove('balance-updated');
-                            void balanceElement.offsetWidth;
-                            balanceElement.classList.add('balance-updated');
-                        }
-                    }
-                }
-
-                // Update budget suggestions if available
-                if (result.budgetSuggestions) {
-                    window.budgetSuggestionData = result.budgetSuggestions;
-                    updateBudgetSuggestions(result.budgetSuggestions);
-                }
-
-                // Update transactions if available
-                if (result.transaction && result.transaction.length > 0) {
-                    updateLatestTransactions(result.transaction);
-                }
-
-                // Check if we have updated goal data in the response
-                if (result.goalData && Array.isArray(result.goalData)) {
-                    console.log('Received updated goal data from server:', result.goalData);
-
-                    // Store the updated goal data globally
-                    window.goalData = result.goalData;
-
-                    // Immediately refresh the entire goal section
-                    console.log('Immediately refreshing goal section after adding salary');
-                    updateAllGoalCards(result.goalData);
-
-                    // Force update of progress circles and redeem buttons
-                    setTimeout(() => {
-                        console.log('Forcing update of progress circles and redeem buttons');
-                        const progressCircles = document.querySelectorAll('.progress-circle');
-                        progressCircles.forEach(circle => {
-                            updateGoalProgressCircle(circle, true);
-                        });
-
-                        // Check for completed goals and ensure redeem buttons are added
-                        if (result.goalData) {
-                            const completedGoals = result.goalData.filter(g => g.progressPercentage >= 100);
-                            if (completedGoals.length > 0) {
-                                console.log('Found completed goals, ensuring redeem buttons are added:', completedGoals);
-                                completedGoals.forEach(goal => {
-                                    showAlert(`Congratulations! Your goal "${goal.goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
-                                });
-                            }
-                        }
-                    }, 500);
-                } else if (result.data && Array.isArray(result.data)) {
-                    console.log('Received updated goal data from server (legacy format):', result.data);
-
-                    // Store the updated goal data globally
-                    window.goalData = result.data;
-
-                    // Immediately refresh the entire goal section
-                    console.log('Immediately refreshing goal section after adding salary (legacy format)');
-                    updateAllGoalCards(result.data);
-
-                    // Force update of progress circles and redeem buttons
-                    setTimeout(() => {
-                        console.log('Forcing update of progress circles and redeem buttons (legacy format)');
-                        const progressCircles = document.querySelectorAll('.progress-circle');
-                        progressCircles.forEach(circle => {
-                            updateGoalProgressCircle(circle, true);
-                        });
-
-                        // Check for completed goals and ensure redeem buttons are added
-                        if (result.data) {
-                            const completedGoals = result.data.filter(g => g.progressPercentage >= 100);
-                            if (completedGoals.length > 0) {
-                                console.log('Found completed goals, ensuring redeem buttons are added (legacy format):', completedGoals);
-                                completedGoals.forEach(goal => {
-                                    showAlert(`Congratulations! Your goal "${goal.goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
-                                });
-                            }
-                        }
-                    }, 500);
-                }
+                window.location.reload();
                 return;
 
             } catch (error) {
