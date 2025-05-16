@@ -35,7 +35,6 @@ The **Signup Page** allows new users to quickly create an account on WalletWhiz,
 | 🔘 **Create Account Button**         | A button to submit the signup form and create a new account.                                    |
 | 🔗 **Sign In Link**                  | A hyperlink for existing users to navigate to the sign-in page if they already have an account. |
 
-![Signup Screenshot](http://127.0.0.1:5000/signup)
 
 ### 🔑 Sign In Page
 
@@ -49,7 +48,6 @@ The **Sign In Page** allows existing users to access their WalletWhiz accounts, 
 | 🔘 **Sign In Button**       | A button to submit the login credentials and access the account.                        |
 | 🔗 **Sign Up Link**         | A link for new users to navigate to the sign-up page if they don't have an account yet. |
 
-![Sign In Screenshot](http://127.0.0.1:5000/login)
 
 ### 📊 Dashboard Module
 
@@ -63,9 +61,7 @@ The **Dashboard** is the main landing page after login, providing users with a q
 | 💸 **Spending**     | Analyze your monthly expenses trends. Visualizes your spending patterns and changes over time.   |
 | 🔄 **Transactions** | Track and review your recent expenses and transactions to stay on top of your spending history.  |
 
-#### 🎨 Example UI (Dashboard)
 
-![Dashboard Screenshot](http://127.0.0.1:5000/dashboard)
 
 ### 💰 Expenses Module
 
@@ -78,9 +74,6 @@ The **Expenses** page allows users to actively manage their income and expenses 
 | 📈 **Weekly Expenses (Last 8 Weeks)** | View spending patterns over the past 8 weeks. If no expenses exist, the module prompts to start logging expenses. |
 | 🥧 **Monthly Category Breakdown**     | Visualizes how expenses are distributed across different categories in the current month.                         |
 
-#### 🎨 Example UI (Expenses Module)
-
-![Expenses Screenshot](http://127.0.0.1:5000/expense)
 
 ### 🔄 Share Financial Reports
 
@@ -104,9 +97,6 @@ The **Settings** page empowers users to manage their personal account details se
 | 🔐 **Change Password**         | Users can change their password by entering the **Current Password**, **New Password**, and confirming it in a separate card. |
 | ✅ **Validation and Feedback** | The app ensures validation for all inputs and provides clear feedback messages upon success or failure.                       |
 
-#### 🎨 Example UI (Settings Module)
-
-![Settings Screenshot](http://127.0.0.1:5000/settings)
 
 ## 🚀 How to Launch the Application
 
