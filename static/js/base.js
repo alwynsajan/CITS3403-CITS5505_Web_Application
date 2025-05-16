@@ -1,4 +1,55 @@
 $(document).ready(function() {
+    // --------- Responsive Sidebar Logic ---------
+    // Handle sidebar toggle for small screens
+    $('#sidebarToggle').on('click', function() {
+        const sidebar = $('#sidebar');
+        const mainContent = $('.main-content');
+        const overlay = $('#sidebarOverlay');
+
+        // Check if sidebar is currently visible
+        const isSidebarVisible = sidebar.hasClass('sidebar-visible');
+
+        if (isSidebarVisible) {
+            // Hide sidebar
+            sidebar.removeClass('sidebar-visible');
+            mainContent.removeClass('sidebar-visible');
+            overlay.removeClass('active');
+            $('body').css('overflow', '');
+        } else {
+            // Show sidebar
+            sidebar.addClass('sidebar-visible');
+            mainContent.addClass('sidebar-visible');
+            overlay.addClass('active');
+            $('body').css('overflow', 'hidden'); // Prevent scrolling when sidebar is open
+        }
+    });
+
+    // Close sidebar when clicking on overlay
+    $('#sidebarOverlay').on('click', function() {
+        $('#sidebar').removeClass('sidebar-visible');
+        $('.main-content').removeClass('sidebar-visible');
+        $(this).removeClass('active');
+        $('body').css('overflow', '');
+    });
+
+    // Close sidebar when clicking on a nav link (for small screens)
+    $('.sidebar .nav-link').on('click', function() {
+        if (window.innerWidth <= 576) {
+            $('#sidebarToggle').click();
+        }
+    });
+
+    // Handle window resize
+    $(window).on('resize', function() {
+        if (window.innerWidth > 576) {
+            // Reset sidebar state on larger screens
+            $('#sidebar').removeClass('sidebar-visible');
+            $('.main-content').removeClass('sidebar-visible');
+            $('#sidebarOverlay').removeClass('active');
+            $('body').css('overflow', '');
+        }
+    });
+
     // --------- Theme Switcher Logic ---------
     // Check local storage for theme preference
     const savedTheme = localStorage.getItem('theme');
@@ -25,8 +76,48 @@ $(document).ready(function() {
     });
 
     // --------- Shared Reports Popup Logic ---------
-    // Initialize shared reports modal
-    const sharedReportsModal = new bootstrap.Modal(document.getElementById('sharedReportsModal'));
+    // Initialize shared reports modal with proper options
+    let sharedReportsModal;
+    const sharedReportsModalEl = document.getElementById('sharedReportsModal');
+
+    // Ensure modal element exists before initializing
+    if (sharedReportsModalEl) {
+        // Initialize with backdrop: 'static' to prevent closing when clicking outside
+        sharedReportsModal = new bootstrap.Modal(sharedReportsModalEl, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+
+        // Add event listeners for modal events
+        sharedReportsModalEl.addEventListener('hidden.bs.modal', function() {
+            // Clean up any modal-related elements that might be left behind
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+
+            // Ensure body classes are removed
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            // Update unread count
+            fetchUnreadBadgeCount();
+        });
+
+        // Handle ESC key press globally when modal is open
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && sharedReportsModalEl.classList.contains('show')) {
+                closeSharedReportsModal();
+            }
+        });
+
+        // Handle clicks on the backdrop
+        $(document).on('click', '.modal-backdrop', function() {
+            if (sharedReportsModalEl.classList.contains('show')) {
+                closeSharedReportsModal();
+            }
+        });
+    }
 
     // Store unread report IDs
     let unreadReportIds = [];
@@ -34,7 +125,12 @@ $(document).ready(function() {
     // Function to fetch unread report count
     function fetchUnreadBadgeCount() {
         fetch('/dashboard/getUnreadReportCount')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'Success') {
                     const count = data.reportCount || 0;
@@ -45,24 +141,39 @@ $(document).ready(function() {
                     } else {
                         unreadBadge.hide();
                     }
+                } else {
+                    console.warn('Failed to get unread report count:', data.message);
                 }
             })
-            .catch(error => console.error('Error fetching unread count:', error));
+            .catch(error => {
+                console.error('Error fetching unread count:', error);
+                // Continue execution despite error
+            });
     }
 
     // Function to fetch unread report ID list
     function fetchUnreadReportIds() {
         // Use the new API endpoint to get the list of unread report IDs
         fetch('/dashboard/getUnreadReportIds')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'Success') {
                     unreadReportIds = data.unreadReportIds || [];
                 } else {
+                    console.warn('Failed to get unread report IDs:', data.message);
                     unreadReportIds = [];
                 }
             })
-            .catch(error => console.error('Error fetching unread report IDs:', error));
+            .catch(error => {
+                console.error('Error fetching unread report IDs:', error);
+                // Continue execution despite error
+                unreadReportIds = [];
+            });
     }
 
     // Function to fetch shared reports list
@@ -88,12 +199,12 @@ $(document).ready(function() {
 
                         // Check if this report is unread - Use the unique reportId instead of senderID
                         const isUnread = unreadReportIds.includes(report.reportId);
-                        const unreadDot = isUnread ? 
+                        const unreadDot = isUnread ?
                             '<span class="unread-dot position-absolute top-0 start-0 translate-middle p-1 bg-danger rounded-circle"></span>' : '';
-                        
+
                         const listItem = `
-                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}" 
-                                data-sender-id="${report.senderID}" 
+                            <li class="list-group-item shared-report-item position-relative ${isUnread ? 'unread-report' : ''}"
+                                data-sender-id="${report.senderID}"
                                 data-report-id="${report.reportId}">
                                 ${unreadDot}
                                 <div class="d-flex justify-content-between align-items-center">
@@ -133,6 +244,9 @@ $(document).ready(function() {
 
     // Function to view a shared report
     function viewSharedReport(senderID, reportId) {
+        // First, close the modal to prevent UI issues
+        closeSharedReportsModal();
+
         // Remove from unread list
         const index = unreadReportIds.indexOf(reportId);
         if (index > -1) {
@@ -140,12 +254,25 @@ $(document).ready(function() {
         }
 
         // Mark report as read on server (non-blocking)
+        // Ensure reportId is a string and not empty
+        const validReportId = String(reportId || '').trim();
+        if (!validReportId) {
+            console.warn('Invalid reportId, skipping markReportAsRead');
+            return;
+        }
+
         fetch('/dashboard/markReportAsRead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reportId: reportId })
+            body: JSON.stringify({ reportId: validReportId })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.warn(`Error marking report as read: ${response.status}`);
+                return { status: 'Failed' };
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === 'Success') {
                 fetchUnreadBadgeCount();
@@ -158,16 +285,23 @@ $(document).ready(function() {
         .catch(error => console.error('Error marking report as read:', error));
 
         // Fetch the full shared report data
-        fetch('/dashboard/getSharedReport', {
+        console.log(`Fetching report with senderID: ${senderID}, reportId: ${reportId}`);
+
+        fetch('/dashboard/getReport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                senderID: senderID, 
-                recipientID: window.currentUserID || null,
-                reportId: reportId  // Include the report ID in the request
+            body: JSON.stringify({
+                userID: senderID || 1,  // Changed to userID to match backend
+                date: reportId || new Date().toISOString().split('T')[0]  // Changed to date to match backend
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                console.warn(`Error fetching report: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === 'Success' && data.reportHtml) {
                 // Open the report HTML in a new tab
@@ -180,20 +314,68 @@ $(document).ready(function() {
         })
         .catch(error => {
             console.error('Error fetching shared report:', error);
-            showAlert('Error loading report: ' + error.message, 'danger');
+            showAlert('Error loading report: ' + (error.message || 'Unknown error'), 'danger');
         });
     }
 
     // Click handler for 'Shared with me' button
     $('#sharedWithMeBtn').on('click', function() {
-        fetchSharedReportsList();
-        sharedReportsModal.show();
+        // Only proceed if modal is properly initialized
+        if (sharedReportsModal) {
+            fetchSharedReportsList();
+
+            try {
+                // Show the modal
+                sharedReportsModal.show();
+
+                // Ensure the close button works properly
+                $('.modal-footer .btn-secondary, .modal-header .btn-close').off('click').on('click', function() {
+                    closeSharedReportsModal();
+                });
+            } catch (error) {
+                console.error('Error showing shared reports modal:', error);
+                // Try to recover by reinitializing the modal
+                if (sharedReportsModalEl) {
+                    sharedReportsModal = new bootstrap.Modal(sharedReportsModalEl);
+                    sharedReportsModal.show();
+                }
+            }
+        } else {
+            console.error('Shared reports modal not initialized');
+            // Try to initialize it now
+            if (sharedReportsModalEl) {
+                sharedReportsModal = new bootstrap.Modal(sharedReportsModalEl);
+                sharedReportsModal.show();
+            }
+        }
     });
 
-    // Refresh unread count when modal closes
-    $('#sharedReportsModal').on('hidden.bs.modal', function() {
-        fetchUnreadBadgeCount();
-    });
+    // Function to safely close the shared reports modal
+    function closeSharedReportsModal() {
+        try {
+            if (sharedReportsModal) {
+                sharedReportsModal.hide();
+            }
+
+            // Manual cleanup in case the event listener doesn't trigger
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            // Update unread count
+            fetchUnreadBadgeCount();
+        } catch (error) {
+            console.error('Error closing shared reports modal:', error);
+            // Force cleanup
+            $('.modal-backdrop').remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+    }
 
     // Initial load and periodic refresh
     fetchUnreadBadgeCount();
