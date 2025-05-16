@@ -1,13 +1,40 @@
-from models import db,User, Goal, Expense, Salary
+from models import db,User, Goal, Expense, Salary, ShareReport
 from werkzeug.security import generate_password_hash
+from datetime import datetime
+from sqlalchemy import extract
 
+"""
+Database client class that handles all database operations.
+Provides meaningful error messages to users while logging technical details.
+"""
 class dbClient:
+
+    def handleError(self, error, context="database operation"):
+        """
+        Centralized error handling method
+        Args:
+            error: Exception object
+            context: String describing what operation was being attempted
+        Returns:
+            dict: Standard error response format
+        """
+        error_msg = f"Error during {context}: {str(error)}"
+        print(f"DB ERROR: {error_msg}")  # Log technical error to console
+        return {
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "A system error occurred. Please try again later."
+        }
 
     # Get the last ID used in a given table
     def getLastId(self, table):
         """Returns the highest ID in a table or 0 if empty"""
-        lastEntry = table.query.order_by(table.id.desc()).first()
-        return lastEntry.id if lastEntry else 0
+        try:
+            lastEntry = table.query.order_by(table.id.desc()).first()
+            return lastEntry.id if lastEntry else 0
+        except Exception as e:
+            print(f"Error getting last ID: {str(e)}")
+            return 0
 
     # Add a new user if the username is not already taken
     def addUser(self, username, password, firstName, lastName):  
@@ -19,7 +46,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 400,
-                    "message": "Username already exists"
+                    "message": "Email already exists"
                 }
 
             newId = self.getLastId(User) + 1 
@@ -43,40 +70,64 @@ class dbClient:
                 }
             }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
+            db.session.rollback()
+            return self.handleError(e, "user registration")
 
     # Validate user login credentials
     def checkCredentials(self, username, password): 
-        """Validates username and password"""
-        user = User.query.filter_by(username=username).first()
+        """Validates user credentials with secure error messages"""
+        try:
+            user = User.query.filter_by(username=username).first()
 
-        if not user:
-            return {
-                "status": "Failed",
-                "statusCode": 404,
-                "message": "User not found"
-            }
-
-        if user.checkPassword(password):
-            return {
-                "status": "Success",
-                "statusCode": 200,
-                "message": "Login successful",
-                "data": {
-                    "username": username,
-                    "userID": user.id
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Account not found. Please check your username."
                 }
-            }
-        else:
+
+            if user.checkPassword(password):
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Login successful",
+                    "data": {
+                        "username": username,
+                        "userID": user.id
+                    }
+                }
             return {
                 "status": "Failed",
                 "statusCode": 401,
-                "message": "Incorrect password"
+                "message": "Incorrect password. Please try again."
             }
+        except Exception as e:
+            return self.handleError(e, "login validation")
+        
+    # Fetch first name of user
+    def getUserFirstName(self, userID):
+        """Retrieves the first name of the user"""
+        try:
+            user = User.query.get(userID)
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "User first name retrieved successfully",
+                    "data": {
+                        "userID": userID,
+                        "firstName": user.firstName
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User not found"
+                }
+        except Exception as e:
+            return self.handleError(e, "User Firsname retrieval")
+
 
     # Fetch current account balance of user
     def getAccountBalance(self, userID):
@@ -97,14 +148,10 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "balance retrieval")
 
     # Fetch previous account balance of user
     def getPreviousAccountBalance(self, userID):
@@ -125,15 +172,169 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
         except Exception as e:
+            return self.handleError(e, "previous balance retrieval")
+        
+    #Checks if a new goal allocation exceeds 100%, and updates it if valid.
+    def checkAndAddGoalAllocation(self, userID, percentageAllocation):
+        
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            currentAllocation = user.goalAllocationPercent
+
+            # Check if the new allocation exceeds 100%
+            if currentAllocation + percentageAllocation > 100:
+                if currentAllocation == 100:
+                    message = "Allocation limit reached. You cannot allocate any more!"
+                else:
+                    message = f"Allocation exceeds limit. You can only allocate {100 - currentAllocation:.2f}% more."
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": message
+                }
+            else:
+                user.goalAllocationPercent += percentageAllocation
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Allocation updated successfully",
+                    "newAllocation": user.goalAllocationPercent
+                }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "goal allocation update")
+        
+    # Get the last 5 expenses of a user.
+    def getLastFiveExpenses(self, userID):
+        try:
+            user = User.query.get(userID)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"User not exist"
+                }
+
+            # Fetching last 5 expense records ordered by date
+            expenses = Expense.query.filter_by(userId=userID).order_by(Expense.date.desc()).limit(5).all()
+
+            transaction = [
+                        {"category": expense.category, "amount": expense.amount}
+                        for expense in expenses
+                    ]
+
             return {
-                "status": "Failed",
-                "statusCode": 500,
-                "message": "Error : "+str(e)
+                "status": "Success",
+                "statusCode": 200,
+                "data": {
+                    "transaction": transaction
+                }
             }
 
+        except Exception as e:
+            return self.handleError(e, "fetching recent expenses")
+
+    # Get all goals created by a user
+    def getGoalsByUserId(self, userID):
+        """Fetches all goals for a given user ID"""
+        try:
+            goals = Goal.query.filter_by(userId=userID).all()
+            goalsData = [
+                {
+                    "goalID": goal.id,
+                    "goalName": goal.goalName,
+                    "targetAmount": goal.targetAmount,
+                    "timeDuration": goal.timeDuration,
+                    "percentageAllocation": goal.percentageAllocation
+                } for goal in goals
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": goalsData
+            }
+        except Exception as e:
+            return self.handleError(e, "fetching user goals")
+
+    # Get all expense entries for a user
+    def getMonthlyExpenses(self, userID):
+        """Fetches all expenses for a given user ID"""
+        try:
+            # Get the current year
+            current_year = datetime.now().year
+
+            # Filter expenses by user ID and the current year
+            expenses = Expense.query.filter(
+            Expense.userId == userID,
+            extract('year', Expense.date) == current_year
+        ).all()
+            expensesData = [
+                {
+                    "expenseID": expense.id,
+                    "category": expense.category,
+                    "amount": expense.amount,
+                    "date": expense.date.strftime("%Y-%m-%d"),
+                    "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d"),
+                } for expense in expenses
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": expensesData
+            }
+        except Exception as e:
+            return self.handleError(e, "fetching monthly expenses")
+
+    # Get the most recent salary received by user
+    def getLastSalary(self, userID):
+        """Fetches latest salary entry and total salary amount for the same month"""
+        try:
+            lastSalary = Salary.query.filter_by(userId=userID).order_by(Salary.salaryDate.desc()).first()
+            
+            if lastSalary:
+                year = lastSalary.salaryDate.year
+                month = lastSalary.salaryDate.month
+
+                monthlyTotal = (
+                    Salary.query
+                    .filter_by(userId=userID)
+                    .filter(db.extract('year', Salary.salaryDate) == year)
+                    .filter(db.extract('month', Salary.salaryDate) == month)
+                    .with_entities(db.func.sum(Salary.amount))
+                    .scalar() or 0
+                )
+
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "data": {
+                        "amount": monthlyTotal,
+                        "salaryDate": lastSalary.salaryDate.strftime("%Y-%m-%d"),
+                    }
+                }
+            else:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "data": None,
+                    "message": "No salary records found"
+                }
+
+        except Exception as e:
+            return self.handleError(e, "fetching salary information")
+        
     # Add a new savings or financial goal
     def addNewGoal(self, username, data):
         """Adds a new goal for the specified user"""
@@ -144,6 +345,15 @@ class dbClient:
                     "status": "Failed",
                     "statusCode": 404,
                     "message": f"User with username '{username}' does not exist"
+                }
+            
+            # Check if goal with the same name already exists for the user
+            existing_goal = Goal.query.filter_by(userId=user.id, goalName=data["goalName"]).first()
+            if existing_goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Goal with name '{data['goalName']}' already exists for user {username}"
                 }
 
             newGoalId = self.getLastId(Goal) + 1
@@ -166,93 +376,42 @@ class dbClient:
             }
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
-
-    # Get all goals created by a user
-    def getGoalsByUserId(self, userID):
-        """Fetches all goals for a given user ID"""
+            return self.handleError(e, "creating new goal")
+        
+    #Fetching usernames, first names, last names, and IDs of all users except the given userID    
+    def getUsernamesAndIDs(self, userID, query):
         try:
-            goals = Goal.query.filter_by(userId=userID).all()
-            print(goals)
-            goalsData = [
-                {
-                    "goalID": goal.id,
-                    "goalName": goal.goalName,
-                    "targetAmount": goal.targetAmount,
-                    "timeDuration": goal.timeDuration,
-                    "percentageAllocation": goal.percentageAllocation
-                } for goal in goals
+            # Prepare lowercase query for case-insensitive search
+            query = (query or "").strip().lower()
+
+            # Filter users (excluding current user)
+            users = User.query.filter(User.id != userID).all()
+
+            # Filter based on firstName + lastName containing the query
+            filteredUsers = [
+                user for user in users
+                if query in (user.firstName + user.lastName).lower()
             ]
+
+            userData = [
+                {
+                    "userID": user.id,
+                    "username": user.username,
+                    "firstName": user.firstName,
+                    "lastName": user.lastName
+                }
+                for user in filteredUsers
+            ]
+
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "data": goalsData
-            }
-        except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": str(e)
+                "data": userData
             }
 
-    # Get all expense entries for a user
-    def getMonthlyExpenses(self, userID):
-        """Fetches all expenses for a given user ID"""
-        try:
-            expenses = Expense.query.filter_by(userId=userID).all()
-            expensesData = [
-                {
-                    "expenseID": expense.id,
-                    "category": expense.category,
-                    "amount": expense.amount,
-                    "date": expense.date.strftime("%Y-%m-%d"),
-                    "weekStartDate": expense.weekStartDate,
-                } for expense in expenses
-            ]
-            return {
-                "status": "Success",
-                "statusCode": 200,
-                "data": expensesData
-            }
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
+            return self.handleError(e, "Fetching username and id")
 
-    # Get the most recent salary received by user
-    def getLastSalary(self, userID):
-        """Fetches the most recent salary entry for a given user ID"""
-        try:
-            lastSalary = Salary.query.filter_by(userId=userID).order_by(Salary.salaryDate.desc()).first()
-            if lastSalary:
-                return {
-                    "status": "Success",
-                    "statusCode": 200,
-                    "data": {
-                        "salaryID": lastSalary.id,
-                        "amount": lastSalary.amount,
-                        "salaryDate": lastSalary.salaryDate.strftime("%Y-%m-%d")
-                    }
-                }
-            else:
-                return {
-                    "status": "Success",
-                    "statusCode": 200,
-                    "data": None,
-                    "message": "No salary records found"
-                }
-        except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error : "+str(e)
-            }
     # Update the previous account balance for a given user
     def updatePreviousBalance(self, userID, newBalance):
         """Updates the previous account balance for the specified user"""
@@ -262,7 +421,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             user.previousBalance = float(newBalance)
@@ -271,16 +430,12 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Previous balance updated to {newBalance} for user {userID}"
+                "message": f"Previous balance updated to {newBalance} for user."
             }
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Updaying previous balance")
         
     # Add a new salary entry for a user
     def addSalary(self, userID, amount, salaryDate):
@@ -291,17 +446,17 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not found"
                 }
 
             newSalaryId = self.getLastId(Salary) + 1
 
-            newSalary = Salary(
-                id=newSalaryId,
-                userId=userID,
-                amount=float(amount),
-                salaryDate=salaryDate 
-            )
+            newSalary = Salary.addSalary(
+            id=newSalaryId,
+            userId=userID,
+            amount=amount,
+            salaryDate=salaryDate
+                    )
 
             db.session.add(newSalary)
             db.session.commit()
@@ -309,7 +464,7 @@ class dbClient:
             return {
                 "status": "Success",
                 "statusCode": 200,
-                "message": f"Salary of {amount} added for user {userID}",
+                "message": f"Salary of {amount} added.",
                 "data": {
                     "salaryID": newSalaryId,
                     "userID": userID,
@@ -320,11 +475,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "add salary")
 
     # Update the account balance for a given user
     def updateAccountBalance(self, userID, newBalance):
@@ -335,7 +486,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 404,
-                    "message": f"User with ID {userID} not found"
+                    "message": f"User not nfound"
                 }
 
             user.accountBalance = float(newBalance)
@@ -349,11 +500,7 @@ class dbClient:
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Updating account balance")
         
     # Add a new expense to the database
     def addNewExpense(self,userId, amount, category, date,startOfWeek):
@@ -387,9 +534,393 @@ class dbClient:
             }
 
         except Exception as e:
+            return self.handleError(e, "Adding new expense")
+        
+    # Get all expense entries for a user
+    # def getUserExpenses(self, userID):
+    #     """Fetches all expenses for a given user ID"""
+    #     try:
+    #         expenses = Expense.query.filter_by(userId=userID).all()
+    #         expensesData = [
+    #             {
+    #                 "expenseID": expense.id,
+    #                 "category": expense.category,
+    #                 "amount": expense.amount,
+    #                 "date": expense.date.strftime("%Y-%m-%d"),
+    #                 "weekStartDate": expense.weekStartDate.strftime("%Y-%m-%d")
+    #             } for expense in expenses
+    #         ]
+    #         return {
+    #             "status": "Success",
+    #             "statusCode": 200,
+    #             "data": expensesData
+    #         }
+    #     except Exception as e:
+    #         return {
+    #             "status": "Failed",
+    #             "statusCode": 400,
+    #             "message": "Error : " + str(e)
+    #         }
+        
+    # Get all salary entries for a user
+    def getUserSalaries(self, userID):
+        """Fetches all salaries for a given user ID"""
+        try:
+            salaries = Salary.query.filter_by(userId=userID).all()
+            salaryData = [
+                {
+                    "salaryID": salary.id,
+                    "amount": salary.amount,
+                    "salaryDate": salary.salaryDate.strftime("%Y-%m-%d")
+                } for salary in salaries
+            ]
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": salaryData
+            }
+        except Exception as e:
+            return self.handleError(e, "Fetching user salaries")
+
+    #Checks if the senderID and receiverID is present in DB.
+    def validateUsersExist(self, senderID, receiverID):
+        """Validates both sender and receiver users exist in the database"""
+        try:
+            # Validate sender exists
+            sender = User.query.filter_by(id=senderID).first()
+            if not sender:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Sender account not found. Please check the user ID.",
+                    "sender": None,
+                    "receiver": None
+                }
+
+            # Validate receiver exists
+            receiver = User.query.filter_by(id=receiverID).first()
+            if not receiver:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Recipient account not found. Please check the user ID.",
+                    "sender": None,
+                    "receiver": None
+                }
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Both users validated successfully",
+                "sender": sender,
+                "receiver": receiver
+            }
+
+        except Exception as e:
+            # Use centralized error handler for unexpected errors
+            return self.handleError(e, "user validation")
+    
+    #The shared report is saved in the shareReport table with relevant sender details.
+    def saveSharedReport(self, senderID, senderFirstName, senderLastName, receiverID, data):
+        """Saves the shared report data to the ShareReport table"""
+        try:
+            newReport = ShareReport(
+                senderID=senderID,
+                senderFirstName=senderFirstName,
+                senderLastName=senderLastName,
+                receiverID=receiverID,
+                data=data,
+                sharedDate=datetime.now(),
+                readFlag=0
+            )
+            db.session.add(newReport)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Report successfully saved",
+                "data": None
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "report sharing")
+        
+    #Returns the number of reports shared with the given userID
+    def getReportNumber(self, userID):
+        
+        try:
+            reportCount = ShareReport.query.filter_by(receiverID=userID).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": {
+                    "reportCount": reportCount
+                }
+            }
+        except Exception as e:
             return {
                 "status": "Failed",
                 "statusCode": 400,
                 "message": "Error: " + str(e)
             }
+        
+    #Fetches all sender details from shareReport table where receiverID equals the passed userID.
+    def getSenderDetails(self, userID):
+        
+        try:
+            senderRecords = ShareReport.query.filter_by(receiverID=userID).all()
+
+            if not senderRecords:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "No reports shared with this user.",
+                    "data": []
+                }
+
+            senders = []
+            for record in senderRecords:
+                senders.append({
+                    "reportId":record.id,
+                    "senderID": record.senderID,
+                    "senderFirstName": record.senderFirstName,
+                    "senderLastName": record.senderLastName,
+                    "sharedDate" : record.sharedDate.strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "data": senders
+            }
+
+        except Exception as e:
+            return self.handleError(e, "Fetching sender details")
+        
+    #Fetches the shared report based on receiver ID, sender ID, and shared date
+    def getReportData(self, userID, senderID, reportID):
+       
+        try:
+            report = ShareReport.query.filter_by(
+                receiverID=userID,
+                senderID=senderID,
+                id=reportID
+            ).first()
+
+            if report:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "Report found",
+                    "data": report.data
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "No matching report found"
+                }
+
+        except Exception as e:
+            return self.handleError(e, "report retrieval")
+        
+    # Fetches all unread shared report IDs for a specific user.
+    # A report is considered unread if readFlag == 0 and the receiverID matches the given userId.    
+    def getUnreadReportIds(self, userId):
+        try:
+            reports = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).all()
+
+            reportIds = [report.id for report in reports]
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Found {len(reportIds)} unread report(s)",
+                "unreadReportIds": reportIds
+            }
+
+        except Exception as e:
+            return self.handleError(e, "Fetching unread report ids")
+        
+    # Returns the count of unread shared reports for a specific user.
+    # A report is considered unread if readFlag == 0 and receiverID matches the given userId.
+    def getUnreadReportCount(self, userId):
+        try:
+            reportCount = ShareReport.query.filter_by(
+                receiverID=userId,
+                readFlag=0
+            ).count()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": f"Unread report count fetched successfully",
+                "reportCount": reportCount
+                
+            }
+
+        except Exception as e:
+            return self.handleError(e, "Fetching unread report count")
+        
+
+    # Updates the readFlag for the given reportID to 1.
+    def markReportAsRead(self, userId, reportId):
+        try:
+            report = ShareReport.query.filter_by(
+                id=reportId,
+                receiverID=userId
+            ).first()
+
+            if report:
+                report.readFlag = 1
+                db.session.commit()
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": f"Report ID {reportId} marked as read"
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": f"No unread report found for user ID {userId} and report ID {reportId}"
+                }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "marking report as read")
+
+
+    def getUserSettings(self, userId):
+        try:
+            user = User.query.get(userId)
+
+            if user:
+                return {
+                    "status": "Success",
+                    "statusCode": 200,
+                    "message": "User settings fetched successfully",
+                    "data": {
+                        "firstName": user.firstName,
+                        "lastName": user.lastName,
+                        "username": user.username
+                    }
+                }
+            else:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+        except Exception as e:
+            return self.handleError(e, "getting user settings")
+
+
+    def updateUserName(self, userId, firstName, lastName):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            user.firstName = firstName
+            user.lastName = lastName
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Name updated successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating user name")
+
+    def updateUserPassword(self, userId, newPassword):
+        try:
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            user.password = generate_password_hash(newPassword)
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Password updated successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating user password")
+        
+
+    def updateAllocation(self, userId, goalName):
+        try:
+            # Fetch the goal for the given user and goal name
+            goal = Goal.query.filter_by(userId=userId, goalName=goalName).first()
+            if not goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Goal not found"
+                }
+
+            # Fetch the user
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            # Subtract the goal's allocation percentage
+            user.goalAllocationPercent -= goal.percentageAllocation
+            if user.goalAllocationPercent < 0:
+                user.goalAllocationPercent = 0
+
+            # Delete the goal from the database
+            db.session.delete(goal)
+
+            # Commit the changes
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Allocation updated and goal removed successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating allocation and deleting goal")
+
+
+
+
+
+
+
+
+
+
+
+
 

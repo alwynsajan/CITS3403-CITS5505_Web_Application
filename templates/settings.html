@@ -1,0 +1,80 @@
+{% extends "base.html" %} 
+{% block content %}
+<div class="container mt-5">
+  <!-- Card 1: Update Name -->
+  <div class="card p-4 shadow-sm mb-4">
+    <h4 class="card-title mb-3">Update Name</h4>
+    <div id="nameAlert" class="alert d-none" role="alert"></div>
+    <form id="nameForm">
+      <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="firstName"
+          name="firstName"
+          value="{{ user.firstName }}"
+          required
+        />
+      </div>
+      <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="lastName"
+          name="lastName"
+          value="{{ user.lastName }}"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Update Name</button>
+    </form>
+  </div>
+
+  <!-- Card 2: Change Password -->
+  <div class="card p-4 shadow-sm">
+    <h4 class="card-title mb-3">Change Password</h4>
+    <div id="passwordAlert" class="alert d-none" role="alert"></div>
+    <form id="passwordForm">
+      <div class="mb-3">
+        <label for="currentPassword" class="form-label">Current Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="currentPassword"
+          name="currentPassword"
+          placeholder="Enter current password"
+          required
+        />
+      </div>
+      <div class="mb-3">
+        <label for="newPassword" class="form-label">New Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="newPassword"
+          name="newPassword"
+          placeholder="Enter new password"
+        />
+      </div>
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label"
+          >Confirm New Password</label
+        >
+        <input
+          type="password"
+          class="form-control"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="Confirm new password"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">Change Password</button>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}
