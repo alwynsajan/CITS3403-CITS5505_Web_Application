@@ -52,7 +52,7 @@ function addGlobalStyles() {
             }
         `;
         document.head.appendChild(style);
-        console.log('Added global styles for animations');
+        // console.log('Added global styles for animations');
     }
 }
 
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isChartJsAvailable()) {
             initMonthlySpendingChart();
         } else {
-            console.error('Chart.js is not available. Charts will not be rendered.');
+            // console.error('Chart.js is not available. Charts will not be rendered.');
             const chartContainers = document.querySelectorAll('.chart-container');
             chartContainers.forEach(container => {
                 container.innerHTML = `
@@ -302,7 +302,7 @@ function fetchSharedReports() {
                 `;
             });
     } catch (error) {
-        console.error('Critical error in fetchSharedReports:', error);
+        // console.error('Critical error in fetchSharedReports:', error);
         // Show user-friendly error message
         if (reportsContainer) {
             reportsContainer.innerHTML = `
@@ -512,7 +512,7 @@ function viewSharedReport(senderID, reportId) {
             }
         })
         .catch(error => {
-            console.error('Error fetching report details:', error);
+            // console.error('Error fetching report details:', error);
 
 
             if (hasModalView) {
@@ -889,19 +889,19 @@ function createExpenseReportHTML(expenseData) {
 function initMonthlySpendingChart() {
     // Check if we're on the expense page - if so, don't try to initialize this chart
     if (window.location.pathname.includes('/expense')) {
-        console.log('On expense page, skipping monthly spending chart initialization');
+        // console.log('On expense page, skipping monthly spending chart initialization');
         return;
     }
 
     const chartCanvas = document.getElementById('monthlySpendingChart');
     if (!chartCanvas) {
-        console.log('Monthly spending chart canvas not found, skipping initialization');
+        // console.log('Monthly spending chart canvas not found, skipping initialization');
         return;
     }
 
     // Check if Chart.js is available
     if (!isChartJsAvailable()) {
-        console.error('Chart.js is not available. Monthly spending chart will not be rendered.');
+        // console.error('Chart.js is not available. Monthly spending chart will not be rendered.');
         const chartContainer = chartCanvas.parentElement;
         if (chartContainer) {
             chartContainer.innerHTML = `
@@ -946,7 +946,7 @@ function initMonthlySpendingChart() {
         // Check if there's an existing chart instance and destroy it
         const existingChart = Chart.getChart(chartCanvas);
         if (existingChart) {
-            console.log('Destroying existing chart instance');
+            // console.log('Destroying existing chart instance');
             existingChart.destroy();
         }
 
@@ -1062,7 +1062,7 @@ function initMonthlySpendingChart() {
 
         console.log('Chart initialized successfully with filtered data');
     } catch (error) {
-        console.error('Error initializing chart:', error);
+        // console.error('Error initializing chart:', error);
         // Show error message
         const chartContainer = chartCanvas.parentElement;
         chartContainer.innerHTML = `
@@ -1107,13 +1107,13 @@ function adjustColor(color, amount) {
 function initGoalProgress() {
     // Check if we're on the expense page - if so, don't try to initialize goal progress
     if (window.location.pathname.includes('/expense')) {
-        console.log('On expense page, skipping goal progress initialization');
+        // console.log('On expense page, skipping goal progress initialization');
         return;
     }
 
     // Check if any goals have reached 100% completion
     if (window.goalData && window.goalData.length > 0) {
-        console.log('Goals found:', window.goalData.length);
+        // console.log('Goals found:', window.goalData.length);
 
         // Check for completed goals
         const completedGoals = window.goalData.filter(goal => goal.progressPercentage >= 100);
@@ -1131,7 +1131,7 @@ function initGoalProgress() {
 
     // For individual goal progress circles
     const progressCircles = document.querySelectorAll('.progress-circle');
-    console.log('Found progress circles:', progressCircles.length);
+    // console.log('Found progress circles:', progressCircles.length);
 
     // Add a slight delay to ensure DOM is fully rendered
     setTimeout(() => {
@@ -1180,7 +1180,7 @@ function initGoalProgress() {
  */
 function updateGoalProgressCircle(circleElement, animate = false) {
     if (!circleElement) {
-        console.error('updateGoalProgressCircle called with no circleElement');
+        // console.error('updateGoalProgressCircle called with no circleElement');
         return;
     }
 
@@ -1191,7 +1191,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
 
     // If SVG elements don't exist, create them
     if (!svg || !bar) {
-        console.log('SVG elements not found, creating them');
+        // console.log('SVG elements not found, creating them');
 
         // Create SVG structure
         svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1261,7 +1261,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
     const updatedPercentageElem = percentageElem || circleElement.querySelector('.progress-percentage');
 
     if (!updatedPercentageElem) {
-        console.error('Could not find or create percentage element');
+        // console.error('Could not find or create percentage element');
         return;
     }
 
@@ -1280,7 +1280,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
         } else {
             goalName = fullName;
         }
-        console.log('Found goal name for progress circle:', goalName);
+        // console.log('Found goal name for progress circle:', goalName);
     }
 
     // If we have a goal name and goal data, find the matching goal
@@ -1288,7 +1288,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
         const matchingGoal = window.goalData.find(g => g.goalName === goalName);
         if (matchingGoal && typeof matchingGoal.progressPercentage !== 'undefined') {
             percentage = matchingGoal.progressPercentage;
-            console.log('Using progress percentage from matching goal data:', percentage);
+            // console.log('Using progress percentage from matching goal data:', percentage);
         }
     }
 
@@ -1301,7 +1301,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
             if (percentageElem) {
                 percentageElem.textContent = `${percentage}%`;
             }
-            console.log('Setting progress percentage from first goal in goalData:', percentage);
+            // console.log('Setting progress percentage from first goal in goalData:', percentage);
         } else {
             percentage = 0;
         }
@@ -1309,7 +1309,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
         percentage = 0;
     }
 
-    console.log('Updating progress circle with percentage:', percentage);
+    // console.log('Updating progress circle with percentage:', percentage);
 
     // Circle parameters
     const r = 65;
@@ -1331,16 +1331,16 @@ function updateGoalProgressCircle(circleElement, animate = false) {
 
     // Check if goal is 100% complete and add redeem button if needed
     if (percentage >= 100) {
-        console.log('Goal is 100% complete, checking if redeem button exists');
+        // console.log('Goal is 100% complete, checking if redeem button exists');
 
         // Find the goal card that contains this circle
         const goalCard = circleElement.closest('.goal-card');
         if (!goalCard) {
-            console.error('Could not find goal card for this progress circle');
+            // console.error('Could not find goal card for this progress circle');
             return;
         }
 
-        console.log('Found goal card:', goalCard);
+        // console.log('Found goal card:', goalCard);
 
         // Find the goal details container - try different approaches
         let goalDetails = goalCard.querySelector('#goalDetails');
@@ -1348,20 +1348,20 @@ function updateGoalProgressCircle(circleElement, animate = false) {
         // If not found by ID, try to find it by class
         if (!goalDetails) {
             goalDetails = goalCard.querySelector('.goal-details');
-            console.log('Found goal details by class:', goalDetails);
+            // console.log('Found goal details by class:', goalDetails);
         }
 
         // If still not found, try to find any container that might hold the details
         if (!goalDetails) {
             goalDetails = goalCard.querySelector('.card-body > div');
-            console.log('Found potential goal details container:', goalDetails);
+            // console.log('Found potential goal details container:', goalDetails);
         }
 
         if (goalDetails) {
             // Remove existing redeem button if any
             const existingRedeemBtn = goalDetails.querySelector('.redeem-goal-btn');
             if (existingRedeemBtn) {
-                console.log('Redeem button already exists');
+                // console.log('Redeem button already exists');
                 return;
             }
 
@@ -1379,7 +1379,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
                     goalName = numberingMatch[1];
                 }
 
-                console.log('Found goal name:', goalName);
+                // console.log('Found goal name:', goalName);
             }
 
             // Get target amount
@@ -1393,7 +1393,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
                     const match = targetText.match(/\$?([\d,]+(\.\d+)?)/);
                     if (match) {
                         targetAmount = match[1].replace(/,/g, '');
-                        console.log('Found target amount from paragraphs:', targetAmount);
+                        // console.log('Found target amount from paragraphs:', targetAmount);
                     }
                 }
             });
@@ -1406,15 +1406,15 @@ function updateGoalProgressCircle(circleElement, animate = false) {
                     const match = goal.target.match(/\$?([\d,]+(\.\d+)?)/);
                     if (match) {
                         targetAmount = match[1].replace(/,/g, '');
-                        console.log('Found target amount from goalData:', targetAmount);
+                        // console.log('Found target amount from goalData:', targetAmount);
                     } else {
                         // If no match, use the target as is (might be a number already)
                         if (typeof goal.target === 'number') {
                             targetAmount = goal.target.toString();
-                            console.log('Using numeric target from goalData:', targetAmount);
+                            // console.log('Using numeric target from goalData:', targetAmount);
                         } else {
                             targetAmount = goal.target;
-                            console.log('Using target as-is from goalData:', targetAmount);
+                            // console.log('Using target as-is from goalData:', targetAmount);
                         }
                     }
                 }
@@ -1422,7 +1422,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
 
             // If we have both goal name and target amount, add the redeem button
             if (goalName && targetAmount) {
-                console.log('Adding redeem button for goal:', goalName, 'with target:', targetAmount);
+                // console.log('Adding redeem button for goal:', goalName, 'with target:', targetAmount);
 
                 const redeemBtn = document.createElement('button');
                 redeemBtn.className = 'btn btn-success btn-sm mt-2 redeem-goal-btn';
@@ -1433,7 +1433,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
                 // Add event listener with proper error handling
                 redeemBtn.addEventListener('click', function() {
                     try {
-                        console.log('Redeem button clicked for goal:', goalName, 'with amount:', targetAmount);
+                        // console.log('Redeem button clicked for goal:', goalName, 'with amount:', targetAmount);
                         redeemGoal(goalName, targetAmount);
                     } catch (error) {
                         console.error('Error in redeem button click handler:', error);
@@ -1443,7 +1443,7 @@ function updateGoalProgressCircle(circleElement, animate = false) {
 
                 // Add the button to the goal details
                 goalDetails.appendChild(redeemBtn);
-                console.log('Redeem button added successfully');
+                // console.log('Redeem button added successfully');
 
                 // Add visual highlight to the goal card
                 goalCard.classList.add('goal-completed');
@@ -1734,7 +1734,7 @@ async function saveNewGoal(event) {
         showAlert(`Goal "${goalName}" added successfully!`, 'success');
 
         // Force a page refresh after a short delay to ensure correct goal card display
-        console.log('Forcing page refresh after adding goal');
+        // console.log('Forcing page refresh after adding goal');
         setTimeout(() => {
             window.location.reload();
         }, 1000); // 1 second delay to allow the success message to be seen
@@ -1760,7 +1760,7 @@ function updateAllGoalCards(goalsData) {
         return;
     }
 
-    console.log('Updating all goal cards with data:', goalsData);
+    // console.log('Updating all goal cards with data:', goalsData);
 
     // Check if we're in single goal view or multiple goals view
     const singleGoalCard = document.querySelector('.goal-card');
@@ -1803,7 +1803,7 @@ function updateSingleGoalUI(goalData) {
     const goalCard = document.querySelector('.goal-card');
     if (!goalCard) return;
 
-    console.log('Updating single goal UI with data:', goalData);
+    // console.log('Updating single goal UI with data:', goalData);
 
     // First fade out the card content
     const cardBody = goalCard.querySelector('.card-body');
@@ -1901,13 +1901,13 @@ function updateSingleGoalUI(goalData) {
             const newGoalBtn = goalCard.querySelector('#newGoalBtn');
             if (newGoalBtn) {
                 newGoalBtn.addEventListener('click', function(event) {
-                    console.log('New goal button clicked in updateSingleGoalUI');
+                    // console.log('New goal button clicked in updateSingleGoalUI');
                     event.preventDefault();
                     event.stopPropagation();
 
                     const goalModal = document.getElementById('goalModal');
                     if (goalModal) {
-                        console.log('Opening goal modal from updateSingleGoalUI');
+                        // console.log('Opening goal modal from updateSingleGoalUI');
                         const goalModalInstance = new bootstrap.Modal(goalModal);
                         goalModalInstance.show();
                     } else {
@@ -1922,7 +1922,7 @@ function updateSingleGoalUI(goalData) {
                 const nextBtn = goalCard.querySelector('#nextGoalBtn');
 
                 if (prevBtn && nextBtn) {
-                    console.log('Adding event listeners to navigation buttons in updateSingleGoalUI');
+                    // console.log('Adding event listeners to navigation buttons in updateSingleGoalUI');
 
                     // Create a reversed copy of the goals array
                     const reversedGoals = [...window.goalData].reverse();
@@ -1931,14 +1931,14 @@ function updateSingleGoalUI(goalData) {
                     const currentIndex = reversedGoals.findIndex(g => g.goalName === goalData.goalName);
 
                     prevBtn.addEventListener('click', function() {
-                        console.log('Previous button clicked in updateSingleGoalUI');
+                        // console.log('Previous button clicked in updateSingleGoalUI');
                         const newIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
                         const newGoal = reversedGoals[newIndex];
                         updateSingleGoalUI(newGoal);
                     });
 
                     nextBtn.addEventListener('click', function() {
-                        console.log('Next button clicked in updateSingleGoalUI');
+                        // console.log('Next button clicked in updateSingleGoalUI');
                         const newIndex = (currentIndex + 1) % reversedGoals.length;
                         const newGoal = reversedGoals[newIndex];
                         updateSingleGoalUI(newGoal);
@@ -1957,7 +1957,7 @@ function renderMultipleGoals(goals) {
     const goalsContainer = document.getElementById('goalsContainer');
     if (!goalsContainer) return;
 
-    console.log('Rendering multiple goals:', goals.length);
+    // console.log('Rendering multiple goals:', goals.length);
 
     // Ensure navigation arrows are visible when there are multiple goals
     const prevBtn = document.getElementById('prevGoalBtn');
@@ -1966,11 +1966,11 @@ function renderMultipleGoals(goals) {
     if (goals && goals.length > 1) {
         if (prevBtn) prevBtn.style.display = '';
         if (nextBtn) nextBtn.style.display = '';
-        console.log('Showing navigation arrows for multiple goals in renderMultipleGoals');
+        // console.log('Showing navigation arrows for multiple goals in renderMultipleGoals');
     } else {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
-        console.log('Hiding navigation arrows for single goal in renderMultipleGoals');
+        // console.log('Hiding navigation arrows for single goal in renderMultipleGoals');
     }
 
     // Fade out existing content
@@ -2007,15 +2007,15 @@ function renderMultipleGoals(goals) {
             setTimeout(() => {
                 const addGoalBtn = emptyState.querySelector('.add-goal-btn');
                 if (addGoalBtn) {
-                    console.log('Adding click event listener to add-goal-btn in renderMultipleGoals');
+                    // console.log('Adding click event listener to add-goal-btn in renderMultipleGoals');
                     addGoalBtn.addEventListener('click', function(event) {
-                        console.log('Add goal button clicked in renderMultipleGoals');
+                        // console.log('Add goal button clicked in renderMultipleGoals');
                         event.preventDefault();
                         event.stopPropagation();
 
                         const goalModal = document.getElementById('goalModal');
                         if (goalModal) {
-                            console.log('Opening goal modal from renderMultipleGoals');
+                            // console.log('Opening goal modal from renderMultipleGoals');
                             const goalModalInstance = new bootstrap.Modal(goalModal);
                             goalModalInstance.show();
                         } else {
@@ -2242,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
 
-                console.log('Sending salary data:', { amount, date });
+                // console.log('Sending salary data:', { amount, date });
                 const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
@@ -2273,7 +2273,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
 
             } catch (error) {
-                console.error('Error adding salary:', error);
+                // console.error('Error adding salary:', error);
                 showAlert(error.message || 'Failed to add salary.', 'danger');
             } finally {
                 // Restore button state
@@ -2384,23 +2384,23 @@ function validateSalaryDate(input) {
 function setDate(dateID) {
     const dateInput = document.getElementById(dateID);
     if (!dateInput) {
-        console.warn(`Date input with ID '${dateID}' not found`);
+        // console.warn(`Date input with ID '${dateID}' not found`);
         return;
     }
 
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
     dateInput.max = today; // Prevent future dates
-    console.log(`Date input '${dateID}' set to today (${today}) with max date restriction`);
+    // console.log(`Date input '${dateID}' set to today (${today}) with max date restriction`);
 }
 
 // Ensure global currentGoalIndex is consistent with updateGoalsUI's currentIndex
 let currentGoalIndex = 0; // Defined as global variable
 
 function updateGoalsUI(goals) {
-    console.log('Updating goals UI with:', goals);
+    // console.log('Updating goals UI with:', goals);
     if (!goals || !goals.length) {
-        console.log('No goals to display');
+        // console.log('No goals to display');
         return;
     }
 
@@ -2449,16 +2449,16 @@ function updateGoalsUI(goals) {
     const goalSelectorContainer = document.querySelector('.goal-selector');
 
     if (reversedGoals.length > 1) {
-        console.log('Multiple goals detected:', reversedGoals.length);
+        // console.log('Multiple goals detected:', reversedGoals.length);
 
         // Don't create a new selector container, use the one from the template
         // Just update the counter if it exists
         const selectorCounter = goalSelectorContainer ? goalSelectorContainer.querySelector('.goal-counter') : null;
         if (selectorCounter) {
-            console.log('Updating goal counter to:', `1/${reversedGoals.length}`);
+            // console.log('Updating goal counter to:', `1/${reversedGoals.length}`);
             selectorCounter.textContent = `1/${reversedGoals.length}`;
         } else {
-            console.log('Goal counter not found in existing selector container');
+            // console.log('Goal counter not found in existing selector container');
         }
 
         // Setup goal navigation
@@ -2467,38 +2467,38 @@ function updateGoalsUI(goals) {
         const nextBtn = document.getElementById('nextGoalBtn');
         const counter = document.querySelector('.goal-counter');
 
-        console.log('Navigation elements:', { prevBtn, nextBtn, counter });
+        // console.log('Navigation elements:', { prevBtn, nextBtn, counter });
 
         // Ensure navigation arrows are visible when there are multiple goals
         if (reversedGoals.length > 1) {
             if (prevBtn) prevBtn.style.display = '';
             if (nextBtn) nextBtn.style.display = '';
-            console.log('Showing navigation arrows for multiple goals in setup');
+            // console.log('Showing navigation arrows for multiple goals in setup');
         } else {
             if (prevBtn) prevBtn.style.display = 'none';
             if (nextBtn) nextBtn.style.display = 'none';
-            console.log('Hiding navigation arrows for single goal in setup');
+            // console.log('Hiding navigation arrows for single goal in setup');
         }
 
         function updateGoalDisplay(index) {
             if (index < 0 || index >= reversedGoals.length) {
-                console.error('Invalid goal index:', index);
+                // console.error('Invalid goal index:', index);
                 return;
             }
 
-            console.log('Updating goal display for index:', index);
+            // console.log('Updating goal display for index:', index);
             const goal = reversedGoals[index];
-            console.log('Current goal:', goal);
+            // console.log('Current goal:', goal);
 
             // Ensure navigation arrows are visible when there are multiple goals
             if (reversedGoals.length > 1) {
                 if (prevBtn) prevBtn.style.display = '';
                 if (nextBtn) nextBtn.style.display = '';
-                console.log('Showing navigation arrows for multiple goals');
+                // console.log('Showing navigation arrows for multiple goals');
             } else {
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
-                console.log('Hiding navigation arrows for single goal');
+                // console.log('Hiding navigation arrows for single goal');
             }
 
             // Update all goal display elements
@@ -2520,7 +2520,7 @@ function updateGoalsUI(goals) {
             if (elements.progressPercentage) {
                 const percentage = goal.progressPercentage !== undefined ? goal.progressPercentage : 0;
                 elements.progressPercentage.textContent = `${percentage}%`;
-                console.log(`Setting progress percentage for ${goal.goalName} to ${percentage}%`);
+                // console.log(`Setting progress percentage for ${goal.goalName} to ${percentage}%`);
             }
             if (elements.goalTarget) elements.goalTarget.textContent = goal.target;
             if (elements.goalSaved) elements.goalSaved.textContent = goal.saved;
@@ -2538,7 +2538,7 @@ function updateGoalsUI(goals) {
 
                 // Add redeem button if goal is 100% complete
                 if (goal.progressPercentage >= 100) {
-                    console.log('Goal is 100% complete in updateGoalDisplay, adding redeem button:', goal.goalName);
+                    // console.log('Goal is 100% complete in updateGoalDisplay, adding redeem button:', goal.goalName);
 
                     const redeemBtn = document.createElement('button');
                     redeemBtn.className = 'btn btn-success btn-sm mt-2 redeem-goal-btn';
@@ -2549,16 +2549,16 @@ function updateGoalsUI(goals) {
                     // Add event listener with proper error handling
                     redeemBtn.addEventListener('click', function() {
                         try {
-                            console.log('Redeem button clicked for goal:', goal.goalName, 'with amount:', goal.target);
+                            // console.log('Redeem button clicked for goal:', goal.goalName, 'with amount:', goal.target);
                             redeemGoal(goal.goalName, goal.target);
                         } catch (error) {
-                            console.error('Error in redeem button click handler:', error);
+                            // console.error('Error in redeem button click handler:', error);
                             showAlert('An error occurred while redeeming the goal. Please try again.', 'danger');
                         }
                     });
 
                     goalDetails.appendChild(redeemBtn);
-                    console.log('Redeem button added successfully in updateGoalDisplay');
+                    // console.log('Redeem button added successfully in updateGoalDisplay');
 
                     // Add visual highlight to the goal card
                     const goalCard = document.querySelector('.goal-card');
@@ -2576,7 +2576,7 @@ function updateGoalsUI(goals) {
             if (circle) {
                 // Pass the current goal's progress percentage to ensure it's correctly updated
                 const percentage = goal.progressPercentage !== undefined ? goal.progressPercentage : 0;
-                console.log(`Updating progress circle for ${goal.goalName} with percentage: ${percentage}`);
+                // console.log(`Updating progress circle for ${goal.goalName} with percentage: ${percentage}`);
 
                 // Set the percentage text first to ensure it's used by updateGoalProgressCircle
                 const percentageElem = circle.querySelector('.progress-percentage');
@@ -2603,41 +2603,41 @@ function updateGoalsUI(goals) {
 
                 // Add new event listeners
                 newPrevBtn.addEventListener('click', () => {
-                    console.log('Previous button clicked');
+                    // console.log('Previous button clicked');
                     // Implement full circular navigation
                     currentIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
                     updateGoalDisplay(currentIndex);
                 });
 
                 newNextBtn.addEventListener('click', () => {
-                    console.log('Next button clicked');
+                    // console.log('Next button clicked');
                     // Implement full circular navigation
                     currentIndex = (currentIndex + 1) % reversedGoals.length;
                     updateGoalDisplay(currentIndex);
                 });
             } catch (error) {
-                console.error('Error setting up navigation buttons:', error);
+                // console.error('Error setting up navigation buttons:', error);
 
                 // Fallback: add event listeners directly to existing buttons
                 prevBtn.addEventListener('click', () => {
-                    console.log('Previous button clicked (fallback)');
+                    // console.log('Previous button clicked (fallback)');
                     currentIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
                     updateGoalDisplay(currentIndex);
                 });
 
                 nextBtn.addEventListener('click', () => {
-                    console.log('Next button clicked (fallback)');
+                    // console.log('Next button clicked (fallback)');
                     currentIndex = (currentIndex + 1) % reversedGoals.length;
                     updateGoalDisplay(currentIndex);
                 });
             }
         } else {
-            console.warn('Navigation buttons not found, creating new ones');
+            // console.warn('Navigation buttons not found, creating new ones');
 
             // If buttons don't exist, we need to create them in the progress circle container
             const progressCircleContainer = document.querySelector('.d-flex.justify-content-center.align-items-center.mb-2');
             if (progressCircleContainer) {
-                console.log('Found progress circle container, adding navigation buttons');
+                // console.log('Found progress circle container, adding navigation buttons');
 
                 // Add previous button before the progress circle
                 const prevBtn = document.createElement('button');
@@ -2672,7 +2672,7 @@ function updateGoalsUI(goals) {
 
                 if (newPrevBtn) {
                     newPrevBtn.addEventListener('click', () => {
-                        console.log('Previous button clicked (new)');
+                        // console.log('Previous button clicked (new)');
                         currentIndex = (currentIndex - 1 + reversedGoals.length) % reversedGoals.length;
                         updateGoalDisplay(currentIndex);
                     });
@@ -2680,7 +2680,7 @@ function updateGoalsUI(goals) {
 
                 if (newNextBtn) {
                     newNextBtn.addEventListener('click', () => {
-                        console.log('Next button clicked (new)');
+                        // console.log('Next button clicked (new)');
                         currentIndex = (currentIndex + 1) % reversedGoals.length;
                         updateGoalDisplay(currentIndex);
                     });
@@ -2792,15 +2792,15 @@ function updateAllGoalCards(goals) {
                 setTimeout(() => {
                     const newGoalBtn = cardBody.querySelector('#newGoalBtn');
                     if (newGoalBtn) {
-                        console.log('Adding click event listener to newGoalBtn in updateAllGoalCards');
+                        // console.log('Adding click event listener to newGoalBtn in updateAllGoalCards');
                         newGoalBtn.addEventListener('click', function(event) {
-                            console.log('New goal button clicked in updateAllGoalCards');
+                            // console.log('New goal button clicked in updateAllGoalCards');
                             event.preventDefault();
                             event.stopPropagation();
 
                             const goalModal = document.getElementById('goalModal');
                             if (goalModal) {
-                                console.log('Opening goal modal from updateAllGoalCards');
+                                // console.log('Opening goal modal from updateAllGoalCards');
                                 const goalModalInstance = new bootstrap.Modal(goalModal);
                                 goalModalInstance.show();
                             } else {
@@ -2815,14 +2815,14 @@ function updateAllGoalCards(goals) {
                 console.error('Could not find card body in goal card');
             }
         } else {
-            console.log('No goal card found, checking if we need to create one');
+            // console.log('No goal card found, checking if we need to create one');
 
             // If there's no goal card but we're in dashboard view, we might need to create one
             const mainContent = document.querySelector('.main-content');
             if (mainContent) {
                 const row = mainContent.querySelector('.row');
                 if (row) {
-                    console.log('Creating new empty goal card');
+                    // console.log('Creating new empty goal card');
 
                     // Create a new column for the goal card
                     const goalCol = document.createElement('div');
@@ -2882,7 +2882,7 @@ function updateAllGoalCards(goals) {
         // Check if we're in multiple goals view
         const goalsContainer = document.getElementById('goalsContainer');
         if (goalsContainer) {
-            console.log('Updating goals container to show empty state');
+            // console.log('Updating goals container to show empty state');
 
             // Show empty state in the goals container
             goalsContainer.innerHTML = `
@@ -2964,7 +2964,7 @@ function updateAllGoalCards(goals) {
     // Check if any goals have reached 100%
     const completedGoals = goals.filter(goal => goal.progressPercentage >= 100);
     if (completedGoals.length > 0) {
-        console.log('Found completed goals in updateAllGoalCards:', completedGoals);
+        // console.log('Found completed goals in updateAllGoalCards:', completedGoals);
 
         // Show notifications for completed goals
         completedGoals.forEach(goal => {
@@ -2974,7 +2974,7 @@ function updateAllGoalCards(goals) {
         // Add visual highlight to completed goal cards and ensure redeem buttons exist
         setTimeout(() => {
             const goalCards = document.querySelectorAll('.goal-card');
-            console.log('Found goal cards:', goalCards.length);
+            // console.log('Found goal cards:', goalCards.length);
 
             goalCards.forEach(card => {
                 const goalNameElement = card.querySelector('.goal-name, .progress-label, h3');
@@ -2986,12 +2986,12 @@ function updateAllGoalCards(goals) {
                         goalName = numberingMatch[1];
                     }
 
-                    console.log('Checking goal card for:', goalName);
+                    // console.log('Checking goal card for:', goalName);
 
                     // Check if this card corresponds to a completed goal
                     const completedGoal = completedGoals.find(g => g.goalName === goalName);
                     if (completedGoal) {
-                        console.log('Found completed goal card for:', goalName);
+                        // console.log('Found completed goal card for:', goalName);
 
                         // Add visual highlight
                         card.classList.add('goal-completed');
@@ -3004,7 +3004,7 @@ function updateAllGoalCards(goals) {
                         if (goalDetails) {
                             const existingRedeemBtn = goalDetails.querySelector('.redeem-goal-btn');
                             if (!existingRedeemBtn) {
-                                console.log('Adding missing redeem button for completed goal:', goalName);
+                                // console.log('Adding missing redeem button for completed goal:', goalName);
 
                                 // Create and add redeem button
                                 const redeemBtn = document.createElement('button');
@@ -3016,17 +3016,17 @@ function updateAllGoalCards(goals) {
                                 // Add event listener
                                 redeemBtn.addEventListener('click', function() {
                                     try {
-                                        console.log('Redeem button clicked for goal:', goalName, 'with amount:', completedGoal.target);
+                                        // console.log('Redeem button clicked for goal:', goalName, 'with amount:', completedGoal.target);
                                         redeemGoal(goalName, completedGoal.target);
                                     } catch (error) {
-                                        console.error('Error in redeem button click handler:', error);
+                                        // console.error('Error in redeem button click handler:', error);
                                         showAlert('An error occurred while redeeming the goal. Please try again.', 'danger');
                                     }
                                 });
 
                                 // Add the button to the goal details
                                 goalDetails.appendChild(redeemBtn);
-                                console.log('Redeem button added successfully for completed goal');
+                                // console.log('Redeem button added successfully for completed goal');
                             } else {
                                 console.log('Redeem button already exists for completed goal:', goalName);
                             }
@@ -3052,32 +3052,32 @@ function updateAllGoalCards(goals) {
  */
 function updateLatestTransactions(transactions) {
     if (!transactions || !transactions.length) {
-        console.log('No transactions to update');
+        // console.log('No transactions to update');
         return;
     }
 
-    console.log('Updating latest transactions with:', transactions);
+    // console.log('Updating latest transactions with:', transactions);
 
     // Try different selectors to find the transactions list
     // First try the class name from the template (transaction-list)
     let transactionsList = document.querySelector('.transaction-list');
-    console.log('Found transaction-list?', !!transactionsList);
+    // console.log('Found transaction-list?', !!transactionsList);
 
     // If not found, try other common class names
     if (!transactionsList) {
         transactionsList = document.querySelector('.transactions-list, .latest-transactions, .transactions');
-        console.log('Found alternative transaction list?', !!transactionsList);
+        // console.log('Found alternative transaction list?', !!transactionsList);
     }
 
     // If not found, try to find it by ID
     if (!transactionsList) {
         transactionsList = document.getElementById('transactionsList');
-        console.log('Found by ID?', !!transactionsList);
+        // console.log('Found by ID?', !!transactionsList);
     }
 
     // If still not found, try to find the transactions card and create the list
     if (!transactionsList) {
-        console.log('Transactions list not found, looking for transactions card');
+        // console.log('Transactions list not found, looking for transactions card');
 
         // Find the card with the "Transactions" title
         const transactionsCard = document.querySelector('.card:has(h5:contains("Transactions"))');
@@ -3087,13 +3087,13 @@ function updateLatestTransactions(transactions) {
             for (const card of allCards) {
                 const title = card.querySelector('h5');
                 if (title && title.textContent.includes('Transaction')) {
-                    console.log('Found transactions card by title content');
+                    // console.log('Found transactions card by title content');
 
                     // Check if the card already has a transaction list
                     const existingList = card.querySelector('.transaction-list');
                     if (existingList) {
                         transactionsList = existingList;
-                        console.log('Found existing transaction list in card');
+                        // console.log('Found existing transaction list in card');
                     } else {
                         // Create a new transaction list
                         const cardBody = card.querySelector('.card-body');
@@ -3110,20 +3110,20 @@ function updateLatestTransactions(transactions) {
                             transactionsList.style.maxHeight = '250px';
                             transactionsList.style.overflowY = 'auto';
                             cardBody.appendChild(transactionsList);
-                            console.log('Created new transaction list in card body');
+                            // console.log('Created new transaction list in card body');
                         }
                     }
                     break;
                 }
             }
         } else {
-            console.log('Found transactions card');
+            // console.log('Found transactions card');
 
             // Check if the card already has a transaction list
             const existingList = transactionsCard.querySelector('.transaction-list');
             if (existingList) {
                 transactionsList = existingList;
-                console.log('Found existing transaction list in card');
+                // console.log('Found existing transaction list in card');
             } else {
                 // Create a new transaction list
                 const cardBody = transactionsCard.querySelector('.card-body');
@@ -3140,7 +3140,7 @@ function updateLatestTransactions(transactions) {
                     transactionsList.style.maxHeight = '250px';
                     transactionsList.style.overflowY = 'auto';
                     cardBody.appendChild(transactionsList);
-                    console.log('Created new transaction list in card body');
+                    // console.log('Created new transaction list in card body');
                 }
             }
         }
@@ -3148,11 +3148,11 @@ function updateLatestTransactions(transactions) {
 
     // If we still couldn't find or create a transaction list, give up
     if (!transactionsList) {
-        console.error('Could not find or create transaction list');
+        // console.error('Could not find or create transaction list');
         return;
     }
 
-    console.log('Found transactions list:', transactionsList);
+    // console.log('Found transactions list:', transactionsList);
 
     // Add scrolling styles to the transaction list
     transactionsList.style.maxHeight = '250px';
@@ -3329,7 +3329,7 @@ function updateLatestTransactions(transactions) {
  */
 function isCountUpAvailable() {
     if (typeof CountUp === 'undefined') {
-        console.error('CountUp.js is not loaded. Please include the CountUp.js library.');
+        // console.error('CountUp.js is not loaded. Please include the CountUp.js library.');
         return false;
     }
     return true;
@@ -3358,7 +3358,7 @@ function initCountUp() {
                     decimalPlaces: 2
                 }).start();
             } catch (error) {
-                console.error('Error initializing CountUp for balanceAmount:', error);
+                // console.error('Error initializing CountUp for balanceAmount:', error);
                 // Fallback: manually update the element
                 balanceAmount.textContent = '$' + balanceValue.toFixed(2);
             }
@@ -3375,7 +3375,7 @@ function initCountUp() {
                     decimalPlaces: 1
                 }).start();
             } catch (error) {
-                console.error('Error initializing CountUp for goalProgress:', error);
+                 console.error('Error initializing CountUp for goalProgress:', error);
                 // Fallback: manually update the element
                 if (goalProgress) {
                     goalProgress.textContent = progressValue.toFixed(1) + '%';
@@ -3396,7 +3396,7 @@ function initCountUp() {
                     }).start();
                 }
             } catch (error) {
-                console.error('Error initializing CountUp for needsAmount:', error);
+                // console.error('Error initializing CountUp for needsAmount:', error);
                 const needsAmount = document.getElementById('needsAmount');
                 if (needsAmount) {
                     needsAmount.textContent = '$' + needs.toFixed(2);
@@ -3412,7 +3412,7 @@ function initCountUp() {
                     }).start();
                 }
             } catch (error) {
-                console.error('Error initializing CountUp for wantsAmount:', error);
+                // console.error('Error initializing CountUp for wantsAmount:', error);
                 const wantsAmount = document.getElementById('wantsAmount');
                 if (wantsAmount) {
                     wantsAmount.textContent = '$' + wants.toFixed(2);
@@ -3428,7 +3428,7 @@ function initCountUp() {
                     }).start();
                 }
             } catch (error) {
-                console.error('Error initializing CountUp for savingsAmount:', error);
+                // console.error('Error initializing CountUp for savingsAmount:', error);
                 const savingsAmount = document.getElementById('savingsAmount');
                 if (savingsAmount) {
                     savingsAmount.textContent = '$' + savings.toFixed(2);
@@ -3436,7 +3436,7 @@ function initCountUp() {
             }
         }
     } catch (error) {
-        console.error('Error in initCountUp:', error);
+        // console.error('Error in initCountUp:', error);
         // Fallback: manually update the elements without animation
         updateElementsWithoutAnimation();
     }
@@ -3446,7 +3446,7 @@ function initCountUp() {
  * Fallback function to update elements without animation when CountUp is not available
  */
 function updateElementsWithoutAnimation() {
-    console.log('Using fallback method to update elements without animation');
+    // console.log('Using fallback method to update elements without animation');
 
     // Update balance amount
     const balanceAmount = document.getElementById('balanceAmount');
@@ -3546,7 +3546,7 @@ function updateGoalContent() {
                     decimalPlaces: 1
                 }).start();
             } catch (error) {
-                console.error('Error updating goal progress with CountUp:', error);
+                // console.error('Error updating goal progress with CountUp:', error);
                 // Fallback if CountUp fails
                 progressPercentage.textContent = `${currentGoal.progressPercentage.toFixed(1)}%`;
             }
@@ -3649,11 +3649,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Use the goal data already provided by the server in the HTML template
     // No need to fetch fresh data since it's already included in the page
-    console.log('Using goal data from HTML template...');
+    // console.log('Using goal data from HTML template...');
     try {
         // Log progress percentages for debugging
         if (window.goalData && window.goalData.length > 0) {
-            console.log('Goal data from template:', window.goalData);
+            // console.log('Goal data from template:', window.goalData);
             window.hasGoal = window.goalData.length > 0;
             window.goalData.forEach(goal => {
                 console.log(`Goal: ${goal.goalName}, Progress: ${goal.progressPercentage}%`);
@@ -3786,15 +3786,15 @@ async function redeemGoal(goalName, amount) {
             });
         }
 
-        if (redeemedCard) {
-            console.log('Found goal card to redeem:', redeemedCard);
-        } else {
-            console.warn('Could not find goal card with name:', goalName);
-        }
+        // if (redeemedCard) {
+        //     console.log('Found goal card to redeem:', redeemedCard);
+        // } else {
+        //     console.warn('Could not find goal card with name:', goalName);
+        // }
 
         // Show loading state on the redeem button
         if (redeemedCard) {
-            console.log('Adding loading state to redeem button');
+            // console.log('Adding loading state to redeem button');
             const redeemBtn = redeemedCard.querySelector('.redeem-goal-btn');
             if (redeemBtn) {
                 redeemBtn.disabled = true;
@@ -3806,11 +3806,11 @@ async function redeemGoal(goalName, amount) {
 
             if (goalIndex !== -1) {
                 // Remove the goal from the global data immediately
-                console.log(`Removing goal "${goalName}" from global data at index ${goalIndex}`);
+                // console.log(`Removing goal "${goalName}" from global data at index ${goalIndex}`);
                 window.goalData.splice(goalIndex, 1);
 
                 // Immediately refresh the entire goal section
-                console.log('Immediately refreshing goal section after redeeming goal');
+                // console.log('Immediately refreshing goal section after redeeming goal');
                 updateAllGoalCards(window.goalData);
             }
 
@@ -3871,7 +3871,7 @@ async function redeemGoal(goalName, amount) {
                 }
             } else if (isMultipleGoalsView && parentCol) {
                 // In multiple goals view, immediately start removing this specific goal card
-                console.log('Immediately removing goal card from multiple goals view');
+                // console.log('Immediately removing goal card from multiple goals view');
 
                 // Animate removal with more visible effect
                 parentCol.style.transition = 'all 0.5s ease';
@@ -3938,11 +3938,11 @@ async function redeemGoal(goalName, amount) {
             goalName: goalName
         };
 
-        console.log('Redeeming goal with data:', data);
+        // console.log('Redeeming goal with data:', data);
 
         // We don't need to show a loading indicator here since we'll refresh the page
         // and it might cause multiple alerts to stack up
-        console.log(`Redeeming goal "${goalName}"...`);
+        // console.log(`Redeeming goal "${goalName}"...`);
 
         // Send request to add expense
         const response = await fetch('/dashboard/addExpense', {
@@ -3960,7 +3960,7 @@ async function redeemGoal(goalName, amount) {
             showAlert(`Goal "${goalName}" redeemed successfully! Page will refresh...`, 'success');
 
             // Always force page refresh after successful redemption
-            console.log('Goal redeemed successfully, forcing page refresh');
+            // console.log('Goal redeemed successfully, forcing page refresh');
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
@@ -3971,13 +3971,13 @@ async function redeemGoal(goalName, amount) {
             try {
                 // Use goal data from the response if available
                 if (result.goalData !== undefined) {
-                    console.log('Using goal data from response:', result.goalData);
+                    // console.log('Using goal data from response:', result.goalData);
                     window.goalData = result.goalData;
                     window.hasGoal = result.hasGoal;
                 } else {
-                    // 不需要从服务器获取目标数据，因为app.py中没有定义/dashboard/getGoals路径
+                    
                     console.log('No goal data in response, using existing goal data');
-                    // 使用现有的目标数据
+                    
                     if (!window.goalData) {
                         window.goalData = [];
                     }
@@ -3999,7 +3999,7 @@ async function redeemGoal(goalName, amount) {
                     const transactionsResult = await transactionsResponse.json();
 
                     if (transactionsResponse.ok && transactionsResult.status === "Success") {
-                        console.log('Updating latest transactions after goal redemption:', transactionsResult.data);
+                        // console.log('Updating latest transactions after goal redemption:', transactionsResult.data);
                         // Update latest transactions
                         updateLatestTransactions(transactionsResult.data);
 
@@ -4008,29 +4008,29 @@ async function redeemGoal(goalName, amount) {
                             // Try different selectors to find the transactions list
                             // First try the class name from the template (transaction-list)
                             let transactionsList = document.querySelector('.transaction-list');
-                            console.log('Found transaction-list for refresh?', !!transactionsList);
+                            // console.log('Found transaction-list for refresh?', !!transactionsList);
 
                             // If not found, try other common class names
                             if (!transactionsList) {
                                 transactionsList = document.querySelector('.transactions-list, .latest-transactions, .transactions');
-                                console.log('Found alternative transaction list for refresh?', !!transactionsList);
+                                // console.log('Found alternative transaction list for refresh?', !!transactionsList);
                             }
 
                             // If not found, try to find it by ID
                             if (!transactionsList) {
                                 transactionsList = document.getElementById('transactionsList');
-                                console.log('Found transaction list by ID?', !!transactionsList);
+                                // console.log('Found transaction list by ID?', !!transactionsList);
                             }
 
                             if (transactionsList) {
-                                console.log('Forcing refresh of transactions list');
+                                // console.log('Forcing refresh of transactions list');
                                 // Add a highlight effect to make the new transaction noticeable
                                 const items = transactionsList.querySelectorAll('.transaction-item, div[class*="transaction"], .d-flex.justify-content-between');
-                                console.log('Found transaction items:', items.length);
+                                // console.log('Found transaction items:', items.length);
 
                                 if (items.length > 0) {
                                     const latestItem = items[0]; // First item is the most recent
-                                    console.log('Highlighting latest transaction item');
+                                    // console.log('Highlighting latest transaction item');
 
                                     // Add a temporary highlight class
                                     latestItem.classList.add('highlight-new-transaction');
@@ -4058,11 +4058,11 @@ async function redeemGoal(goalName, amount) {
                                     }, 2000);
                                 }
                             } else {
-                                console.log('Transactions list not found for refresh, trying to find transactions card');
+                                // console.log('Transactions list not found for refresh, trying to find transactions card');
 
                                 // Try to find all cards
                                 const allCards = document.querySelectorAll('.card');
-                                console.log('Found cards:', allCards.length);
+                                // console.log('Found cards:', allCards.length);
 
                                 // Try to find the transactions card by title content
                                 let transactionsCard = null;
@@ -4075,17 +4075,17 @@ async function redeemGoal(goalName, amount) {
                                         title.textContent.includes('Latest')
                                     )) {
                                         transactionsCard = card;
-                                        console.log('Found transactions card by title:', title.textContent);
+                                        // console.log('Found transactions card by title:', title.textContent);
                                     }
                                 });
 
                                 if (transactionsCard) {
-                                    console.log('Found transactions card, refreshing its content');
+                                    // console.log('Found transactions card, refreshing its content');
 
                                     // Check if there's an empty state
                                     const emptyState = transactionsCard.querySelector('.empty-state');
                                     if (emptyState) {
-                                        console.log('Found empty state, removing it');
+                                        // console.log('Found empty state, removing it');
                                         emptyState.remove();
                                     }
 
@@ -4094,7 +4094,7 @@ async function redeemGoal(goalName, amount) {
                                         .then(response => response.json())
                                         .then(data => {
                                             if (data.status === "Success") {
-                                                console.log('Got fresh transaction data, updating UI');
+                                                // console.log('Got fresh transaction data, updating UI');
 
                                                 // Get the card body
                                                 const cardBody = transactionsCard.querySelector('.card-body');
@@ -4102,7 +4102,7 @@ async function redeemGoal(goalName, amount) {
                                                     // Create a transaction list if it doesn't exist
                                                     let transactionList = cardBody.querySelector('.transaction-list');
                                                     if (!transactionList) {
-                                                        console.log('Creating new transaction list');
+                                                        // console.log('Creating new transaction list');
                                                         transactionList = document.createElement('div');
                                                         transactionList.className = 'transaction-list';
 
@@ -4202,7 +4202,7 @@ async function redeemGoal(goalName, amount) {
 
                 // Immediately remove the redeemed goal from the UI
                 if (redeemedCard) {
-                    console.log('Removing redeemed goal from UI');
+                    // console.log('Removing redeemed goal from UI');
 
                     // Add a visual indicator that the goal is being redeemed
                     redeemedCard.classList.add('redeeming');
@@ -4212,15 +4212,15 @@ async function redeemGoal(goalName, amount) {
                     const isSingleGoalView = !isMultipleGoalsView && document.querySelector('.goal-card') !== null;
 
                     if (isSingleGoalView) {
-                        console.log('In single goal view - removing goal and showing next goal if available');
+                        // console.log('In single goal view - removing goal and showing next goal if available');
 
                         // If we have other goals, show the next one
                         if (window.goalData && window.goalData.length > 0) {
-                            console.log(`${window.goalData.length} goals remaining, showing next goal`);
+                            // console.log(`${window.goalData.length} goals remaining, showing next goal`);
                             // Update the single goal view with the first remaining goal
                             updateGoalsUI(window.goalData);
                         } else {
-                            console.log('No goals left, showing empty state');
+                            // console.log('No goals left, showing empty state');
                             // Show empty state in the goal card
                             const cardBody = redeemedCard.querySelector('.card-body');
                             if (cardBody) {
@@ -4254,30 +4254,30 @@ async function redeemGoal(goalName, amount) {
                                     setTimeout(() => {
                                         const newGoalBtn = cardBody.querySelector('#newGoalBtn');
                                         if (newGoalBtn) {
-                                            console.log('Adding click event listener to newGoalBtn');
+                                            // console.log('Adding click event listener to newGoalBtn');
                                             newGoalBtn.addEventListener('click', function(event) {
-                                                console.log('New goal button clicked');
+                                                // console.log('New goal button clicked');
                                                 event.preventDefault();
                                                 event.stopPropagation();
 
                                                 const goalModal = document.getElementById('goalModal');
                                                 if (goalModal) {
-                                                    console.log('Opening goal modal');
+                                                    // console.log('Opening goal modal');
                                                     const goalModalInstance = new bootstrap.Modal(goalModal);
                                                     goalModalInstance.show();
                                                 } else {
-                                                    console.error('Goal modal not found');
+                                                    // console.error('Goal modal not found');
                                                 }
                                             });
                                         } else {
-                                            console.error('New goal button not found after adding to DOM');
+                                            // console.error('New goal button not found after adding to DOM');
                                         }
                                     }, 100);
                                 }, 300);
                             }
                         }
                     } else if (isMultipleGoalsView) {
-                        console.log('In multiple goals view - removing this goal card');
+                        // console.log('In multiple goals view - removing this goal card');
 
                         // Find the specific goal card for this goal
                         const allCards = document.querySelectorAll('.card');
@@ -4301,7 +4301,7 @@ async function redeemGoal(goalName, amount) {
                         });
 
                         if (goalCard) {
-                            console.log('Found specific goal card to remove');
+                            // console.log('Found specific goal card to remove');
                             const parentCol = goalCard.closest('.col-md-6');
 
                             if (parentCol) {
@@ -4340,15 +4340,15 @@ async function redeemGoal(goalName, amount) {
                                             setTimeout(() => {
                                                 const addGoalBtn = goalsContainer.querySelector('.add-goal-btn');
                                                 if (addGoalBtn) {
-                                                    console.log('Adding click event listener to add-goal-btn in multiple goals view');
+                                                    // console.log('Adding click event listener to add-goal-btn in multiple goals view');
                                                     addGoalBtn.addEventListener('click', function(event) {
-                                                        console.log('Add goal button clicked in multiple goals view');
+                                                        // console.log('Add goal button clicked in multiple goals view');
                                                         event.preventDefault();
                                                         event.stopPropagation();
 
                                                         const goalModal = document.getElementById('goalModal');
                                                         if (goalModal) {
-                                                            console.log('Opening goal modal from multiple goals view');
+                                                            // console.log('Opening goal modal from multiple goals view');
                                                             const goalModalInstance = new bootstrap.Modal(goalModal);
                                                             goalModalInstance.show();
                                                         } else {
@@ -4367,12 +4367,12 @@ async function redeemGoal(goalName, amount) {
                                 }, 300);
                             }
                         } else {
-                            console.log('Could not find specific goal card, refreshing all goals');
+                            // console.log('Could not find specific goal card, refreshing all goals');
                             // If we couldn't find the specific card, update all goals
                             renderMultipleGoals(window.goalData);
                         }
                     } else {
-                        console.log('Could not determine view type, refreshing all goals');
+                        // console.log('Could not determine view type, refreshing all goals');
                         // If we couldn't determine the view type, update all goals
                         if (window.goalData && window.goalData.length > 0) {
                             updateAllGoalCards(window.goalData);
@@ -4383,7 +4383,7 @@ async function redeemGoal(goalName, amount) {
                 // We've already updated the UI in the previous step, so we don't need to do it again
                 console.log('UI has been updated, no further action needed');
             } catch (updateError) {
-                console.error('Error updating UI after goal redemption:', updateError);
+                // console.error('Error updating UI after goal redemption:', updateError);
                 // If updating the UI fails, fall back to page reload
                 setTimeout(() => {
                     window.location.reload();
@@ -4394,17 +4394,17 @@ async function redeemGoal(goalName, amount) {
             showAlert(`Error: ${result.message || 'Failed to redeem goal'}. Page will refresh...`, 'danger');
 
             // Refresh the page after a short delay
-            console.log('Error occurred during goal redemption, refreshing page in 2 seconds...');
+            // console.log('Error occurred during goal redemption, refreshing page in 2 seconds...');
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
         }
     } catch (error) {
-        console.error('Error redeeming goal:', error);
+        // console.error('Error redeeming goal:', error);
         showAlert(`Error: ${error.message || 'Failed to redeem goal'}. Page will refresh...`, 'danger');
 
         // Refresh the page after a short delay
-        console.log('Error caught during goal redemption, refreshing page in 2 seconds...');
+        // console.log('Error caught during goal redemption, refreshing page in 2 seconds...');
         setTimeout(() => {
             window.location.reload();
         }, 2000);
@@ -4422,7 +4422,7 @@ async function updateTransactionsList() {
         const result = await response.json();
 
         if (response.ok && result.status === "Success") {
-            console.log('Updating latest transactions:', result.data);
+            // console.log('Updating latest transactions:', result.data);
 
             // Try different selectors to find the transactions list
             let transactionsList = document.querySelector('.transaction-list');
@@ -4501,7 +4501,7 @@ async function updateTransactionsList() {
                     }, 2000);
                 }
 
-                console.log('Transaction list updated successfully');
+                // console.log('Transaction list updated successfully');
                 return;
             }
 
@@ -4521,7 +4521,7 @@ async function updateTransactionsList() {
             });
 
             if (transactionsCard) {
-                console.log('Found transactions card, refreshing its content');
+                // console.log('Found transactions card, refreshing its content');
 
                 // Check if there's an empty state
                 const emptyState = transactionsCard.querySelector('.empty-state');
@@ -4644,7 +4644,7 @@ async function updateTransactionsList() {
             // Update the monthly expenses data if it's included in the response
             if (result.monthlyExpenses && Array.isArray(result.monthlyExpenses)) {
                 window.monthlyExpenses = result.monthlyExpenses;
-                console.log('Updated monthly expenses data:', window.monthlyExpenses);
+                // console.log('Updated monthly expenses data:', window.monthlyExpenses);
             }
 
             // Update the share button state based on the new expense data
@@ -4653,7 +4653,7 @@ async function updateTransactionsList() {
             throw new Error(result.message || 'Failed to fetch latest transactions');
         }
     } catch (error) {
-        console.error('Error updating transactions list:', error);
+        // console.error('Error updating transactions list:', error);
         throw error;
     }
 }
@@ -4771,7 +4771,7 @@ window.setupShareSummaryButton = function() {
     const shareBtn = document.getElementById('shareSummaryBtn');
 
     if (shareBtn) {
-        console.log('Setting up share summary button');
+        // console.log('Setting up share summary button');
 
         // Remove any existing event listeners to prevent duplicates
         if (shareBtn.clickHandlerAttached) {
@@ -4785,21 +4785,21 @@ window.setupShareSummaryButton = function() {
         if (window.location.pathname.includes('/expense')) {
             // On expense page, use expenseData
             hasExpense = window.expenseData && window.expenseData.hasExpense;
-            console.log('On expense page, has expense data:', hasExpense);
+            // console.log('On expense page, has expense data:', hasExpense);
         } else {
             // On dashboard page, use monthlyExpenses
             hasExpense = window.hasOwnProperty('monthlyExpenses') &&
                           Array.isArray(window.monthlyExpenses) &&
                           window.monthlyExpenses.some(expense => expense > 0);
-            console.log('On dashboard page, has expense data:', hasExpense);
-            console.log('Monthly expenses:', window.monthlyExpenses);
+            // console.log('On dashboard page, has expense data:', hasExpense);
+            // console.log('Monthly expenses:', window.monthlyExpenses);
         }
 
         if (!hasExpense) {
             // Disable the button if there are no expenses
             shareBtn.disabled = true;
             shareBtn.title = ""; // No tooltip text
-            console.log('Share button disabled: No expense data to share');
+            // console.log('Share button disabled: No expense data to share');
 
             // Make the button gray to indicate it's disabled
             shareBtn.style.backgroundColor = '#f0f0f0';
@@ -4836,7 +4836,7 @@ window.setupShareSummaryButton = function() {
  * This function is made globally available for use in expense.js
  */
 window.handleShareButtonClick = function() {
-    console.log('Share button clicked');
+    // console.log('Share button clicked');
 
     // Get the export report modal
     const exportReportModal = document.getElementById('exportReportModal');
@@ -4939,7 +4939,7 @@ function initSalaryVsExpensesChart() {
 
         console.log('Salary vs Expenses chart initialized');
     } catch (error) {
-        console.error('Error initializing Salary vs Expenses chart:', error);
+        // console.error('Error initializing Salary vs Expenses chart:', error);
         // Show error message
         chartContainer.innerHTML = `
             <div class="text-center py-4">
@@ -5091,7 +5091,7 @@ function setupExportReportFeature() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error searching users:', error);
+                    // console.error('Error searching users:', error);
                     userSearchLoading.classList.add('d-none');
                     searchResults.innerHTML = `
                         <div class="list-group-item text-center text-danger">
@@ -5164,7 +5164,7 @@ function setupExportReportFeature() {
             }
         })
         .catch(error => {
-            console.error('Error sending report:', error);
+            // console.error('Error sending report:', error);
             showAlert('Send failed: ' + error.message, 'danger');
         })
         .finally(() => {
@@ -5200,14 +5200,14 @@ function hideLoading(element) {
  * @returns {boolean} True if the goal name already exists, false otherwise
  */
 function checkDuplicateGoalName(goalName) {
-    console.log('Checking if goal name already exists:', goalName);
+    // console.log('Checking if goal name already exists:', goalName);
 
     // Normalize the goal name for case-insensitive comparison
     const normalizedName = goalName.trim().toLowerCase();
 
     // Check if window.goalData exists and is an array
     if (!window.goalData || !Array.isArray(window.goalData)) {
-        console.log('No existing goals found');
+        // console.log('No existing goals found');
         return false;
     }
 
@@ -5221,7 +5221,7 @@ function checkDuplicateGoalName(goalName) {
         return isMatch;
     });
 
-    console.log('Is duplicate goal name:', isDuplicate);
+    // console.log('Is duplicate goal name:', isDuplicate);
     return isDuplicate;
 }
 
@@ -5252,40 +5252,40 @@ function validateGoalData(data) {
  */
 function updateAccountBalance(accountData) {
     if (!accountData) {
-        console.error('updateAccountBalance called with no accountData');
+        // console.error('updateAccountBalance called with no accountData');
         return;
     }
 
-    console.log('Updating account balance with:', accountData);
+    // console.log('Updating account balance with:', accountData);
 
     // Check if accountData has the correct structure
     if (typeof accountData.balance === 'undefined') {
-        console.error('accountData is missing balance property:', accountData);
+        // console.error('accountData is missing balance property:', accountData);
         // Try to extract balance from nested structure if available
         if (accountData.accountData && typeof accountData.accountData.balance !== 'undefined') {
-            console.log('Found balance in nested accountData structure, using that instead');
+            // console.log('Found balance in nested accountData structure, using that instead');
             accountData = accountData.accountData;
         } else {
-            console.error('Could not find balance property in accountData');
+            // console.error('Could not find balance property in accountData');
             return;
         }
     }
 
     const balanceElement = document.getElementById('balanceAmount');
-    console.log('Balance element found:', balanceElement ? 'Yes' : 'No');
+    // console.log('Balance element found:', balanceElement ? 'Yes' : 'No');
 
     // Try different selectors for trend element
     let trendElement = document.querySelector('.balance-trend');
     if (!trendElement) {
         // Try alternative selectors
         trendElement = document.querySelector('.card .balance-trend');
-        console.log('Tried alternative selector for trend element, found:', trendElement ? 'Yes' : 'No');
+        // console.log('Tried alternative selector for trend element, found:', trendElement ? 'Yes' : 'No');
     }
-    console.log('Trend element found:', trendElement ? 'Yes' : 'No');
+    // console.log('Trend element found:', trendElement ? 'Yes' : 'No');
 
     // If balance element doesn't exist, create the account balance card
     if (!balanceElement) {
-        console.log('Balance element not found, creating account balance card');
+        // console.log('Balance element not found, creating account balance card');
         const mainContent = document.querySelector('.main-content');
         if (mainContent) {
             const row = mainContent.querySelector('.row');
@@ -5326,7 +5326,7 @@ function updateAccountBalance(accountData) {
                     col.style.transform = 'translateY(0)';
                 }, 100);
 
-                console.log('Created new account balance card');
+                // console.log('Created new account balance card');
                 return; // Exit function since we've created the card with the current balance
             }
         }
@@ -5334,7 +5334,7 @@ function updateAccountBalance(accountData) {
 
     // Update existing balance element
     if (balanceElement) {
-        console.log('Updating existing balance element with value:', accountData.balance);
+        // console.log('Updating existing balance element with value:', accountData.balance);
 
         // Force immediate update first for better UX
         balanceElement.textContent = '$' + accountData.balance.toFixed(2);
@@ -5355,7 +5355,7 @@ function updateAccountBalance(accountData) {
 
         // If trend element doesn't exist, try to create it
         if (!trendElement) {
-            console.log('Trend element not found, trying to create it');
+            // console.log('Trend element not found, trying to create it');
             const balanceContainer = balanceElement.parentElement;
             if (balanceContainer) {
                 // Check if there's already a trend element as a sibling
@@ -5371,7 +5371,7 @@ function updateAccountBalance(accountData) {
                         </span>
                     `;
                     balanceContainer.appendChild(newTrendElement);
-                    console.log('Created new trend element');
+                    // console.log('Created new trend element');
                     trendElement = newTrendElement;
                 }
             }
@@ -5380,7 +5380,7 @@ function updateAccountBalance(accountData) {
 
     // Update trend element if it exists
     if (trendElement) {
-        console.log('Updating trend element');
+        // console.log('Updating trend element');
         trendElement.innerHTML = `
             <span class="badge bg-${accountData.trendType === 'up' ? 'success' : 'danger'} me-2">
                 <i class="fas fa-arrow-${accountData.trendType}"></i>
@@ -5392,7 +5392,7 @@ function updateAccountBalance(accountData) {
     // Highlight the account balance card to draw attention to the update
     const balanceCard = balanceElement?.closest('.card');
     if (balanceCard) {
-        console.log('Highlighting balance card');
+        // console.log('Highlighting balance card');
 
         // Remove any existing animation classes
         balanceCard.classList.remove('salary-added', 'balance-updated');

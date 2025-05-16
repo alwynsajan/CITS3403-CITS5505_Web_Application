@@ -49,7 +49,7 @@ class FlaskAppTest(unittest.TestCase):
 
         # Clean up all users whose username starts with 'test'
         with app.app_context():
-            usersToDelete = User.query.filter(User.username.like('test%')).all()
+            usersToDelete = User.query.filter(User.username.like('%test%')).all()
             for user in usersToDelete:
                 db.session.delete(user)
             db.session.commit()
@@ -73,10 +73,6 @@ class FlaskAppTest(unittest.TestCase):
         self.driver.find_element(By.NAME, "password").send_keys("password123")
         self.driver.find_element(By.ID, "submitBtn").click()
 
-        # Wait until redirected and sidebar appears
-        # WebDriverWait(self.driver, 5).until(
-        #     EC.presence_of_element_located((By.ID, "expense"))
-        # )
         time.sleep(10)
 
 
@@ -128,48 +124,6 @@ class FlaskAppTest(unittest.TestCase):
         errorMessage = driver.find_element(By.CLASS_NAME, "alert-danger")
         self.assertTrue(errorMessage.is_displayed())
 
-    # def testAddSalaryDashboard(self):
-    #     self.login()  # Reuse existing login method
-
-    #     # Go to dashboard page
-    #     self.driver.get(localhostUrl + 'dashboard')
-
-    #     # Wait for and click the "Add Salary" button
-    #     add_salary_button = WebDriverWait(self.driver, 10).until(
-    #         EC.element_to_be_clickable((By.CSS_SELECTOR, '.add-salary-btn'))
-    #     )
-    #     add_salary_button.click()
-
-    #     # Wait for modal to appear (assuming modal inputs exist)
-    #     amount_input = WebDriverWait(self.driver, 10).until(
-    #         EC.visibility_of_element_located((By.ID, 'salaryAmount'))
-    #     )
-    #     date_input = self.driver.find_element(By.ID, 'salaryDate')
-    #     save_button = self.driver.find_element(By.ID, 'saveSalaryBtn')
-
-    #     # Fill in salary data
-    #     amount_input.clear()
-    #     amount_input.send_keys('2500')
-
-    #     date_input.clear()
-    #     date_input.send_keys('2025-05-15')  # ISO date format
-
-    #     # Submit form
-    #     save_button.click()
-
-    #     # Wait for reload after submission
-    #     WebDriverWait(self.driver, 10).until(
-    #         EC.url_to_be(localhostUrl + 'dashboard')
-    #     )
-
-    #     # Confirm success by checking if balance card updates or toast appears
-    #     balance = WebDriverWait(self.driver, 10).until(
-    #         EC.presence_of_element_located((By.ID, 'balanceAmount'))
-    #     )
-    #     self.assertIn('$', balance.text)
-
-
-
     def testAccessDashboardWithoutLogin(self):
         driver = self.driver
         driver.get("http://localhost:5000/dashboard")
@@ -208,44 +162,6 @@ class FlaskAppTest(unittest.TestCase):
         self.login()
         self.driver.find_element(By.ID, "settings").click()
         self.assertIn(localhostUrl+"settings", self.driver.current_url)
-
-
-
-
-
-    # def test_update_user_settings(self):
-    #     driver = self.driver
-    #     # Log in first
-    #     username_field = driver.find_element(By.ID, "username")
-    #     password_field = driver.find_element(By.ID, "password")
-    #     login_button = driver.find_element(By.XPATH, "//button[text()='Login']")
-        
-    #     username_field.send_keys("testuser")
-    #     password_field.send_keys("password123")
-    #     login_button.click()
-
-    #     time.sleep(2)  # Wait for login to complete
-
-    #     # Go to settings page
-    #     settings_link = driver.find_element(By.LINK_TEXT, "Settings")
-    #     settings_link.click()
-
-    #     # Update user name
-    #     first_name_field = driver.find_element(By.ID, "firstName")
-    #     last_name_field = driver.find_element(By.ID, "lastName")
-    #     first_name_field.clear()
-    #     last_name_field.clear()
-    #     first_name_field.send_keys("Updated")
-    #     last_name_field.send_keys("User")
-        
-    #     save_button = driver.find_element(By.XPATH, "//button[text()='Save Changes']")
-    #     save_button.click()
-
-    #     time.sleep(2)
-
-    #     # Check if the changes are saved
-    #     self.assertIn("Settings", driver.title)
-    #     self.assertTrue("Updated" in driver.page_source)
 
 if __name__ == '__main__':
     unittest.main()
