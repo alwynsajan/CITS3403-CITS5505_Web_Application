@@ -365,13 +365,12 @@
 <script>
     // Declare global variables
     window.monthlyLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    window.monthlyExpenses = JSON.parse('{{ data.monthlySpendData.Expenses | default([]) | tojson | safe }}');
+    window.monthlyExpenses = JSON.parse('{{ data.monthlySpendData | default([]) | tojson | safe }}');
     window.accountData = JSON.parse('{{ data.accountData | default({}) | tojson | safe }}');
     window.budgetSuggestionData = JSON.parse('{{ data.budgetSuggestionData | default({}) | tojson | safe }}');
     window.goalData = JSON.parse('{{ data.goalData | default([]) | tojson | safe }}');
 
     window.currentUserID = {{ current_user.id | tojson | safe }};
-
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
