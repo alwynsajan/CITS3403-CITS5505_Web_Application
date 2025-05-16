@@ -582,6 +582,15 @@ class serviceHandler():
         except Exception as e:
             return self.handleError(e, "marking report as read")
 
+    """
+    Retrieve user settings
+
+    Args:
+        userId (int): ID of the user
+
+    Returns:
+        dict: User settings or error information
+    """
     def getUserSettings(self, userId):
         try:
             status = self.DBClient.getUserSettings(userId)
@@ -589,9 +598,32 @@ class serviceHandler():
         except Exception as e:
             return self.handleError(e, "Fetching user Settings.")
 
+    """
+    Update a user's name
+
+    Args:
+        userId (int): ID of the user
+        firstName (str): New first name
+        lastName (str): New last name
+
+    Returns:
+        dict: Status of update operation
+    """
     def updateUserName(self, userId, firstName, lastName):
         return self.DBClient.updateUserName(userId, firstName, lastName)
 
+    """
+    Update a user's password
+
+    Args:
+        userId (int): ID of the user
+        currentPassword (str): Current password
+        newPassword (str): New password
+        confirmPassword (str): Confirmation of the new password
+
+    Returns:
+        dict: Status indicating success/failure and messages for error cases
+    """
     def updateUserPassword(self, userId, currentPassword, newPassword, confirmPassword):
         try:
             user = User.query.get(userId)
@@ -621,6 +653,15 @@ class serviceHandler():
         except Exception as e:
             return self.handleError(e, "update user password")
         
+    """
+    Get the account balance and related data for a user
+
+    Args:
+        userID (int): ID of the user
+
+    Returns:
+        dict: Account data including current and previous balances, and computed insights
+    """
     def getAccountData(self,userID):
 
         try:
@@ -660,6 +701,15 @@ class serviceHandler():
             return self.handleError(e, "Fetching user account Data.")
         
 
+    """
+    Retrieve the latest transactions and monthly expense summary for a user
+
+    Args:
+        userID (int): ID of the user
+
+    Returns:
+        dict: Latest transactions, monthly expenses, and metadata
+    """
     def getLatestTransactions(self, userID):
         try:
             data= {"status":None,
@@ -687,11 +737,39 @@ class serviceHandler():
             return self.handleError(e, "Fetching last Transaction")
         
 
+    """
+    Update allocation settings for a user
+
+    Args:
+        userID (int): ID of the user
+        data (dict): Dictionary containing goal name to update
+
+    Returns:
+        dict: Status indicating success/failure
+    """
     def updateAllocation(self,userID, data):
 
         try:
             status = self.DBClient.updateAllocation(userID,data["goalName"])
             return status
+
+        except Exception as e:
+            return self.handleError(e, "update user password")
+        
+    """
+    Retrieve goals for a user
+
+    Args:
+        userID (int): ID of the user
+
+    Returns:
+        dict: Goals data or error message
+    """
+    def getGoals(self,userID):
+
+        try:
+            getGoalsStatus = self.DBClient.getGoalsByUserId(userID)
+            return getGoalsStatus
 
         except Exception as e:
             return self.handleError(e, "update user password")

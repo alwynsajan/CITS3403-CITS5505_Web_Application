@@ -442,11 +442,18 @@ def getAccountData():
     requestStatus = handler.getAccountData(current_user.id)
     return jsonify(requestStatus)
 
-# Route to get AccountData 
+# Route to get Latest Transactions  
 @app.route('/dashboard/getLatestTransactions')
 @login_required
 def getLatestTransactions():
     requestStatus = handler.getLatestTransactions(current_user.id)
+    return jsonify(requestStatus)
+
+# Route to get Goal List
+@app.route('/dashboard/getGoals')
+@login_required
+def getGoals():
+    requestStatus = handler.getGoals(current_user.id)
     return jsonify(requestStatus)
 
 

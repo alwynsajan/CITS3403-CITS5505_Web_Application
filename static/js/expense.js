@@ -301,7 +301,7 @@ async function saveExpense(event) {
     const payload = {
       amount:   parseFloat(form.amount.value),
       category: form.category.value,
-      date:     form.date.value
+      date:     form.expenseDate.value
     };
 
     const resp   = await fetch('/expense/addExpense', {
@@ -348,7 +348,7 @@ async function saveSalary(event) {
 
     const payload = {
       amount: parseFloat(form.amount.value),
-      date:   form.date.value
+      date:   form.salaryDate.value
     };
 
     const resp   = await fetch('/expense/addSalary', {
