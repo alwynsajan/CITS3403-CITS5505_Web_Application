@@ -241,24 +241,31 @@ function drawMonthlyBalanceTrend() {
     const salaryData = window.expenseData.expenseAndSalary.salaryData;
     const expenseData = window.expenseData.expenseAndSalary.expenseData;
 
-    const monthLabels = [
+    const allMonthLabels = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
 
+    // Get current month (0-based: Jan = 0)
+    const currentMonth = new Date().getMonth() + 1;
+
+    const monthLabels = allMonthLabels.slice(0, currentMonth);
+    const slicedSalaryData = salaryData.slice(0, currentMonth);
+    const slicedExpenseData = expenseData.slice(0, currentMonth);
+
     // Monthly balance: salary - expense (only if salary exists)
-    const monthlyBalance = salaryData.map((salary, index) => {
-        const expense = expenseData[index] || 0;
+    const monthlyBalance = slicedSalaryData.map((salary, index) => {
+        const expense = slicedExpenseData[index] || 0;
         return salary === 0 ? 0 : (salary - expense);
     });
 
     // Cumulative net savings: sum of (salary - expense) if salary > 0
     const cumulativeNet = [];
     let total = 0;
-    for (let i = 0; i < salaryData.length; i++) {
+    for (let i = 0; i < slicedSalaryData.length; i++) {
         let net = 0;
-        if (salaryData[i] > 0) {
-            net = salaryData[i] - (expenseData[i] || 0);
+        if (slicedSalaryData[i] > 0) {
+            net = slicedSalaryData[i] - (slicedExpenseData[i] || 0);
         }
         total += net;
         cumulativeNet.push(total);
@@ -314,7 +321,6 @@ function drawMonthlyBalanceTrend() {
         }
     });
 }
-
 
 
 function handlePrevMonth() {
