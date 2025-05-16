@@ -16,11 +16,11 @@ function setupPasswordToggle(passwordId, toggleId) {
     }
 }
 
-// const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
 // Login Form Handling
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Set up password toggle for login form
     setupPasswordToggle('password', 'togglePassword');
@@ -38,6 +38,7 @@ if (loginForm) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(formData)
         })
@@ -69,6 +70,7 @@ if (loginForm) {
 
 // Signup Form Handling
 const signupForm = document.getElementById('signupForm');
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 if (signupForm) {
     // Set up password toggles for signup form
     setupPasswordToggle('password', 'togglePassword');
@@ -90,6 +92,7 @@ if (signupForm) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(formData)
         })

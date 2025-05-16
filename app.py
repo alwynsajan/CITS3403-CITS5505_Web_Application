@@ -5,8 +5,12 @@ from serviceHandler import serviceHandler
 from flask_migrate import Migrate
 from config import Config
 from models import db,User
+from flask_wtf.csrf import validate_csrf, generate_csrf 
+from wtforms.validators import ValidationError 
 from flask_wtf import CSRFProtect
 import re
+from forms import LoginForm,SignupForm
+
 
 app = Flask(__name__)
 
@@ -29,8 +33,12 @@ login_manager.init_app(app)
 app.permanent_session_lifetime = timedelta(days=7)
 
 # CSRF protection
-# csrf = CSRFProtect()
-# csrf.init_app(app)
+csrf = CSRFProtect(app)
+
+@app.after_request
+def inject_csrf_token(response):
+    response.set_cookie('csrf_token', generate_csrf())
+    return response
 
 # Creates tables if they don't exist
 with app.app_context():
@@ -55,14 +63,25 @@ def is_valid_email(email):
 @app.route('/')
 @app.route('/login')
 def loginPage():
+    form = LoginForm()
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 # Login route (POST) - Authenticates user credentials
 @app.route('/login', methods=['POST'])
 def login():
+    try:
+        csrf_token = request.headers.get('X-CSRFToken')
+        validate_csrf(csrf_token)  # Raises exception if invalid
+    except ValidationError:
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid or missing CSRF token"
+        }), 400
+    
     formData = request.get_json()
     if formData is None:
         return jsonify({
@@ -110,7 +129,8 @@ def logout():
 def signUp():
     if current_user.is_authenticated:
         logout_user()
-    return render_template('signup.html')
+    form = SignupForm()
+    return render_template('signup.html', form=form)
 
 # Dashboard view route
 @app.route('/dashboard')
@@ -125,6 +145,16 @@ def dashboard():
 # Route to create a new user account
 @app.route('/addUser', methods=['POST'])
 def addUser():
+
+    try:
+        csrf_token = request.headers.get('X-CSRFToken')
+        validate_csrf(csrf_token)  # Raises exception if invalid
+    except ValidationError:
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid or missing CSRF token"
+        }), 400
 
     formData = request.get_json()
 
@@ -171,6 +201,7 @@ def addUser():
     return jsonify(requestStatus)
     
 # Route to add a new savings goal
+@csrf.exempt
 @app.route('/dashboard/addGoal', methods=['POST'])
 @login_required
 def addGoal():
@@ -189,6 +220,7 @@ def addGoal():
     return jsonify(requestStatus)
 
 # Route to add a new salary entry (accessible from both dashboard and expense pages)
+@csrf.exempt
 @app.route('/dashboard/addSalary', methods=['POST'])
 @app.route('/expense/addSalary', methods=['POST'])
 @login_required
@@ -213,15 +245,15 @@ def addSalary():
         "salaryDate": formData.get('date')
     }
 
-    print(data)
-
     requestStatus = handler.addNewSalary(current_user.username, current_user.id, data)
     return jsonify(requestStatus)
 
 # Route to add a new expense entry
+@csrf.exempt
 @app.route('/expense/addExpense', methods=['POST'])
 @login_required
 def addExpense():
+    
     formData = request.get_json()
     if formData is None:
         return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
@@ -247,6 +279,7 @@ def addExpense():
     return jsonify(result)
 
 # Route to add a new expense entry
+@csrf.exempt
 @app.route('/dashboard/addExpense', methods=['POST'])
 @login_required
 def addExpenseAndUpadteGoalAllocation():
@@ -271,8 +304,6 @@ def addExpenseAndUpadteGoalAllocation():
         "date": formData.get('date'),
         "goalName":formData.get('goalName')
     }
-
-    print(data)
 
     result = handler.addNewExpense(current_user.username, current_user.id, data)
     requestStatus = handler.updateAllocation(current_user.id, data)
@@ -308,9 +339,7 @@ def sentReport():
         return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
 
     receiversID = data.get('receiversID')
-    print("receiversID ",receiversID)
     requestStatus = handler.sendReport(current_user.id, receiversID)
-    print(requestStatus)
     return jsonify(requestStatus)
 
 # Route to get sender details for received reports

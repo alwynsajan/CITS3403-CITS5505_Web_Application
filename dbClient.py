@@ -46,7 +46,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 400,
-                    "message": "Username already exists"
+                    "message": "Email already exists"
                 }
 
             newId = self.getLastId(User) + 1 
