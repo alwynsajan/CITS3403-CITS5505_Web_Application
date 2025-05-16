@@ -316,7 +316,10 @@ async function saveExpense(event) {
     window.expenseData = result.data ?? result;
     initExpenseCharts();
     // Update share button state after adding expense
-    setupShareSummaryButton();
+    // Use the setupShareSummaryButton function from dashboard.js
+    if (typeof window.setupShareSummaryButton === 'function') {
+      window.setupShareSummaryButton();
+    }
     showAlert('Expense added successfully!', 'success');
     form.reset();
     setDate('dateInput1');
@@ -370,7 +373,10 @@ async function saveSalary(event) {
 
     drawExpenseAndSalaryGraph();
     // Update share button state after adding salary
-    setupShareSummaryButton();
+    // Use the setupShareSummaryButton function from dashboard.js
+    if (typeof window.setupShareSummaryButton === 'function') {
+      window.setupShareSummaryButton();
+    }
     showAlert('Salary added successfully!', 'success');
     form.reset();
     setDate('dateInput2');
@@ -394,14 +400,20 @@ function setDate(dateID){
 
 /**
  * Utility function to show a Bootstrap alert message
+ * Made globally available for use in dashboard.js
  * @param {string} message - The message to display
  * @param {string} type - Alert type (success, danger, info, etc.)
  */
-function showAlert(message, type = 'info') {
-  const container = document.querySelector('.main-content');
+window.showAlert = function(message, type = 'info') {
+  const container = document.querySelector('.main-content') || document.body;
   const alertDiv  = document.createElement('div');
   alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
   alertDiv.role = 'alert';
+  alertDiv.style.position = 'fixed';
+  alertDiv.style.top = '20px';
+  alertDiv.style.right = '20px';
+  alertDiv.style.zIndex = '9999';
+  alertDiv.style.maxWidth = '400px';
   alertDiv.innerHTML = `
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -410,79 +422,8 @@ function showAlert(message, type = 'info') {
   setTimeout(() => alertDiv.remove(), 5000);
 }
 
-/**
- * Setup share summary button functionality
- * Disables the button if there are no expenses to share
- * but does not show any message when clicked
- */
-function setupShareSummaryButton() {
-  const shareBtn = document.getElementById('shareSummaryBtn');
-
-  if (shareBtn) {
-    console.log('Setting up share summary button');
-
-    // Remove any existing event listeners to prevent duplicates
-    if (shareBtn.clickHandlerAttached) {
-      shareBtn.removeEventListener('click', handleShareButtonClick);
-    }
-
-    // Check if there are expenses to share
-    const hasExpense = window.expenseData && window.expenseData.hasExpense;
-
-    console.log('Has expense data:', hasExpense);
-
-    if (!hasExpense) {
-      // Disable the button if there are no expenses
-      shareBtn.disabled = true;
-      shareBtn.title = ""; // No tooltip text
-      console.log('Share button disabled: No expense data to share');
-
-      // Make the button gray to indicate it's disabled
-      shareBtn.style.backgroundColor = '#f0f0f0';
-      shareBtn.style.borderColor = '#e0e0e0';
-      shareBtn.style.color = '#a0a0a0';
-      shareBtn.style.cursor = 'not-allowed';
-
-      // We don't add any click handler to disabled button
-      shareBtn.clickHandlerAttached = false;
-    } else {
-      // Enable the button if there are expenses
-      shareBtn.disabled = false;
-      shareBtn.title = "Share Expense Summary";
-
-      // Reset button style to default blue
-      shareBtn.style.backgroundColor = '';
-      shareBtn.style.borderColor = '';
-      shareBtn.style.color = '';
-      shareBtn.style.cursor = '';
-
-      // Add click handler to button
-      shareBtn.addEventListener('click', handleShareButtonClick);
-      shareBtn.clickHandlerAttached = true;
-    }
-  }
-}
-
-/**
- * Handle share button click event
- */
-function handleShareButtonClick() {
-  console.log('Share button clicked');
-
-  // Get the export report modal
-  const exportReportModal = document.getElementById('exportReportModal');
-
-  if (exportReportModal) {
-    // Initialize modal
-    const modal = new bootstrap.Modal(exportReportModal);
-
-    // Show modal
-    modal.show();
-  } else {
-    // If modal doesn't exist, show an alert that the feature is not available
-    showAlert('Share feature is not available. Please try again later.', 'warning');
-  }
-}
+// Note: We're using setupShareSummaryButton and handleShareButtonClick from dashboard.js
+// No need to redefine these functions here
 
 // Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -494,6 +435,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
 
-  // Setup share button
-  setupShareSummaryButton();
+  // Setup share button using dashboard.js function
+  // We need to wait a bit to ensure dashboard.js has loaded and initialized
+  setTimeout(() => {
+    if (typeof window.setupShareSummaryButton === 'function') {
+      window.setupShareSummaryButton();
+    }
+  }, 100);
 });

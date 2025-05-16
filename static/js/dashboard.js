@@ -5290,8 +5290,10 @@ function setupActiveNavigation() {
  * Setup share summary button functionality
  * Disables the button if there are no expenses to share
  * but does not show any message when clicked
+ *
+ * This function is made globally available for use in expense.js
  */
-function setupShareSummaryButton() {
+window.setupShareSummaryButton = function() {
     const shareBtn = document.getElementById('shareSummaryBtn');
 
     if (shareBtn) {
@@ -5299,16 +5301,25 @@ function setupShareSummaryButton() {
 
         // Remove any existing event listeners to prevent duplicates
         if (shareBtn.clickHandlerAttached) {
-            shareBtn.removeEventListener('click', handleShareButtonClick);
+            shareBtn.removeEventListener('click', window.handleShareButtonClick);
         }
 
         // Check if there are expenses to share
-        const hasExpense = window.hasOwnProperty('monthlyExpenses') &&
+        // First check if we're on the expense page
+        let hasExpense = false;
+
+        if (window.location.pathname.includes('/expense')) {
+            // On expense page, use expenseData
+            hasExpense = window.expenseData && window.expenseData.hasExpense;
+            console.log('On expense page, has expense data:', hasExpense);
+        } else {
+            // On dashboard page, use monthlyExpenses
+            hasExpense = window.hasOwnProperty('monthlyExpenses') &&
                           Array.isArray(window.monthlyExpenses) &&
                           window.monthlyExpenses.some(expense => expense > 0);
-
-        console.log('Has expense data:', hasExpense);
-        console.log('Monthly expenses:', window.monthlyExpenses);
+            console.log('On dashboard page, has expense data:', hasExpense);
+            console.log('Monthly expenses:', window.monthlyExpenses);
+        }
 
         if (!hasExpense) {
             // Disable the button if there are no expenses
@@ -5327,7 +5338,7 @@ function setupShareSummaryButton() {
         } else {
             // Enable the button if there are expenses
             shareBtn.disabled = false;
-            shareBtn.title = "Share Dashboard Summary";
+            shareBtn.title = "Share Summary";
 
             // Reset button style to default blue
             shareBtn.style.backgroundColor = '';
@@ -5336,7 +5347,7 @@ function setupShareSummaryButton() {
             shareBtn.style.cursor = '';
 
             // Add click handler to button
-            shareBtn.addEventListener('click', handleShareButtonClick);
+            shareBtn.addEventListener('click', window.handleShareButtonClick);
             shareBtn.clickHandlerAttached = true;
         }
     }
@@ -5347,8 +5358,10 @@ function setupShareSummaryButton() {
 
 /**
  * Handle share button click event
+ *
+ * This function is made globally available for use in expense.js
  */
-function handleShareButtonClick() {
+window.handleShareButtonClick = function() {
     console.log('Share button clicked');
 
     // Get the export report modal
@@ -5362,7 +5375,12 @@ function handleShareButtonClick() {
         modal.show();
     } else {
         // If modal doesn't exist, show an alert that the feature is not available
-        showAlert('Share feature is not available. Please try again later.', 'warning');
+        // Use the appropriate showAlert function based on which page we're on
+        if (window.location.pathname.includes('/expense') && typeof window.showAlert === 'function') {
+            window.showAlert('Share feature is not available. Please try again later.', 'warning');
+        } else {
+            showAlert('Share feature is not available. Please try again later.', 'warning');
+        }
     }
 }
 
