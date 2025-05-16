@@ -1120,13 +1120,9 @@ function initGoalProgress() {
         if (completedGoals.length > 0) {
             console.log('Found completed goals:', completedGoals.length);
 
-            // Show notifications for completed goals
-            completedGoals.forEach(goal => {
-                // Delay the notification slightly to ensure the UI is ready
-                setTimeout(() => {
-                    showAlert(`Congratulations! Your goal "${goal.goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
-                }, 1000);
-            });
+            // We'll show notifications in updateGoalProgressCircle instead
+            // to avoid duplicate alerts
+            console.log('Completed goals will be highlighted in the UI');
         }
 
         // Visualization for multiple goals
@@ -1455,7 +1451,8 @@ function updateGoalProgressCircle(circleElement, animate = false) {
                     goalCard.classList.remove('goal-completed');
                 }, 3000);
 
-                // Show a notification
+                // Show a notification - but only if this is the first time we're adding the button
+                // We can tell this is the first time because we had to create the button
                 showAlert(`Congratulations! Your goal "${goalName}" is now 100% complete and ready to redeem!`, 'success', 5000);
             } else {
                 console.error('Could not add redeem button: missing goal name or target amount', { goalName, targetAmount });
@@ -4467,8 +4464,9 @@ async function redeemGoal(goalName, amount) {
 
         console.log('Redeeming goal with data:', data);
 
-        // Show loading indicator in the UI
-        showAlert(`Redeeming goal "${goalName}"...`, 'info', 2000);
+        // We don't need to show a loading indicator here since we'll refresh the page
+        // and it might cause multiple alerts to stack up
+        console.log(`Redeeming goal "${goalName}"...`);
 
         // Send request to add expense
         const response = await fetch('/dashboard/addExpense', {
@@ -4482,7 +4480,7 @@ async function redeemGoal(goalName, amount) {
         const result = await response.json();
 
         if (response.ok && result.status === "Success") {
-            // Show success message
+            // Show a single success message
             showAlert(`Goal "${goalName}" redeemed successfully! Page will refresh...`, 'success');
 
             // Always force page refresh after successful redemption
