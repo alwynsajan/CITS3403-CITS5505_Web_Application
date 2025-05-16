@@ -587,11 +587,7 @@ class serviceHandler():
             status = self.DBClient.getUserSettings(userId)
             return status
         except Exception as e:
-            return {
-                "status": "Failed",
-                "statusCode": 400,
-                "message": "Error: " + str(e)
-            }
+            return self.handleError(e, "Fetching user Settings.")
 
     def updateUserName(self, userId, firstName, lastName):
         return self.DBClient.updateUserName(userId, firstName, lastName)
@@ -624,6 +620,82 @@ class serviceHandler():
 
         except Exception as e:
             return self.handleError(e, "update user password")
+        
+    def getAccountData(self,userID):
+
+        try:
+            accBalanceStatus = self.DBClient.getAccountBalance(userID)
+            hasAccountBalance = False
+            accountBalance = 0.0
+            previousBalance = 0.0
+            data= {"status":None,
+                    "statusCode":None,
+                    "data": {"accountData":None,
+                             "hasAccountBalance":False
+                             }
+                    
+                    }
+
+            #Fetch Account Data:
+            if accBalanceStatus["status"] == "Success":
+                if accBalanceStatus["data"]["accountBalance"] != 0:
+                    accountBalance = accBalanceStatus["data"]["accountBalance"]
+                    hasAccountBalance = True
+
+                    previousAccBalanceStatus = self.DBClient.getPreviousAccountBalance(userID)
+                    if previousAccBalanceStatus["status"] == "Success":
+                        previousBalance = previousAccBalanceStatus["data"]["previousBalance"]
+                    accountData = calculations.getAccountData(float(accountBalance),float(previousBalance))
+
+                    data["status"] = "Success"
+                    data["statusCode"] = 200
+                    data["data"]["accountData"] = accountData
+                    data["data"]["hasAccountBalance"] = hasAccountBalance
+
+                    return data
+                
+            return accBalanceStatus
+        
+        except Exception as e:
+            return self.handleError(e, "Fetching user account Data.")
+        
+
+    def getLatestTransactions(self, userID):
+        try:
+            data= {"status":None,
+                    "statusCode":None,
+                    "data": None,
+                    "monthlyExpenses": None,
+                    "hasExpense":False
+                    }
+            
+            lastestExpensestatus = self.DBClient.getLastFiveExpenses(userID)
+            data['data'] = lastestExpensestatus["data"]["transaction"]
+
+            status = self.DBClient.getMonthlyExpenses(userID)
+
+            if status["status"] == "Success" and status["data"] != []:
+                #Get the monthly expenses in a list.
+                monthlyExpenseList = calculations.getMonthlyExpenseList(status["data"])
+                data["monthlyExpenses"] = monthlyExpenseList
+                data["hasExpense"] = True
+                data["status"] = "Success"
+                data["statusCode"] = 200
+
+            return data
+        except Exception as e:
+            return self.handleError(e, "Fetching last Transaction")
+        
+
+    def updateAllocation(self,userID, data):
+
+        try:
+            status = self.DBClient.updateAllocation(userID,data["goalName"])
+            return status
+
+        except Exception as e:
+            return self.handleError(e, "update user password")
+
 
 
         

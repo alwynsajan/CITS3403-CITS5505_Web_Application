@@ -213,6 +213,8 @@ def addSalary():
         "salaryDate": formData.get('date')
     }
 
+    print(data)
+
     requestStatus = handler.addNewSalary(current_user.username, current_user.id, data)
     return jsonify(requestStatus)
 
@@ -244,6 +246,39 @@ def addExpense():
     result = handler.addNewExpense(current_user.username, current_user.id, data)
     return jsonify(result)
 
+# Route to add a new expense entry
+@app.route('/dashboard/addExpense', methods=['POST'])
+@login_required
+def addExpenseAndUpadteGoalAllocation():
+    formData = request.get_json()
+    if formData is None:
+        return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
+
+    try:
+        amount = float(formData.get('amount'))
+        if amount <= 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid amount. Must be a positive number."
+        })
+
+    data = {
+        "amount": amount,
+        "category": formData.get('category'),
+        "date": formData.get('date'),
+        "goalName":formData.get('goalName')
+    }
+
+    print(data)
+
+    result = handler.addNewExpense(current_user.username, current_user.id, data)
+    requestStatus = handler.updateAllocation(current_user.id, data)
+    return jsonify(requestStatus)
+    return jsonify(result)
+
 # Expense page view route
 @app.route('/expense')
 @login_required
@@ -272,8 +307,10 @@ def sentReport():
     if data is None:
         return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
 
-    receiversID = data.get('recipientID')
+    receiversID = data.get('receiversID')
+    print("receiversID ",receiversID)
     requestStatus = handler.sendReport(current_user.id, receiversID)
+    print(requestStatus)
     return jsonify(requestStatus)
 
 # Route to get sender details for received reports
@@ -312,31 +349,6 @@ def getReport():
         "statusCode": 200,
         "reportHtml": report_html
     })
-
-
-# @app.route('/renderSharedReportView', methods=['POST'])
-# @login_required
-# def renderSharedReportView():
-#     senderId = request.args.get('senderId')
-#     reportID = request.args.get('reportID')
-
-#     if not senderId or not reportID:
-#         return jsonify({
-#             "status": "Failed",
-#             "statusCode": 400,
-#             "message": "Invalid request parameters"
-#         }), 400
-
-#     requestStatus = handler.getReportData(current_user.id, senderId, reportID)
-
-#     if requestStatus["status"] != "Success":
-#         return jsonify({
-#             "status": "Failed",
-#             "statusCode": 404,
-#             "message": "Report not found"
-#         }), 404
-
-#     return render_template("report.html", data=requestStatus["data"])
 
 # Route to get IDs of unread reports
 @app.route('/dashboard/getUnreadReportIds')
@@ -394,6 +406,19 @@ def settings():
 
     return render_template('settings.html', username =current_user.firstName, user=current_user)
 
+# Route to get AccountData 
+@app.route('/dashboard/getAccountData')
+@login_required
+def getAccountData():
+    requestStatus = handler.getAccountData(current_user.id)
+    return jsonify(requestStatus)
+
+# Route to get AccountData 
+@app.route('/dashboard/getLatestTransactions')
+@login_required
+def getLatestTransactions():
+    requestStatus = handler.getLatestTransactions(current_user.id)
+    return jsonify(requestStatus)
 
 
 
