@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session,jsonify
+from flask import Flask, render_template, request, redirect, url_for,jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from datetime import timedelta
 from serviceHandler import serviceHandler
@@ -329,6 +329,7 @@ def getUsernamesAndIDs():
     return jsonify(requestStatus)
 
 # Route to send report to another user, report is saved in db.
+@csrf.exempt
 @app.route('/dashboard/sentReport', methods=['POST'])
 @login_required
 def sentReport():
@@ -348,6 +349,7 @@ def getSenderDetails():
     return jsonify(requestStatus)
 
 # Route to view a specific shared report
+@csrf.exempt
 @app.route('/dashboard/getSharedReport', methods=['POST'])
 @login_required
 def getReport():
@@ -392,6 +394,7 @@ def getUnreadReportCount():
     return jsonify(requestStatus)
 
 # Route to mark a report as read
+@csrf.exempt
 @app.route('/dashboard/markReportAsRead', methods=['POST'])
 @login_required
 def markReportAsRead():
@@ -403,6 +406,7 @@ def markReportAsRead():
     requestStatus = handler.markReportAsRead(current_user.id, reportID)
     return jsonify(requestStatus)
 
+@csrf.exempt
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():

@@ -1,10 +1,21 @@
-# 💰 Budget Analyzer Web Application
+# 💰WalletWhiz - Budget Analyzer Web Application
 
 ## 📋 Purpose
 
-**Budget Analyzer** is a personal finance management web application designed to help users take control of their financial goals and expenses.  
+**WalletWhiz** is a personal finance management web application designed to help users take control of their financial goals and expenses.  
 It offers an intuitive dashboard to monitor expenses, set and track savings goals, visualize financial data, and receive budgeting recommendations based on intelligent algorithms like the **50/30/20 rule**.  
 Users can export reports and get insights into their spending patterns to make smarter financial decisions.
+
+---
+
+## 👥 Group Members
+
+| UWA ID   | Name              | GitHub Username |
+| -------- | ----------------- | --------------- |
+| 24504806 | Alwyn Sajan       | alwynsajan      |
+| 24177393 | Neel Rakesh Patel | NeelPatel-22    |
+| 23861854 | Ashley Song       | aaaaashleysong  |
+| 24113613 | Yuxuan Zhang      | Zhangyuxuan323  |
 
 ---
 
@@ -78,7 +89,7 @@ The **Share Financial Reports** feature allows users to share financial insights
 | 🔹 Action                     | 💡 Description                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | 📤 **Share Your Report**      | Users can search for other users by name or email to share their financial reports.                                       |
-| 📥 **Reports Shared With Me** | View a list of reports that have been shared with you, along with details of the sender and timestamp.                    |
+| 📥 **Reports Shared With Me** | View a list of reports that have been shared with you, along with details of the sender and timestamp.                      |
 | 📈 **View Financial Report**  | Access detailed financial reports shared with you, providing insights into salary versus expenses and category breakdown. |
 
 Detailed view of the financial report received, showing a monthly salary vs. expenses chart, weekly spending insights, and a monthly category breakdown.
@@ -96,19 +107,6 @@ The **Settings** page empowers users to manage their personal account details se
 #### 🎨 Example UI (Settings Module)
 
 ![Settings Screenshot](http://127.0.0.1:5000/settings)
-
----
-
-## 👥 Group Members
-
-| UWA ID   | Name              | GitHub Username |
-| -------- | ----------------- | --------------- |
-| 24504806 | Alwyn Sajan       | alwynsajan      |
-| 24177393 | Neel Rakesh Patel | NeelPatel-22    |
-| 23861854 | Ashley Song       | aaaaashleysong  |
-| 24113613 | Yuxuan Zhang      | Zhangyuxuan323  |
-
----
 
 ## 🚀 How to Launch the Application
 
@@ -134,7 +132,9 @@ $env:ANALYSER_SECRET_KEY = "ANALYSER_SECRET_KEY"
 export SECRET_KEY="ANALYSER_SECRET_KEY"
 
 # 4. Run the application
-python app.py
+python app.py 
+   or 
+flask run
 ```
 
 ## 🧪 Testing the Application
@@ -156,10 +156,6 @@ Set up the environment and execute tests on the WalletWhiz web application with 
 ```
 
 Following these steps ensures thorough testing of the application, verifying both component functionality and system stability.
-
-## 📄 License
-
-This project is licensed under the MIT License. This allows for wide use and distribution with minimal restrictions.
 
 ## 📧 Contact
 
