@@ -403,6 +403,8 @@ class serviceHandler():
                 expenseData["expenseAndSalary"] = expenseAndSalary
             else:
                 expenseData["hasSalary"] = False
+                expenseAndSalary["salaryData"] = [0,0,0,0,0,0,0,0,0,0,0,0]
+                expenseData["expenseAndSalary"] = expenseAndSalary
 
             expenseDataListStatus = self.DBClient.getMonthlyExpenses(userID)
             if expenseDataListStatus["status"] == "Success" and expenseDataListStatus["data"] != []:
@@ -415,6 +417,8 @@ class serviceHandler():
 
             else:
                 expenseData["hasExpense"] = False
+                expenseAndSalary["expenseData"] = [0,0,0,0,0,0,0,0,0,0,0,0]
+                expenseData["expenseAndSalary"] = expenseAndSalary
 
             return expenseData
         

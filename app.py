@@ -244,7 +244,6 @@ def addSalary():
         "amount": amount,
         "salaryDate": formData.get('date')
     }
-
     requestStatus = handler.addNewSalary(current_user.username, current_user.id, data)
     return jsonify(requestStatus)
 
@@ -308,7 +307,6 @@ def addExpenseAndUpadteGoalAllocation():
     result = handler.addNewExpense(current_user.username, current_user.id, data)
     requestStatus = handler.updateAllocation(current_user.id, data)
     return jsonify(requestStatus)
-    return jsonify(result)
 
 # Expense page view route
 @app.route('/expense')
