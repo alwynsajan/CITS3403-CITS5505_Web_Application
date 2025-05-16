@@ -198,7 +198,7 @@ h1, h2, h3, h4, h5, h6, p {
     transition: all var(--transition-speed);
     display: flex;
     flex-direction: column;
-    width: 16.666667%; /* col-md-2 equivalent */
+    width: 250px; /* Fixed width instead of percentage */
 }
 
 .sidebar .logo {
@@ -351,8 +351,26 @@ h1, h2, h3, h4, h5, h6, p {
 .main-content {
     padding: 20px;
     transition: all var(--transition-speed);
-    width: 83.333333%; /* col-md-10 equivalent */
-    margin-left: 16.666667%; /* col-md-2 equivalent */
+    /* Make the layout responsive */
+    width: calc(100% - 250px); /* Subtract sidebar width */
+    margin-left: 250px; /* Fixed sidebar width */
+}
+
+/* Media query for smaller screens */
+@media (max-width: 992px) {
+    .main-content {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .sidebar {
+        width: 250px;
+        transform: translateX(-100%);
+    }
+
+    .sidebar-visible {
+        transform: translateX(0);
+    }
 }
 
 /* Additional styles for sidebar visibility */
