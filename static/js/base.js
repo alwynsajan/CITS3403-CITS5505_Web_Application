@@ -221,7 +221,9 @@ $(document).ready(function() {
                         reportsList.append(listItem);
                     });
                     // Bind click events
-                    $('.view-report-btn, .shared-report-item').off('click').on('click', function() {
+                    $('.view-report-btn, .shared-report-item').off('click').on('click', function(e) {
+                        e.preventDefault(); // Prevent any default button behavior
+                        e.stopPropagation(); // Stop the event from bubbling up
                         const reportItem = $(this).closest('.shared-report-item');
                         const senderID = reportItem.data('sender-id');
                         const reportId = reportItem.data('report-id');
@@ -301,10 +303,11 @@ $(document).ready(function() {
             return response.json();
         })
         .then(data => {
-            if (data.status === 'Success') {
-                // Store report data and redirect to view page
-                sessionStorage.setItem('sharedReportData', JSON.stringify(data));
-                window.location.href = '/shared-report-view';
+            if (data.status === 'Success' && data.reportHtml) {
+                // Open the report HTML in a new tab
+                const newTab = window.open('', '_blank');
+                newTab.document.write(data.reportHtml);
+                newTab.document.close();
             } else {
                 showAlert('Failed to load report: ' + (data.message || 'Unknown error'), 'danger');
             }

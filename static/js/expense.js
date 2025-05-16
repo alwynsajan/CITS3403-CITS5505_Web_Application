@@ -7,25 +7,24 @@ let lineChartInstance = null;
 let monthKeys = [];
 let currentMonthIndex = 0;
 
-
 /**
  * Draws the salary vs expenses bar chart
  * Compares monthly salary and expenses data in a bar chart format
  * Shows empty state if no data exists
  */
 function drawExpenseAndSalaryGraph() {
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
   const hasSalary = window.expenseData.hasSalary;
 
   // Salary vs Expenses
   const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
   const barChartEl = document.getElementById('barChart');
   if (salaryEmpty && barChartEl) {
-    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
-    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
+    salaryEmpty.style.display = (hasExpense || hasSalary) ? 'none' : 'block';
+    barChartEl.style.display = (hasExpense || hasSalary) ? 'block' : 'none';
   }
 
-  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
+  if ((hasExpense || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
     if (barChartInstance) {
       barChartInstance.destroy();
     }
@@ -93,9 +92,9 @@ function drawExpenseAndSalaryGraph() {
  */
 function drawCategoryPieChart(index) {
 
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
 
-  if (hasExpenses == true){
+  if (hasExpense == true){
   monthKeys = Object.keys(window.expenseData.monthlyCategoryExpenses);
 
   // Toggle category breakdown empty state and chart
@@ -105,7 +104,7 @@ function drawCategoryPieChart(index) {
   const nextBtn = document.getElementById('nextMonth');
 
   // Show/hide buttons only if there are multiple months
-  if (hasExpenses && monthKeys.length > 1) {
+  if (hasExpense && monthKeys.length > 1) {
       prevBtn.style.display = 'inline-block';
       nextBtn.style.display = 'inline-block';
   } else {
@@ -115,11 +114,11 @@ function drawCategoryPieChart(index) {
 
   // Toggle chart visibility based on expenses
   if (categoryEmpty && pieChartEl) {
-      categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
-      pieChartEl.style.display = hasExpenses ? 'block' : 'none';
+      categoryEmpty.style.display = hasExpense ? 'none' : 'block';
+      pieChartEl.style.display = hasExpense ? 'block' : 'none';
   }
 
-  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
+  if (hasExpense && pieChartEl && pieChartEl.style.display === 'block') {
       if (pieChartInstance) {
           pieChartInstance.destroy();
       }
@@ -186,16 +185,16 @@ function drawCategoryPieChart(index) {
 */
 function initExpenseCharts() {
   // Show/hide empty states and charts based on data
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
 
   const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
   const lineChartEl = document.getElementById('lineChart');
   if (weeklyEmpty && lineChartEl) {
-    weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
-    lineChartEl.style.display = hasExpenses ? 'block' : 'none';
+    weeklyEmpty.style.display = hasExpense ? 'none' : 'block';
+    lineChartEl.style.display = hasExpense ? 'block' : 'none';
   }
 
-  if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
+  if (hasExpense && lineChartEl && lineChartEl.style.display === 'block') {
     if (lineChartInstance) {
       lineChartInstance.destroy();
     }
@@ -318,6 +317,7 @@ async function saveExpense(event) {
     initExpenseCharts();
     showAlert('Expense added successfully!', 'success');
     form.reset();
+    setDate('dateInput1');
 
   } catch (err) {
     console.error(err);
@@ -365,6 +365,7 @@ async function saveSalary(event) {
     drawExpenseAndSalaryGraph();
     showAlert('Salary added successfully!', 'success');
     form.reset();
+    setDate('dateInput2');
 
   } catch (err) {
     console.error(err);
@@ -373,6 +374,14 @@ async function saveSalary(event) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-dollar-sign me-1"></i> Add Salary';
   }
+}
+
+function setDate(dateID){
+  const dateInput = document.getElementById(dateID);
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.value = today;
+  dateInput.max = today; // Prevent future dates
+
 }
 
 /**
@@ -396,8 +405,11 @@ function showAlert(message, type = 'info') {
 // Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
+  setDate('dateInput1');
+  setDate('dateInput2');
   document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
   document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
+  
 });

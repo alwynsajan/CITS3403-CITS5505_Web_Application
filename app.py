@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from config import Config
 from models import db,User
 from flask_wtf import CSRFProtect
+import re
 
 app = Flask(__name__)
 
@@ -43,6 +44,11 @@ handler = serviceHandler()
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Helper function to validate email
+def is_valid_email(email):
+    email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    return re.match(email_regex, email)
+
 # Home route
 # This ensures both `/` and `/login` go to the login page
 # Login page route (GET)
@@ -69,21 +75,28 @@ def login():
     password = formData.get('password')
 
     user = User.query.filter_by(username=username).first()
-    if user and user.checkPassword(password):
-        login_user(user, remember=True, duration=timedelta(days=7))
+    if user:
+        if user.checkPassword(password):
+            login_user(user, remember=True, duration=timedelta(days=3))
 
+            return jsonify({
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Login successfully",
+                "redirect": url_for('dashboard')
+            })
+        
         return jsonify({
-            "status": "Success",
-            "statusCode": 200,
-            "message": "Login successfully",
-            "redirect": url_for('dashboard')
-        })
-
-    return jsonify({
-        "status": "Failed",
-        "statusCode": 401,
-        "message": "Invalid username or password"
-    })
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "Invalid Username or Password."
+                }), 401
+    else:
+        return jsonify({
+                    "status": "Failed",
+                    "statusCode": 401,
+                    "message": "User Not Found."
+                }), 401
        
 # Logout route
 @app.route('/logout')
@@ -106,7 +119,7 @@ def dashboard():
     status = handler.getUserFirstName(current_user.id)
     if status["status"] == "Success":
         data = handler.getDashboardData(current_user.id)
-        return render_template('dashboard.html', username=status["data"]["firstName"], data=data)
+        return render_template('dashboard.html', username=current_user.firstName, data=data)
     return redirect(url_for('loginPage'))
 
 # Route to create a new user account
@@ -129,6 +142,14 @@ def addUser():
         "firstName": formData.get('firstName'),
         "lastName": formData.get('lastName')
     }
+
+    # Validate email format
+    if not is_valid_email(data["username"]):
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 400,
+            "message": "Invalid email address"
+        })
 
     if data["password"] != data["confirmPassword"]:
         return jsonify({"status" : "Failed",
@@ -230,7 +251,7 @@ def expensePage():
     status = handler.getUserFirstName(current_user.id)
     if status["status"] == "Success":
         data = handler.getExpensePageData(current_user.id)
-        return render_template('expense.html', username=status["data"]["firstName"], data=data)
+        return render_template('expense.html', username=current_user.firstName, data=data)
     return redirect(url_for('loginPage'))
     
 # Route to fetch usernames and their IDs for sharing reports
@@ -263,18 +284,59 @@ def getSenderDetails():
     return jsonify(requestStatus)
 
 # Route to view a specific shared report
-@app.route('/dashboard/getReport')
+@app.route('/dashboard/getSharedReport', methods=['POST'])
 @login_required
 def getReport():
     data = request.get_json()
     if data is None:
         return jsonify({"status": "Failed", "statusCode": 400, "message": "No data received"})
 
-    sendersID = data.get('userID')
-    sharedDate = data.get('date')
+    senderID = data.get('senderID')
+    reportID = data.get('reportId')
 
-    requestStatus = handler.getReportData(current_user.id, sendersID, sharedDate)
-    return render_template("report.html", data=requestStatus["data"])
+    # Fetch the report data
+    requestStatus = handler.getReportData(current_user.id, senderID, reportID)
+
+    if requestStatus["status"] != "Success":
+        return jsonify({
+            "status": "Failed",
+            "statusCode": 404,
+            "message": "Report not found"
+        }), 404
+
+    # Render the report HTML using Jinja2 template and send it in the response
+    report_html = render_template("report.html", data=requestStatus["data"])
+
+    return jsonify({
+        "status": "Success",
+        "statusCode": 200,
+        "reportHtml": report_html
+    })
+
+
+# @app.route('/renderSharedReportView', methods=['POST'])
+# @login_required
+# def renderSharedReportView():
+#     senderId = request.args.get('senderId')
+#     reportID = request.args.get('reportID')
+
+#     if not senderId or not reportID:
+#         return jsonify({
+#             "status": "Failed",
+#             "statusCode": 400,
+#             "message": "Invalid request parameters"
+#         }), 400
+
+#     requestStatus = handler.getReportData(current_user.id, senderId, reportID)
+
+#     if requestStatus["status"] != "Success":
+#         return jsonify({
+#             "status": "Failed",
+#             "statusCode": 404,
+#             "message": "Report not found"
+#         }), 404
+
+#     return render_template("report.html", data=requestStatus["data"])
 
 # Route to get IDs of unread reports
 @app.route('/dashboard/getUnreadReportIds')
@@ -330,7 +392,7 @@ def settings():
         result = handler.updateUserPassword(current_user.id, current_password, new_password, confirm_password)
         return jsonify(result)
 
-    return render_template('settings.html', user=current_user)
+    return render_template('settings.html', username =current_user.firstName, user=current_user)
 
 
 

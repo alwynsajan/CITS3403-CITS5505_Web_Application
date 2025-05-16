@@ -13,3 +13,5 @@ venv/
 # Other
 *.log
 *.sqlite3
+
+test/__pycache__

@@ -35,7 +35,7 @@
             <div class="col-md-7">
                 <div class="card h-100">
                     <div class="card-body">
-                        <h5 class="card-title">Weekly Spending</h5>
+                        <h5 class="card-title">Weekly Spending (Upto Last 8 Weeks)</h5>
                         <div class="chart-container">
                             <canvas id="lineChart"></canvas>
                         </div>
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Third Row: Monthly Spending Bar Chart -->
-        <div class="row">
+        <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
@@ -78,7 +78,21 @@
                 </div>
             </div>
         </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Net Worth Timeline</h5>
+                        <div class="chart-container">
+                            <canvas id="monthlyBalanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
