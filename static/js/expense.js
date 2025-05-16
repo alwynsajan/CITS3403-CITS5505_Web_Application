@@ -54,7 +54,7 @@ function drawExpenseAndSalaryGraph() {
       },
       options: {
         responsive: true,
-        aspectRatio: 4, 
+        aspectRatio: 4,
         plugins: {
           legend: { position: 'top' },
           tooltip: {
@@ -64,7 +64,7 @@ function drawExpenseAndSalaryGraph() {
               label: function(context) {
                 // Get the value from the context (data from the bar)
                 const value = context.raw;
-                return `$${value.toFixed(2)}`; 
+                return `$${value.toFixed(2)}`;
               }
             }
           }
@@ -315,6 +315,8 @@ async function saveExpense(event) {
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
     initExpenseCharts();
+    // Update share button state after adding expense
+    // setupShareSummaryButton();
     showAlert('Expense added successfully!', 'success');
     form.reset();
     setDate('dateInput1');
@@ -361,8 +363,14 @@ async function saveSalary(event) {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData.expenseAndSalary.salaryData = result.data.newSalaryData ?? result;
+    // Update hasExpense flag if needed
+    if (result.data && typeof result.data.hasExpense !== 'undefined') {
+      window.expenseData.hasExpense = result.data.hasExpense;
+    }
 
     drawExpenseAndSalaryGraph();
+    // Update share button state after adding salary
+    setupShareSummaryButton();
     showAlert('Salary added successfully!', 'success');
     form.reset();
     setDate('dateInput2');
@@ -402,6 +410,80 @@ function showAlert(message, type = 'info') {
   setTimeout(() => alertDiv.remove(), 5000);
 }
 
+/**
+ * Setup share summary button functionality
+ * Disables the button if there are no expenses to share
+ * but does not show any message when clicked
+ */
+function setupShareSummaryButton() {
+  const shareBtn = document.getElementById('shareSummaryBtn');
+
+  if (shareBtn) {
+    console.log('Setting up share summary button');
+
+    // Remove any existing event listeners to prevent duplicates
+    if (shareBtn.clickHandlerAttached) {
+      shareBtn.removeEventListener('click', handleShareButtonClick);
+    }
+
+    // Check if there are expenses to share
+    const hasExpense = window.expenseData && window.expenseData.hasExpense;
+
+    console.log('Has expense data:', hasExpense);
+
+    if (!hasExpense) {
+      // Disable the button if there are no expenses
+      shareBtn.disabled = true;
+      shareBtn.title = ""; // No tooltip text
+      console.log('Share button disabled: No expense data to share');
+
+      // Make the button gray to indicate it's disabled
+      shareBtn.style.backgroundColor = '#f0f0f0';
+      shareBtn.style.borderColor = '#e0e0e0';
+      shareBtn.style.color = '#a0a0a0';
+      shareBtn.style.cursor = 'not-allowed';
+
+      // We don't add any click handler to disabled button
+      shareBtn.clickHandlerAttached = false;
+    } else {
+      // Enable the button if there are expenses
+      shareBtn.disabled = false;
+      shareBtn.title = "Share Expense Summary";
+
+      // Reset button style to default blue
+      shareBtn.style.backgroundColor = '';
+      shareBtn.style.borderColor = '';
+      shareBtn.style.color = '';
+      shareBtn.style.cursor = '';
+
+      // Add click handler to button
+      shareBtn.addEventListener('click', handleShareButtonClick);
+      shareBtn.clickHandlerAttached = true;
+    }
+  }
+}
+
+/**
+ * Handle share button click event
+ */
+function handleShareButtonClick() {
+  console.log('Share button clicked');
+
+  // Get the export report modal
+  const exportReportModal = document.getElementById('exportReportModal');
+
+  if (exportReportModal) {
+    // Initialize modal
+    const modal = new bootstrap.Modal(exportReportModal);
+
+    // Show modal
+    modal.show();
+  } else {
+    // If modal doesn't exist, show an alert that the feature is not available
+    showAlert('Share feature is not available. Please try again later.', 'warning');
+  }
+}
+
 // Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
@@ -411,5 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
-  
+
+  // Setup share button
+  setupShareSummaryButton();
 });

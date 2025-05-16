@@ -887,9 +887,15 @@ function createExpenseReportHTML(expenseData) {
  * Initialize the monthly spending chart with modern styling
  */
 function initMonthlySpendingChart() {
+    // Check if we're on the expense page - if so, don't try to initialize this chart
+    if (window.location.pathname.includes('/expense')) {
+        console.log('On expense page, skipping monthly spending chart initialization');
+        return;
+    }
+
     const chartCanvas = document.getElementById('monthlySpendingChart');
     if (!chartCanvas) {
-        console.error('Monthly spending chart canvas not found');
+        console.log('Monthly spending chart canvas not found, skipping initialization');
         return;
     }
 
@@ -1099,6 +1105,12 @@ function adjustColor(color, amount) {
  * Initialize goal progress visualization(s) with enhanced animations
  */
 function initGoalProgress() {
+    // Check if we're on the expense page - if so, don't try to initialize goal progress
+    if (window.location.pathname.includes('/expense')) {
+        console.log('On expense page, skipping goal progress initialization');
+        return;
+    }
+
     // Check if any goals have reached 100% completion
     if (window.goalData && window.goalData.length > 0) {
         console.log('Goals found:', window.goalData.length);
@@ -2551,20 +2563,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Validate salary date
             const date = salaryDateInput.value;
+            console.log('Salary date value:', date);
+            console.log('Salary date input element:', salaryDateInput);
+
             if (!date) {
                 isValid = false;
                 errorMessage = 'Please select a date';
                 salaryDateInput.classList.add('is-invalid');
+                console.error('Date is empty or undefined');
             } else {
                 const selectedDate = new Date(date);
                 const today = new Date();
+                console.log('Selected date:', selectedDate);
+                console.log('Today:', today);
+
                 if (selectedDate > today) {
                     isValid = false;
                     errorMessage = 'Date cannot be in the future';
                     salaryDateInput.classList.add('is-invalid');
+                    console.error('Date is in the future');
                 } else {
                     salaryDateInput.classList.remove('is-invalid');
                     salaryDateInput.classList.add('is-valid');
+                    console.log('Date is valid');
                 }
             }
 
@@ -2587,20 +2608,29 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
 
                 console.log('Sending salary data:', { amount, date });
+
+                // Create the request payload
+                const payload = {
+                    amount: amount,
+                    date: date  // Using 'date' as expected by app.py
+                };
+
+                console.log('Request payload:', payload);
+                console.log('Request payload JSON:', JSON.stringify(payload));
+
                 const response = await fetch('/dashboard/addSalary', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        amount: amount,
-                        salaryDate: date  // Using correct parameter name as in app.py
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
+                console.log('Response from server:', result);
 
                 if (!response.ok || result.status !== "Success") {
+                    console.error('Error response from server:', result);
                     throw new Error(result.message || `HTTP error! status: ${response.status}`);
                 }
 
@@ -4144,27 +4174,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     animateCards();
     initMonthlySpendingChart();
 
-    // Always fetch fresh goal data on page load to ensure correct progress percentages
-    console.log('Fetching fresh goal data from server on page load...');
+    // Use the goal data already provided by the server in the HTML template
+    // No need to fetch fresh data since it's already included in the page
+    console.log('Using goal data from HTML template...');
     try {
-        const response = await fetch('/dashboard/getGoals');
-        if (response.ok) {
-            const result = await response.json();
-            if (result.status === "Success" && result.data) {
-                console.log('Successfully fetched goal data from server:', result.data);
-                window.goalData = result.data;
-                window.hasGoal = result.data.length > 0;
-
-                // Log progress percentages for debugging
-                if (window.goalData && window.goalData.length > 0) {
-                    window.goalData.forEach(goal => {
-                        console.log(`Goal: ${goal.goalName}, Progress: ${goal.progressPercentage}%`);
-                    });
-                }
-            }
+        // Log progress percentages for debugging
+        if (window.goalData && window.goalData.length > 0) {
+            console.log('Goal data from template:', window.goalData);
+            window.hasGoal = window.goalData.length > 0;
+            window.goalData.forEach(goal => {
+                console.log(`Goal: ${goal.goalName}, Progress: ${goal.progressPercentage}%`);
+            });
+        } else {
+            console.log('No goal data found in template');
+            window.hasGoal = false;
         }
     } catch (error) {
-        console.error('Error fetching goal data:', error);
+        console.error('Error processing goal data:', error);
     }
 
     // Initialize progress circle with fresh data
@@ -4475,14 +4501,11 @@ async function redeemGoal(goalName, amount) {
                     window.goalData = result.goalData;
                     window.hasGoal = result.hasGoal;
                 } else {
-                    // Fallback to fetching goal data
-                    console.log('Fetching goal data from server');
-                    const goalsResponse = await fetch('/dashboard/getGoals');
-                    const goalsResult = await goalsResponse.json();
-
-                    if (goalsResponse.ok && goalsResult.status === "Success") {
-                        // Update global goal data
-                        window.goalData = goalsResult.data;
+                    // 不需要从服务器获取目标数据，因为app.py中没有定义/dashboard/getGoals路径
+                    console.log('No goal data in response, using existing goal data');
+                    // 使用现有的目标数据
+                    if (!window.goalData) {
+                        window.goalData = [];
                     }
                 }
 
