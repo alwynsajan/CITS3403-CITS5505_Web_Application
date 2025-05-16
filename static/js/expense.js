@@ -301,7 +301,7 @@ async function saveExpense(event) {
     const payload = {
       amount:   parseFloat(form.amount.value),
       category: form.category.value,
-      date:     form.date.value
+      date:     form.expenseDate.value
     };
 
     const resp   = await fetch('/expense/addExpense', {
@@ -316,7 +316,7 @@ async function saveExpense(event) {
     window.expenseData = result.data ?? result;
     initExpenseCharts();
     // Update share button state after adding expense
-    setupShareSummaryButton();
+    // setupShareSummaryButton();
     showAlert('Expense added successfully!', 'success');
     form.reset();
     setDate('dateInput1');
@@ -350,7 +350,7 @@ async function saveSalary(event) {
 
     const payload = {
       amount: parseFloat(form.amount.value),
-      date:   form.date.value
+      date:   form.salaryDate.value
     };
 
     const resp   = await fetch('/expense/addSalary', {

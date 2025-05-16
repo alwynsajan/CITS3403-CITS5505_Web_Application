@@ -42,7 +42,7 @@
             </div>
             <div class="col-md-4">
               <label class="form-label">Date</label>
-              <input type="date" id="dateInput1" name="date" class="form-control" required>
+              <input type="date" id="dateInput1" name="expenseDate" class="form-control" required>
             </div>
             <div class="col-12">
               <button type="submit" class="btn btn-primary">
@@ -67,7 +67,7 @@
             </div>
             <div class="col-12">
               <label class="form-label">Date</label>
-              <input type="date" name="date" class="form-control" required>
+              <input type="date" id="dateInput2" name="salaryDate" class="form-control" required>
             </div>
             <div class="col-12 d-grid">
               <button type="submit" class="btn btn-success">
@@ -82,83 +82,64 @@
   </div>
 
   <!-- Second Row: Weekly Expenses + Category Breakdown -->
-<div class="row g-4 mb-4">
-  <!-- Weekly Expenses (8/12) -->
-  <div class="col-md-8">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Weekly Expenses</h5>
-        <div id="weeklyExpensesEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
-          <i class="empty-state-icon bi bi-graph-up"></i>
-          <p class="mt-2 text-muted">Your weekly spending trends will appear here.</p>
-        </div>
-        <canvas id="lineChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Category Breakdown (4/12) -->
-  <div class="col-md-4">
-    <div class="card h-100">
+  <div class="row g-4 mb-4">
+    <!-- Weekly Expenses (8/12) -->
+    <div class="col-md-8">
+      <div class="card h-100">
         <div class="card-body">
-            <h5 class="card-title">Monthly Category Breakdown</h5>
-            <!-- Empty State (only visible when no data) -->
-            <div id="categoryBreakdownEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
-                <i class="empty-state-icon bi bi-graph-up"></i>
-                <p class="mt-2 text-muted">Add expenses to view your category breakdown.</p>
-            </div>
-            <!-- Pie chart (only visible when there is data) -->
-            <canvas id="pieChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
-
-            <!-- Navigation buttons -->
-            <div>
-                <button id="prevMonth" class="month-nav-btn left-btn">
-                  <i class="fas fa-chevron-left"></i>
-              </button>
-              <button id="nextMonth" class="month-nav-btn right-btn">
-                  <i class="fas fa-chevron-right"></i>
-              </button>
-            </div>
+          <h5 class="card-title">Weekly Expenses</h5>
+          <div id="weeklyExpensesEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
+            <i class="empty-state-icon bi bi-graph-up"></i>
+            <p class="mt-2 text-muted">Your weekly spending trends will appear here.</p>
+          </div>
+          <canvas id="lineChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
         </div>
+      </div>
     </div>
-</div>
+
+    <!-- Category Breakdown (4/12) -->
+    <div class="col-md-4">
+      <div class="card h-100">
+          <div class="card-body">
+              <h5 class="card-title">Monthly Category Breakdown</h5>
+              <!-- Empty State (only visible when no data) -->
+              <div id="categoryBreakdownEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses %}block{% else %}none{% endif %};">
+                  <i class="empty-state-icon bi bi-graph-up"></i>
+                  <p class="mt-2 text-muted">Add expenses to view your category breakdown.</p>
+              </div>
+              <!-- Pie chart (only visible when there is data) -->
+              <canvas id="pieChart" style="display: {% if data.hasExpenses %}block{% else %}none{% endif %};"></canvas>
+
+              <!-- Navigation buttons -->
+              <div>
+                  <button id="prevMonth" class="month-nav-btn left-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="nextMonth" class="month-nav-btn right-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+          </div>
+      </div>
+  </div>
 
 
-<!-- Third Row: Salary vs Expenses -->
-<div class="row g-4 mb-4">
-  <div class="col-md-12">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">Salary vs Expenses</h5>
-        <div id="salaryVsExpensesEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses and not data.hasSalary %}block{% else %}none{% endif %};">
-          <i class="empty-state-icon bi bi-bar-chart-fill"></i>
-          <p class="mt-2 text-muted">Log salary &amp; expenses to compare them here.</p>
+  <!-- Third Row: Salary vs Expenses -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-12">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Salary vs Expenses</h5>
+          <div id="salaryVsExpensesEmpty" class="empty-state py-5 text-center" style="display: {% if not data.hasExpenses and not data.hasSalary %}block{% else %}none{% endif %};">
+            <i class="empty-state-icon bi bi-bar-chart-fill"></i>
+            <p class="mt-2 text-muted">Log salary &amp; expenses to compare them here.</p>
+          </div>
+          <canvas id="barChart" style="display: {% if data.hasExpenses or data.hasSalary %}block{% else %}none{% endif %};"></canvas>
         </div>
-        <canvas id="barChart" style="display: {% if data.hasExpenses or data.hasSalary %}block{% else %}none{% endif %};"></canvas>
       </div>
     </div>
   </div>
-</div>
 
-
-  <!-- Expense Log Table -->
-  <!-- <div class="card p-4">
-    <h5 class="card-title">Expense Log</h5>
-    {% if not data.hasExpenses %}
-      <div class="empty-state py-5 text-center">
-        <i class="empty-state-icon bi bi-table"></i>
-        <p class="mt-2 text-muted">Your expenses will be listed here once you add them.</p>
-      </div>
-    {% else %}
-      <table id="expenseLog" class="table table-striped">
-        <thead>
-          <tr><th>Date</th><th>Amount</th><th>Category</th></tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-    {% endif %}
-  </div> -->
 
 </div>
 {% endblock %}

@@ -46,7 +46,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 400,
-                    "message": "Username already exists"
+                    "message": "Email already exists"
                 }
 
             newId = self.getLastId(User) + 1 
@@ -869,6 +869,49 @@ class dbClient:
         except Exception as e:
             db.session.rollback()
             return self.handleError(e, "updating user password")
+        
+
+    def updateAllocation(self, userId, goalName):
+        try:
+            # Fetch the goal for the given user and goal name
+            goal = Goal.query.filter_by(userId=userId, goalName=goalName).first()
+            if not goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Goal not found"
+                }
+
+            # Fetch the user
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            # Subtract the goal's allocation percentage
+            user.goalAllocationPercent -= goal.percentageAllocation
+            if user.goalAllocationPercent < 0:
+                user.goalAllocationPercent = 0
+
+            # Delete the goal from the database
+            db.session.delete(goal)
+
+            # Commit the changes
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Allocation updated and goal removed successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating allocation and deleting goal")
+
 
 
 
