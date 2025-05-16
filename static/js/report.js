@@ -11,49 +11,58 @@ function drawExpenseAndSalaryGraph(){
     const expenseData = window.expenseData.expenseAndSalary?.expenseData ?? Array(12).fill(0);
 
     barChartInstance = new Chart(barChartEl, {
-    type: 'bar',
-    data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        datasets: [
-        {
-            label: 'Salary',
-            data: salaryData,
-            backgroundColor: '#6c5ce7',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
+        type: 'bar',
+        data: {
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            datasets: [
+                {
+                    label: 'Salary',
+                    data: salaryData,
+                    backgroundColor: '#6c5ce7',
+                    borderRadius: { topLeft: 10, topRight: 10 },
+                    barThickness: 20
+                },
+                {
+                    label: 'Expenses',
+                    data: expenseData,
+                    backgroundColor: '#00cec9',
+                    borderRadius: { topLeft: 10, topRight: 10 },
+                    barThickness: 20
+                }
+            ]
         },
-        {
-            label: 'Expenses',
-            data: expenseData,
-            backgroundColor: '#00cec9',
-            borderRadius: { topLeft: 10, topRight: 10 },
-            barThickness: 20
+        options: {
+            responsive: true,
+            aspectRatio: 4, 
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: {
+                    stacked: false,
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    stacked: false,
+                    grid: { color: '#f1f1f1' }
+                }
+            }
         }
-        ]
-    },
-    options: {
-        responsive: true,
-        aspectRatio: 4, 
-        maintainAspectRatio: false,
-        plugins: {
-        legend: { position: 'top' },
-        tooltip: { mode: 'index', intersect: false }
-        },
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-        x: {
-            stacked: false,
-            grid: { display: false }
-        },
-        y: {
-            beginAtZero: true,
-            stacked: false,
-            grid: { color: '#f1f1f1' }
-        }
-        }
-      }
     });
-  }
+}
+
 
   function drawMonthlySpendingChart() {
     const ctx = document.getElementById('monthlySpendingChart');
@@ -126,50 +135,54 @@ function drawExpenseAndSalaryGraph(){
     });
 }
 
-function drawWeeklyExpenseGraph(){
-
+function drawWeeklyExpenseGraph() {
     const lineChartEl = document.getElementById('lineChart');
     lineChartInstance = new Chart(lineChartEl, {
         type: "line",
         data: {
-        labels: Object.keys(window.expenseData.weeklyExpense),  
-        datasets: [{
-            label: "Weekly Spending",
-            data: Object.values(window.expenseData.weeklyExpense),  
-            borderColor: "#6932dd",
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: "#fff",
-            pointBorderColor: "#6932dd",
-            pointRadius: 5
-        }]
+            labels: Object.keys(window.expenseData.weeklyExpense),
+            datasets: [{
+                label: "Weekly Spending",
+                data: Object.values(window.expenseData.weeklyExpense),
+                borderColor: "#6932dd",
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: "#fff",
+                pointBorderColor: "#6932dd",
+                pointRadius: 5
+            }]
         },
         options: {
-        responsive: true,
-        aspectRatio: 3, 
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: { display: false },
-            x: { display: false }
-        }
+            responsive: true,
+            aspectRatio: 3,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Spending: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { display: false },
+                x: { display: false }
+            }
         }
     });
 }
 
-function drawCategoryPieChart(index) {
 
+function drawCategoryPieChart(index) {
     const prevBtn = document.getElementById('prevMonth');
     const nextBtn = document.getElementById('nextMonth');
     console.log("In drawCategoryPieChart");
 
-    // Extract and order the months from the data
     const monthlyExpenses = window.expenseData.monthlyCategoryExpenses;
-    monthKeys = Object.keys(monthlyExpenses); // ['April', 'March', 'February', 'May']
-    monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`)); // Sort by month
+    monthKeys = Object.keys(monthlyExpenses);
+    monthKeys.sort((a, b) => new Date(`1 ${b} 2020`) - new Date(`1 ${a} 2020`));
 
-    // Show/hide buttons only if there are multiple months
     if (monthKeys.length > 1) {
         prevBtn.style.display = 'inline-block';
         nextBtn.style.display = 'inline-block';
@@ -177,13 +190,11 @@ function drawCategoryPieChart(index) {
     } else {
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-        }
-
+    }
 
     const month = monthKeys[index];
     const data = monthlyExpenses[month];
 
-    // Remove the 'total' key to only include category breakdown
     const categories = Object.keys(data).filter(k => k !== 'total');
     const values = categories.map(cat => data[cat]);
 
@@ -210,12 +221,107 @@ function drawCategoryPieChart(index) {
                     text: `Category Breakdown - ${month}`
                 },
                 legend: {
-                    position: 'bottom'
+                    display: false 
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw;
+                            return `${label}: $${value.toFixed(2)}`;
+                        }
+                    }
                 }
             }
         }
     });
 }
+
+function drawMonthlyBalanceTrend() {
+    const salaryData = window.expenseData.expenseAndSalary.salaryData;
+    const expenseData = window.expenseData.expenseAndSalary.expenseData;
+
+    const allMonthLabels = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    // Get current month (0-based: Jan = 0)
+    const currentMonth = new Date().getMonth() + 1;
+
+    const monthLabels = allMonthLabels.slice(0, currentMonth);
+    const slicedSalaryData = salaryData.slice(0, currentMonth);
+    const slicedExpenseData = expenseData.slice(0, currentMonth);
+
+    // Monthly balance: salary - expense (only if salary exists)
+    const monthlyBalance = slicedSalaryData.map((salary, index) => {
+        const expense = slicedExpenseData[index] || 0;
+        return salary === 0 ? 0 : (salary - expense);
+    });
+
+    // Cumulative net savings: sum of (salary - expense) if salary > 0
+    const cumulativeNet = [];
+    let total = 0;
+    for (let i = 0; i < slicedSalaryData.length; i++) {
+        let net = 0;
+        if (slicedSalaryData[i] > 0) {
+            net = slicedSalaryData[i] - (slicedExpenseData[i] || 0);
+        }
+        total += net;
+        cumulativeNet.push(total);
+    }
+
+    const balanceChartEl = document.getElementById('monthlyBalanceChart');
+    new Chart(balanceChartEl, {
+        type: 'line',
+        data: {
+            labels: monthLabels,
+            datasets: [
+                {
+                    label: 'Monthly Balance',
+                    data: monthlyBalance,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#28a745',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Cumulative Net Balance',
+                    data: cumulativeNet,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#007bff',
+                    pointRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            aspectRatio: 3,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { display: false },
+                x: { display: true }
+            }
+        }
+    });
+}
+
 
 function handlePrevMonth() {
     if (currentMonthIndex < monthKeys.length - 1) {
@@ -244,4 +350,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
     document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
     drawMonthlySpendingChart();
+    drawMonthlyBalanceTrend();
   });

@@ -46,7 +46,7 @@ class dbClient:
                 return {
                     "status": "Failed",
                     "statusCode": 400,
-                    "message": "Username already exists"
+                    "message": "Email already exists"
                 }
 
             newId = self.getLastId(User) + 1 
@@ -345,6 +345,15 @@ class dbClient:
                     "status": "Failed",
                     "statusCode": 404,
                     "message": f"User with username '{username}' does not exist"
+                }
+            
+            # Check if goal with the same name already exists for the user
+            existing_goal = Goal.query.filter_by(userId=user.id, goalName=data["goalName"]).first()
+            if existing_goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 400,
+                    "message": f"Goal with name '{data['goalName']}' already exists for user {username}"
                 }
 
             newGoalId = self.getLastId(Goal) + 1
@@ -675,6 +684,7 @@ class dbClient:
             senders = []
             for record in senderRecords:
                 senders.append({
+                    "reportId":record.id,
                     "senderID": record.senderID,
                     "senderFirstName": record.senderFirstName,
                     "senderLastName": record.senderLastName,
@@ -691,13 +701,13 @@ class dbClient:
             return self.handleError(e, "Fetching sender details")
         
     #Fetches the shared report based on receiver ID, sender ID, and shared date
-    def getReportData(self, userID, senderID, sharedDate):
+    def getReportData(self, userID, senderID, reportID):
        
         try:
             report = ShareReport.query.filter_by(
                 receiverID=userID,
                 senderID=senderID,
-                sharedDate=sharedDate
+                id=reportID
             ).first()
 
             if report:
@@ -732,9 +742,7 @@ class dbClient:
                 "status": "Success",
                 "statusCode": 200,
                 "message": f"Found {len(reportIds)} unread report(s)",
-                "data": {
-                    "unreadReportIds": reportIds
-                }
+                "unreadReportIds": reportIds
             }
 
         except Exception as e:
@@ -753,9 +761,8 @@ class dbClient:
                 "status": "Success",
                 "statusCode": 200,
                 "message": f"Unread report count fetched successfully",
-                "data": {
-                    "reportCount": reportCount
-                }
+                "reportCount": reportCount
+                
             }
 
         except Exception as e:
@@ -862,6 +869,49 @@ class dbClient:
         except Exception as e:
             db.session.rollback()
             return self.handleError(e, "updating user password")
+        
+
+    def updateAllocation(self, userId, goalName):
+        try:
+            # Fetch the goal for the given user and goal name
+            goal = Goal.query.filter_by(userId=userId, goalName=goalName).first()
+            if not goal:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "Goal not found"
+                }
+
+            # Fetch the user
+            user = User.query.get(userId)
+            if not user:
+                return {
+                    "status": "Failed",
+                    "statusCode": 404,
+                    "message": "User not found"
+                }
+
+            # Subtract the goal's allocation percentage
+            user.goalAllocationPercent -= goal.percentageAllocation
+            if user.goalAllocationPercent < 0:
+                user.goalAllocationPercent = 0
+
+            # Delete the goal from the database
+            db.session.delete(goal)
+
+            # Commit the changes
+            db.session.commit()
+
+            return {
+                "status": "Success",
+                "statusCode": 200,
+                "message": "Allocation updated and goal removed successfully"
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            return self.handleError(e, "updating allocation and deleting goal")
+
 
 
 

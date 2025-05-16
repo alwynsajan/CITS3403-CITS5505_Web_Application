@@ -7,25 +7,24 @@ let lineChartInstance = null;
 let monthKeys = [];
 let currentMonthIndex = 0;
 
-
 /**
  * Draws the salary vs expenses bar chart
  * Compares monthly salary and expenses data in a bar chart format
  * Shows empty state if no data exists
  */
 function drawExpenseAndSalaryGraph() {
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
   const hasSalary = window.expenseData.hasSalary;
 
   // Salary vs Expenses
   const salaryEmpty = document.getElementById('salaryVsExpensesEmpty');
   const barChartEl = document.getElementById('barChart');
   if (salaryEmpty && barChartEl) {
-    salaryEmpty.style.display = (hasExpenses || hasSalary) ? 'none' : 'block';
-    barChartEl.style.display = (hasExpenses || hasSalary) ? 'block' : 'none';
+    salaryEmpty.style.display = (hasExpense || hasSalary) ? 'none' : 'block';
+    barChartEl.style.display = (hasExpense || hasSalary) ? 'block' : 'none';
   }
 
-  if ((hasExpenses || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
+  if ((hasExpense || hasSalary) && barChartEl && barChartEl.style.display === 'block') {
     if (barChartInstance) {
       barChartInstance.destroy();
     }
@@ -55,7 +54,7 @@ function drawExpenseAndSalaryGraph() {
       },
       options: {
         responsive: true,
-        aspectRatio: 4, 
+        aspectRatio: 4,
         plugins: {
           legend: { position: 'top' },
           tooltip: {
@@ -65,7 +64,7 @@ function drawExpenseAndSalaryGraph() {
               label: function(context) {
                 // Get the value from the context (data from the bar)
                 const value = context.raw;
-                return `$${value.toFixed(2)}`; 
+                return `$${value.toFixed(2)}`;
               }
             }
           }
@@ -93,9 +92,9 @@ function drawExpenseAndSalaryGraph() {
  */
 function drawCategoryPieChart(index) {
 
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
 
-  if (hasExpenses == true){
+  if (hasExpense == true){
   monthKeys = Object.keys(window.expenseData.monthlyCategoryExpenses);
 
   // Toggle category breakdown empty state and chart
@@ -105,7 +104,7 @@ function drawCategoryPieChart(index) {
   const nextBtn = document.getElementById('nextMonth');
 
   // Show/hide buttons only if there are multiple months
-  if (hasExpenses && monthKeys.length > 1) {
+  if (hasExpense && monthKeys.length > 1) {
       prevBtn.style.display = 'inline-block';
       nextBtn.style.display = 'inline-block';
   } else {
@@ -115,11 +114,11 @@ function drawCategoryPieChart(index) {
 
   // Toggle chart visibility based on expenses
   if (categoryEmpty && pieChartEl) {
-      categoryEmpty.style.display = hasExpenses ? 'none' : 'block';
-      pieChartEl.style.display = hasExpenses ? 'block' : 'none';
+      categoryEmpty.style.display = hasExpense ? 'none' : 'block';
+      pieChartEl.style.display = hasExpense ? 'block' : 'none';
   }
 
-  if (hasExpenses && pieChartEl && pieChartEl.style.display === 'block') {
+  if (hasExpense && pieChartEl && pieChartEl.style.display === 'block') {
       if (pieChartInstance) {
           pieChartInstance.destroy();
       }
@@ -186,16 +185,16 @@ function drawCategoryPieChart(index) {
 */
 function initExpenseCharts() {
   // Show/hide empty states and charts based on data
-  const hasExpenses = window.expenseData.hasExpenses;
+  const hasExpense = window.expenseData.hasExpense;
 
   const weeklyEmpty = document.getElementById('weeklyExpensesEmpty');
   const lineChartEl = document.getElementById('lineChart');
   if (weeklyEmpty && lineChartEl) {
-    weeklyEmpty.style.display = hasExpenses ? 'none' : 'block';
-    lineChartEl.style.display = hasExpenses ? 'block' : 'none';
+    weeklyEmpty.style.display = hasExpense ? 'none' : 'block';
+    lineChartEl.style.display = hasExpense ? 'block' : 'none';
   }
 
-  if (hasExpenses && lineChartEl && lineChartEl.style.display === 'block') {
+  if (hasExpense && lineChartEl && lineChartEl.style.display === 'block') {
     if (lineChartInstance) {
       lineChartInstance.destroy();
     }
@@ -302,7 +301,7 @@ async function saveExpense(event) {
     const payload = {
       amount:   parseFloat(form.amount.value),
       category: form.category.value,
-      date:     form.date.value
+      date:     form.expenseDate.value
     };
 
     const resp   = await fetch('/expense/addExpense', {
@@ -316,8 +315,11 @@ async function saveExpense(event) {
     // unpack either { data: {...} } or raw {...}
     window.expenseData = result.data ?? result;
     initExpenseCharts();
+    // Update share button state after adding expense
+    // setupShareSummaryButton();
     showAlert('Expense added successfully!', 'success');
     form.reset();
+    setDate('dateInput1');
 
   } catch (err) {
     console.error(err);
@@ -348,7 +350,7 @@ async function saveSalary(event) {
 
     const payload = {
       amount: parseFloat(form.amount.value),
-      date:   form.date.value
+      date:   form.salaryDate.value
     };
 
     const resp   = await fetch('/expense/addSalary', {
@@ -361,10 +363,17 @@ async function saveSalary(event) {
 
     // unpack either { data: {...} } or raw {...}
     window.expenseData.expenseAndSalary.salaryData = result.data.newSalaryData ?? result;
+    // Update hasExpense flag if needed
+    if (result.data && typeof result.data.hasExpense !== 'undefined') {
+      window.expenseData.hasExpense = result.data.hasExpense;
+    }
 
     drawExpenseAndSalaryGraph();
+    // Update share button state after adding salary
+    setupShareSummaryButton();
     showAlert('Salary added successfully!', 'success');
     form.reset();
+    setDate('dateInput2');
 
   } catch (err) {
     console.error(err);
@@ -373,6 +382,14 @@ async function saveSalary(event) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-dollar-sign me-1"></i> Add Salary';
   }
+}
+
+function setDate(dateID){
+  const dateInput = document.getElementById(dateID);
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.value = today;
+  dateInput.max = today; // Prevent future dates
+
 }
 
 /**
@@ -393,11 +410,90 @@ function showAlert(message, type = 'info') {
   setTimeout(() => alertDiv.remove(), 5000);
 }
 
+/**
+ * Setup share summary button functionality
+ * Disables the button if there are no expenses to share
+ * but does not show any message when clicked
+ */
+function setupShareSummaryButton() {
+  const shareBtn = document.getElementById('shareSummaryBtn');
+
+  if (shareBtn) {
+    console.log('Setting up share summary button');
+
+    // Remove any existing event listeners to prevent duplicates
+    if (shareBtn.clickHandlerAttached) {
+      shareBtn.removeEventListener('click', handleShareButtonClick);
+    }
+
+    // Check if there are expenses to share
+    const hasExpense = window.expenseData && window.expenseData.hasExpense;
+
+    console.log('Has expense data:', hasExpense);
+
+    if (!hasExpense) {
+      // Disable the button if there are no expenses
+      shareBtn.disabled = true;
+      shareBtn.title = ""; // No tooltip text
+      console.log('Share button disabled: No expense data to share');
+
+      // Make the button gray to indicate it's disabled
+      shareBtn.style.backgroundColor = '#f0f0f0';
+      shareBtn.style.borderColor = '#e0e0e0';
+      shareBtn.style.color = '#a0a0a0';
+      shareBtn.style.cursor = 'not-allowed';
+
+      // We don't add any click handler to disabled button
+      shareBtn.clickHandlerAttached = false;
+    } else {
+      // Enable the button if there are expenses
+      shareBtn.disabled = false;
+      shareBtn.title = "Share Expense Summary";
+
+      // Reset button style to default blue
+      shareBtn.style.backgroundColor = '';
+      shareBtn.style.borderColor = '';
+      shareBtn.style.color = '';
+      shareBtn.style.cursor = '';
+
+      // Add click handler to button
+      shareBtn.addEventListener('click', handleShareButtonClick);
+      shareBtn.clickHandlerAttached = true;
+    }
+  }
+}
+
+/**
+ * Handle share button click event
+ */
+function handleShareButtonClick() {
+  console.log('Share button clicked');
+
+  // Get the export report modal
+  const exportReportModal = document.getElementById('exportReportModal');
+
+  if (exportReportModal) {
+    // Initialize modal
+    const modal = new bootstrap.Modal(exportReportModal);
+
+    // Show modal
+    modal.show();
+  } else {
+    // If modal doesn't exist, show an alert that the feature is not available
+    showAlert('Share feature is not available. Please try again later.', 'warning');
+  }
+}
+
 // Initialize charts and set up event listeners when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   initExpenseCharts();
+  setDate('dateInput1');
+  setDate('dateInput2');
   document.getElementById('prevMonth').addEventListener('click', handlePrevMonth);
   document.getElementById('nextMonth').addEventListener('click', handleNextMonth);
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
   document.getElementById('salaryForm').addEventListener('submit', saveSalary);
+
+  // Setup share button
+  setupShareSummaryButton();
 });

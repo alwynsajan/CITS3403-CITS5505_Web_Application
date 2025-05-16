@@ -11,9 +11,9 @@ def getAccountData(accBalance,previousBalance):
 
     # Calculate the percentage change, avoiding division by zero
     if previousBalance != 0:
-        data["percentChange"] = round(((float(accBalance) - float(previousBalance)) / float(previousBalance)) * 100,2)
+        data["percentageChange"] = round(((float(accBalance) - float(previousBalance)) / float(previousBalance)) * 100,2)
     else:
-        data["percentChange"] = 100.0
+        data["percentageChange"] = 100.0
 
     return data
 
